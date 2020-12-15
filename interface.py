@@ -15,20 +15,12 @@ class CollectionDB(CoreDB):
         self.session.commit()
         return c
 
-    def list_files_in_collection(self):
+    def list_files_in_collection(self, collection):
         """
         List files in a particular collection
         """
-        pass
-
-    def upload_file_to_collection(self, collection, name, path, checksum):
-        """
-        Add a new file into the database, and add details to collection
-        """
-        c = self.session.query(Collection).filter_by(name=collection).first()
-        f = File(name=name, path=path, checksum=checksum, initial_collection=c.id)
-        self.session.add(f)
-        self.session.commit()
+        dataset = self.session.query(Collection).filter_by(name=collection).one().holds_files
+        print(dataset)
 
     def add_file_to_collection(self, collection, file):
         """
@@ -46,7 +38,8 @@ class CollectionDB(CoreDB):
         """
         Return information about a collection
         """
-        pass
+        c = self.session.query(Collection).filter_by(name=name).first()
+        return str(c)
 
     ### tag API
 
@@ -77,6 +70,15 @@ class CollectionDB(CoreDB):
     ###
     # Files API
     ###
+
+    def upload_file_to_collection(self, collection, name, path, checksum):
+        """
+        Add a new file into the database, and add details to collection
+        """
+        c = self.session.query(Collection).filter_by(name=collection).first()
+        f = File(name=name, path=path, checksum=checksum, initial_collection=c.id)
+        self.session.add(f)
+        self.session.commit()
 
     def upload_files_to_collection(self, collection, files):
         """

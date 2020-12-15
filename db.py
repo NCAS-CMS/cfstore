@@ -80,9 +80,8 @@ class Collection(ProxiedDictMixin, Base):
     """
     __tablename__ = 'collections'
     id = Column(Integer, primary_key=True)
-    name = Column(Unicode)
+    name = Column(Unicode, unique=True)
     description = Column(UnicodeText)
-    filecount = Column(Integer)
     volume = Column(Integer)
 
     holds_files = relationship(
@@ -107,11 +106,18 @@ class Collection(ProxiedDictMixin, Base):
         creator=lambda key, value: CollectionProperty(key=key, value=value))
 
     def __repr__(self):
+        if not self.volume:
+            self.volume=0
         return f'<Collection {self.name} {self.volume/9e6}GB  in {self.filecount} files'
 
     @classmethod
     def with_property(self, key, value):
         return self.properties.any(key=key, value=value)
+
+    @property
+    def filecount(self):
+
+        return len(self.holds_files)
 
 
 class Tag(Base):

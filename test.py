@@ -20,6 +20,9 @@ class BasicStructure(unittest.TestCase):
         files = [f'/somewhere/in/unix_land/file{i}' for i in range(10)]
         db.upload_files_to_collection('mrun1', files)
 
+        print(db.collection_info('mrun1'))
+        print(db.list_files_in_collection('mrun1'))
+
 
 if __name__ == "__main__":
     unittest.main()
