@@ -88,14 +88,16 @@ class Collection(ProxiedDictMixin, Base):
         "File",
         secondary=collection_files_associations,
         back_populates="in_collections")
+    association_proxy('holds_files', 'files')
 
     # collections which correspond to uploaded batches, and which cannot be
     # deleted unless there are no references to the files within it elsewhere
     batch = Column(Boolean)
 
-    tags = relationship("Tag",
-                       secondary=lambda: collection_tags_associations,
-                       back_populates="in_collections")
+    tags = relationship(
+        "Tag",
+        secondary=lambda: collection_tags_associations,
+        back_populates="in_collections")
 
     # vertical table properties
     properties = relationship("CollectionProperty",
@@ -107,17 +109,17 @@ class Collection(ProxiedDictMixin, Base):
 
     def __repr__(self):
         if not self.volume:
-            self.volume=0
-        return f'<Collection {self.name} {self.volume/9e6}GB  in {self.filecount} files'
+            self.volume = 0
+        return f'Collection <{self.name}> has  {self.volume/9e6}GB in {self.filecount} files'
+
+    @property
+    def filecount(self):
+        return len(self.holds_files)
 
     @classmethod
     def with_property(self, key, value):
         return self.properties.any(key=key, value=value)
 
-    @property
-    def filecount(self):
-
-        return len(self.holds_files)
 
 
 class Tag(Base):
@@ -131,6 +133,8 @@ class Tag(Base):
     in_collections = relationship('Collection',
                                   secondary=collection_tags_associations,
                                   back_populates='tags')
+    def __repr__(self):
+        return self.name
 
 
 class File(Base):
