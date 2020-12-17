@@ -1,6 +1,6 @@
 import os, sys
 from db import Collection, CoreDB, File, Tag
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -100,6 +100,22 @@ class CollectionDB(CoreDB):
         else:
             return self.session.query(Collection).all()
 
+    def organise(self, collection, files, description):
+        """
+        Organise files already known to the environment into collection,
+        (creating collection if necessary)
+        """
+        try:
+            c = self.retrieve_collection(collection)
+        except ValueError:
+            if not description:
+                description = 'Manually organised collection'
+            c = self.create_collection(collection, description, {})
+        for f in files:
+            ff = self.retrieve_file(f)
+            c.holds_files.append(ff)
+        self.session.commit()
+
 
     ### tag API
 
@@ -178,6 +194,9 @@ class CollectionDB(CoreDB):
     def remove_file_from_collection(self, collection, file):
         raise NotImplementedError
 
+    def retrieve_file(self, filename):
+        path, name = os.path.split(filename)
+        return self.session.query(File).filter(and_(File.name==name,File.path==path)).one()
 
     @property
     def tables(self):

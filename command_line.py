@@ -1,5 +1,5 @@
 from interface import CollectionDB
-import os, json
+import os, json, sys
 import click
 from urllib.parse import urlparse
 
@@ -74,7 +74,7 @@ def safe_cli():
 
 
 @click.group()
-@click.option('--db', default=None, help='New default database file')
+@click.option('--db', default=None, help='New default database (e.g sqlite///hiresgw.db) ')
 @click.option('--collection', default=None, help='Current collection (make default)')
 @click.pass_context
 def cli(ctx, db, collection):
@@ -90,7 +90,7 @@ def cli(ctx, db, collection):
 @click.pass_context
 def save(ctx):
     """
-    Save current db, overwriting existing state if desired
+    Save current db choice and last used collection (which becomes default).
     """
     view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
     _save(view_state)
@@ -98,10 +98,12 @@ def save(ctx):
 
 @cli.command()
 @click.pass_context
-@click.option('--collection', default=None, help='Required collection(use and make default)')
+@click.option('--collection', default=None, help='Required collection (use and make default)')
 def ls(ctx, collection):
     """ 
-    List collections, or list files in collection
+    List collections (collections=None),
+    or list files in a specific collection
+    (which might be the last used one).
     """
     view_state, db = _set_context(ctx, collection)
 
@@ -120,11 +122,11 @@ def ls(ctx, collection):
 
 @cli.command()
 @click.pass_context
-@click.option('--collection', default=None, help='Look in collection(use and make default)')
+@click.option('--collection', default=None, help='Look in collection (use and make default)')
 @click.argument('match')
 def find(ctx, match, collection):
     """
-    Find files in collection (or entire database if collection=all), which include "match"
+    Find files in collection (or entire database if --collection=all), which include MATCH
     anywhere in their path and filename.
     """
     view_state, db = _set_context(ctx, collection)
@@ -139,6 +141,35 @@ def find(ctx, match, collection):
             print(f)
 
     _save(view_state)
+
+
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+@click.option('--description_file', default=None, help='(Optional) File in which a description for this collection can be found')
+def organise(ctx, collection, description_file):
+    """
+    Take a list of files read from std input and move them into a collection with name COLLECTION.
+    If COLLECTION doesn't exist, create it, otherwise add files into it.
+    """
+    view_state, db = _set_context(ctx, collection)
+
+    if os.isatty(0):
+        click.echo(ctx.get_help())
+        return
+
+    if description_file:
+        with open(description_file, 'r') as f:
+            description = f.readlines()
+    else:
+        description = None
+
+    files = [f.strip() for f in sys.stdin.readlines()]
+    db.organise(collection, files, description=description)
+
+    _save(view_state)
+
+
 
 if __name__ == "__main__":
     safe_cli()

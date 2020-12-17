@@ -145,12 +145,30 @@ class TestClick(unittest.TestCase):
         runner = CliRunner()
         with runner.isolated_filesystem():
             self._mysetup(runner)
-            # now do it again and aim to find all the file1s ...
             result = runner.invoke(cli, ['find', 'file2', '--collection=all'])
             if result.exit_code != 0:
                 raise result.exception
             lines = result.output.split('\n')[:-1]
             self.assertEqual(len(lines), 5)
+
+    def test_organise(self):
+        """
+        Test the method of organising files into collections, using data from stdin
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file23\n'
+            result = runner.invoke(cli, ['organise', 'newc'], input=dummy_input)
+            if result.exit_code != 0:
+                raise result.exception
+            result = runner.invoke(cli, ['ls','--collection=newc'])
+            self.assertEqual(dummy_input, result.output)
+
+
+
+
+
 
 
 if __name__ == "__main__":
