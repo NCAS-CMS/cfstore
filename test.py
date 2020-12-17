@@ -151,9 +151,9 @@ class TestClick(unittest.TestCase):
             lines = result.output.split('\n')[:-1]
             self.assertEqual(len(lines), 5)
 
-    def test_organise(self):
+    def test_organise_new(self):
         """
-        Test the method of organising files into collections, using data from stdin
+        Test the method of organising files into a new collections, using data from stdin
         """
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -164,6 +164,21 @@ class TestClick(unittest.TestCase):
                 raise result.exception
             result = runner.invoke(cli, ['ls','--collection=newc'])
             self.assertEqual(dummy_input, result.output)
+
+    def test_organise_existing(self):
+        """
+        Test the method of organising files into an existing collections, using data from stdin
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file13\n'
+            result = runner.invoke(cli, ['organise', 'dummy4'], input=dummy_input)
+            if result.exit_code != 0:
+                raise result.exception
+            result = runner.invoke(cli, ['ls', '--collection=dummy4'])
+            files = [f.strip() for f in result.output.split('\n')[:-1]]
+            self.assertEqual(len(files), 12)
 
 
 
