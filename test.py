@@ -53,7 +53,19 @@ class BasicStructure(unittest.TestCase):
             self.db.get_collections(description_contains='real', name_contains='x')
             self.assertTrue('Invalid Request' in str(context))
 
-
+    def test_get_collection_fails(self):
+        """ Make sure we handle a request for a non-existent collection gracefully"""
+        for i in range(5):
+            self.db.create_collection(f'dummy{i}', 'no description', {})
+        # expect an empty set, not an error for this one:
+        cset = self.db.get_collections(name_contains='Fred')
+        self.assertEqual(cset,[])
+        with self.assertRaises(ValueError) as context:
+            fset = self.db.get_files_in_collection('Fred')
+            self.assertTrue('No such collection' in str(context))
+        with self.assertRaises(ValueError) as context:
+            c = self.db.retrieve_collection('Fred')
+            self.assertTrue('No such collection' in str(context))
 
 if __name__ == "__main__":
     unittest.main()

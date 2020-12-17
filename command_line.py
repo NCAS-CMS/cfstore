@@ -5,12 +5,14 @@ from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
 
+
 def _save(view_state):
     """ Save view state if valid"""
     if not view_state['db']:
         raise ValueError('Save option requires default database value')
     with open(STATE_FILE,'w') as f:
         json.dump(view_state, f)
+
 
 def _load():
     """ Load existing view state"""
@@ -26,14 +28,30 @@ def _load():
     else:
         raise FileNotFoundError('No existing configuration file found')
 
+
+def safe_cli():
+    """
+    Traps all ValueErrors which bubble up from the things click calls, and
+    removes the stack trace ...
+    """
+    try:
+        cli()
+    except ValueError as e:
+        click.echo(e)
+
+
 @click.group()
 @click.option('--db', default=None, help='New default database file')
-@click.option('--collection', default=None, help='Current collection (default)')
+@click.option('--collection', default=None, help='Current collection (make default)')
 @click.pass_context
 def cli(ctx, db, collection):
+    """
+    Provides the overall group context for command line arguments
+    """
     ctx.ensure_object(dict)
     ctx.obj['db'] = db
     ctx.obj['collection'] = collection
+
 
 @cli.command()
 @click.pass_context
@@ -44,30 +62,31 @@ def save(ctx):
     view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
     _save(view_state)
 
+
 @cli.command()
 @click.pass_context
-def ls(ctx):
+@click.option('--collection', default=None, help='Required collection(use and make default)')
+def ls(ctx, collection):
     """ 
     List collections, or list files in collection
     """
-
     try:
         view_state = _load()
-        print('Loaded', view_state)
         for k in ['db', 'collection']:
             if ctx.obj[k]:
                 view_state[k] = ctx.obj[k]
-        print('Now', view_state)
     except ValueError:
-        print('ve')
         view_state = {'db': ctx.obj['db'], 'collection': None}
         if ctx.obj['collection']:
             view_state['collection'] = ctx.obj['collection']
     except FileNotFoundError:
-        print ('fe')
         view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
 
-    db=CollectionDB()
+    # now override default with arguments to ls
+    if collection:
+        view_state['collection'] = collection
+
+    db = CollectionDB()
     print(view_state)
     db.init(view_state['db'])
 
@@ -83,5 +102,5 @@ def ls(ctx):
     _save(view_state)
 
 
-if __name__=="__main__":
-    cli()
+if __name__ == "__main__":
+    safe_cli()

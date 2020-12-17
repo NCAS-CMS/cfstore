@@ -1,5 +1,6 @@
-import os
+import os, sys
 from db import Collection, CoreDB, File, Tag
+from sqlalchemy.orm.exc import NoResultFound
 
 
 class CollectionDB(CoreDB):
@@ -25,7 +26,10 @@ class CollectionDB(CoreDB):
         return c
 
     def retrieve_collection(self, collection_name):
-        c = self.session.query(Collection).filter_by(name=collection_name).one()
+        try:
+            c = self.session.query(Collection).filter_by(name=collection_name).one()
+        except NoResultFound:
+            raise ValueError(f'No such collection {collection_name}')
         assert c.name == collection_name
         return c
 
@@ -37,7 +41,10 @@ class CollectionDB(CoreDB):
         """
         List files in a particular collection
         """
-        dataset = self.session.query(Collection).filter_by(name=collection).one().holds_files
+        try:
+            dataset = self.session.query(Collection).filter_by(name=collection).one().holds_files
+        except NoResultFound:
+            raise ValueError(f'No such collection {collection}')
         return dataset
 
     def add_file_to_collection(self, collection, file):
@@ -56,7 +63,11 @@ class CollectionDB(CoreDB):
         """
         Return information about a collection
         """
-        c = self.session.query(Collection).filter_by(name=name).first()
+        try:
+            c = self.session.query(Collection).filter_by(name=name).first()
+        except NoResultFound:
+            raise ValueError(f'No such collection {name}')
+
         return str(c), [str(k) for k in c.tags]
 
     def get_collections(self, name_contains=None, description_contains=None):
@@ -67,12 +78,14 @@ class CollectionDB(CoreDB):
         """
         if name_contains and description_contains:
             raise ValueError('Invalid request to <get_collections>, cannot search on both name and description')
+
         if name_contains:
             return self.session.query(Collection).filter(Collection.name.like(f'%{name_contains}%')).all()
         elif description_contains:
             return self.session.query(Collection).filter(Collection.description.like(f'%{description_contains}%')).all()
         else:
             return self.session.query(Collection).all()
+
 
     ### tag API
 
