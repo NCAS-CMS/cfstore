@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
 
-
 def _save(view_state):
     """ Save view state if valid"""
     if not view_state['db']:
@@ -19,8 +18,7 @@ def _load():
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE,'r') as f:
             view_state = json.load(f)
-        actual_file = urlparse(view_state['db']).path[1:]
-        print(actual_file)
+        actual_file = _naked(view_state['db'])
         if os.path.exists(actual_file):
             return view_state
         else:
@@ -28,6 +26,41 @@ def _load():
     else:
         raise FileNotFoundError('No existing configuration file found')
 
+def _set_context(ctx, collection):
+    """
+    Set the view_state context
+    """
+    try:
+        view_state = _load()
+        for k in ['db', 'collection']:
+            if ctx.obj[k]:
+                view_state[k] = ctx.obj[k]
+    except ValueError:
+        view_state = {'db': ctx.obj['db'], 'collection': None}
+        if ctx.obj['collection']:
+            view_state['collection'] = ctx.obj['collection']
+    except FileNotFoundError:
+        view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
+
+    # now override default with arguments to ls
+    if collection:
+        view_state['collection'] = collection
+
+    db = CollectionDB()
+    db.init(view_state['db'])
+    if view_state['collection'] == 'all':
+        view_state['collection'] = None
+
+    return view_state, db
+
+
+
+def _naked(db_name, display=False):
+    """ Strip protocol gubbins from database connection string"""
+    f = urlparse(db_name).path[1:]
+    if display:
+        print(f)
+    return f
 
 def safe_cli():
     """
@@ -70,25 +103,7 @@ def ls(ctx, collection):
     """ 
     List collections, or list files in collection
     """
-    try:
-        view_state = _load()
-        for k in ['db', 'collection']:
-            if ctx.obj[k]:
-                view_state[k] = ctx.obj[k]
-    except ValueError:
-        view_state = {'db': ctx.obj['db'], 'collection': None}
-        if ctx.obj['collection']:
-            view_state['collection'] = ctx.obj['collection']
-    except FileNotFoundError:
-        view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
-
-    # now override default with arguments to ls
-    if collection:
-        view_state['collection'] = collection
-
-    db = CollectionDB()
-    print(view_state)
-    db.init(view_state['db'])
+    view_state, db = _set_context(ctx, collection)
 
     if view_state['collection']:
         files = db.get_files_in_collection(view_state['collection'])
@@ -96,11 +111,34 @@ def ls(ctx, collection):
             print(f)
     else:
         collections = db.get_collections()
+        _naked(view_state['db'], display=True)
         for c in collections:
             print(c)
 
     _save(view_state)
 
+
+@cli.command()
+@click.pass_context
+@click.option('--collection', default=None, help='Look in collection(use and make default)')
+@click.argument('match')
+def find(ctx, match, collection):
+    """
+    Find files in collection (or entire database if collection=all), which include "match"
+    anywhere in their path and filename.
+    """
+    view_state, db = _set_context(ctx, collection)
+    collection = view_state['collection']
+    if collection:
+        files = db.get_files_in_collection(collection, match=match)
+        for f in files:
+            print(f)
+    else:
+        files = db.retrieve_files_which_match(match)
+        for f in files:
+            print(f)
+
+    _save(view_state)
 
 if __name__ == "__main__":
     safe_cli()

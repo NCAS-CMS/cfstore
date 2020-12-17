@@ -1,5 +1,6 @@
 import os, sys
 from db import Collection, CoreDB, File, Tag
+from sqlalchemy import or_
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -37,15 +38,28 @@ class CollectionDB(CoreDB):
         # Will need to worry about files and whether they will be left hanging
         raise NotImplementedError
 
-    def get_files_in_collection(self, collection):
+    def get_files_in_collection(self, collection, match=None):
         """
         List files in a particular collection
         """
-        try:
-            dataset = self.session.query(Collection).filter_by(name=collection).one().holds_files
-        except NoResultFound:
-            raise ValueError(f'No such collection {collection}')
-        return dataset
+        if match is None:
+            return self.retrieve_collection(collection).holds_files
+        else:
+            m = f'%{match}%'
+            # this gives the collection with files that match this ... not what we wanted
+            #files = self.session.query(Collection).filter_by(name=collection).join(
+            #    Collection.holds_files).filter(or_(File.name.like(m), File.path.like(m))).all()
+            # However, given we know that the number of files is much greater than the number
+            # of collections, it's likely that searching the files that match a collection first
+            # could be faster. We can investigate that another day ...
+            files = self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).join(
+                File.in_collections).filter_by(name=collection).all()
+            return files
+
+    def retrieve_files_which_match(self, match):
+        m = f'%{match}%'
+        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
+
 
     def add_file_to_collection(self, collection, file):
         """
@@ -163,6 +177,7 @@ class CollectionDB(CoreDB):
 
     def remove_file_from_collection(self, collection, file):
         raise NotImplementedError
+
 
     @property
     def tables(self):

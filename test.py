@@ -1,5 +1,20 @@
 import unittest
 from interface import CollectionDB
+from click.testing import CliRunner
+import os
+from command_line import cli
+
+
+def _dummy(db):
+    """ Set up a dummy dataset in db with accessible
+    structure for testing
+    """
+    for i in range(5):
+        c = f'dummy{i}'
+        db.create_collection(c,'no description', {})
+        files = [(f'/somewhere/in/unix_land/file{j}{i}', 0, ) for j in range(10)]
+        db.upload_files_to_collection(c, files)
+
 
 class BasicStructure(unittest.TestCase):
     """
@@ -31,7 +46,9 @@ class BasicStructure(unittest.TestCase):
         self.assertEquals(len(self.db.get_files_in_collection('mrun1')), len(files))
 
     def test_add_tag(self):
-        """ Need to add tags, and select by tags """
+        """
+        Need to add tags, and select by tags
+        """
         tagname = 'test_tag'
         self.db.create_tag(tagname)
         for i in range(5):
@@ -42,6 +59,9 @@ class BasicStructure(unittest.TestCase):
         assert ['mrun1', 'mrun3'] == [x.name for x in tagged]
 
     def test_get_collections(self):
+        """
+        Test ability to get a subset of collections via name and/or description
+        """
         for i in range(5):
             self.db.create_collection(f'dummy{i}','no description', {})
             self.db.create_collection(f'eg{i}','no description', {})
@@ -54,7 +74,9 @@ class BasicStructure(unittest.TestCase):
             self.assertTrue('Invalid Request' in str(context))
 
     def test_get_collection_fails(self):
-        """ Make sure we handle a request for a non-existent collection gracefully"""
+        """
+        Make sure we handle a request for a non-existent collection gracefully
+        """
         for i in range(5):
             self.db.create_collection(f'dummy{i}', 'no description', {})
         # expect an empty set, not an error for this one:
@@ -66,6 +88,70 @@ class BasicStructure(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             c = self.db.retrieve_collection('Fred')
             self.assertTrue('No such collection' in str(context))
+
+    def test_get_files_match(self):
+        """
+        Make sure we can get files in a collection AND
+        those in a collection that match a specfic string
+        """
+        # set it up
+        _dummy(self.db)
+        files = self.db.get_files_in_collection('dummy3')
+        self.assertEqual(len(files), 10)
+        files = self.db.get_files_in_collection('dummy3','file1')
+        self.assertEqual(len(files), 1)
+
+
+class TestClick(unittest.TestCase):
+
+    def _mysetup(self, runner):
+        database = 'sqlite:///temp.db'
+        result = runner.invoke(cli, [f'--db={database}', 'save'])
+        db = CollectionDB()
+        db.init(database)
+        _dummy(db)
+
+    def test_save(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            result = runner.invoke(cli, ['--db=sqlite:///temp.db', 'save'])
+            assert result.exit_code == 0
+
+    def test_find_in_collection(self):
+        """
+        test command line "find" method
+        this test expects to find one file, with file name starting with file1
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            result = runner.invoke(cli, ['find', 'file1', '--collection=dummy3'])
+            assert result.exit_code == 0
+            lines = result.output.split('\n')[:-1]
+            self.assertEqual(len(lines), 1)
+            self.assertTrue(lines[0].find('file1') != -1)
+            # now do it again and make sure we are looking at the default
+            result = runner.invoke(cli, ['find', 'file1'])
+            assert result.exit_code == 0
+            lines = result.output.split('\n')[:-1]
+            self.assertEqual(len(lines), 1)
+
+    def test_find_across_collections(self):
+        """
+        test command line "find" method
+        this test expects to find five files,
+        one from each dummy collection.
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            # now do it again and aim to find all the file1s ...
+            result = runner.invoke(cli, ['find', 'file2', '--collection=all'])
+            if result.exit_code != 0:
+                raise result.exception
+            lines = result.output.split('\n')[:-1]
+            self.assertEqual(len(lines), 5)
+
 
 if __name__ == "__main__":
     unittest.main()
