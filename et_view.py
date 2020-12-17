@@ -20,7 +20,7 @@ def getsoup(url):
 
 class ET_Workspace:
     """
-    Collect all file information about a specfic workspace.
+    Collect all file information about a specific workspace.
     This version assumes all data loaded is still present.
     """
     def __init__(self, workspace_name):
@@ -31,7 +31,6 @@ class ET_Workspace:
         self.quota_used = 0
         self.volume = 0
         self.load_from_et()
-
 
     def load_from_et(self):
         url = f"ET_Holdings_Summary.php?workspace={self.name}&level=top"
@@ -112,7 +111,8 @@ class TransferSummary:
 
 
 class File:
-    """ User files, allow attributes to vary on initialisaiton by keyword
+    """
+    User files, allow attributes to vary on initialisation by keyword
     """
     def __init__(self, **kwargs):
         for kw in kwargs:
@@ -120,7 +120,8 @@ class File:
 
 
 class Transition:
-    """ A transition in state during the ET ingestion process
+    """
+    A transition in state during the ET ingestion process
     """
     def __init__(self, initial, final, start_time, end_time):
         self.initial, self.host_start = tuple(initial.split(':'))
@@ -137,7 +138,8 @@ class Transition:
 
 
 class Transfer:
-    """ Holds full details of a transfer from
+    """
+    Holds full details of a transfer from
             http://et-monitor.fds.rl.ac.uk/et_user/
             ET_Aggregation_File_Details.php?aggregation=235228
     """
@@ -181,7 +183,9 @@ class Transfer:
 class TestBatch(unittest.TestCase):
 
     def test_etworkspace(self):
-        """ Test we can see the first few batches in hiresgw correctly """
+        """
+        Test we can see hiresgw without breaking
+        """
         w = ET_Workspace('hiresgw')
 
 

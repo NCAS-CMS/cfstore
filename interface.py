@@ -1,6 +1,5 @@
 import os
 from db import Collection, CoreDB, File, Tag
-import sqlite3
 
 
 class CollectionDB(CoreDB):
@@ -60,6 +59,21 @@ class CollectionDB(CoreDB):
         c = self.session.query(Collection).filter_by(name=name).first()
         return str(c), [str(k) for k in c.tags]
 
+    def get_collections(self, name_contains=None, description_contains=None):
+        """
+        Return a list of all collections as collection instances
+        optionally including those which contain the string <name_contains>
+        somewhere in their name OR <description_contains> somewhere in their description.
+        """
+        if name_contains and description_contains:
+            raise ValueError('Invalid request to <get_collections>, cannot search on both name and description')
+        if name_contains:
+            return self.session.query(Collection).filter(Collection.name.like(f'%{name_contains}%')).all()
+        elif description_contains:
+            return self.session.query(Collection).filter(Collection.description.like(f'%{description_contains}%')).all()
+        else:
+            return self.session.query(Collection).all()
+
     ### tag API
 
     def create_tag(self, tagname):
@@ -108,12 +122,12 @@ class CollectionDB(CoreDB):
     # Files API
     ###
 
-    def upload_file_to_collection(self, collection, name, path, checksum):
+    def upload_file_to_collection(self, collection, name, path, checksum, size):
         """
         Add a new file into the database, and add details to collection
         """
         c = self.session.query(Collection).filter_by(name=collection).first()
-        f = File(name=name, path=path, checksum=checksum, initial_collection=c.id)
+        f = File(name=name, path=path, checksum=checksum, size=size, initial_collection=c.id)
         c.holds_files.append(f)
         self.session.commit()
 
@@ -121,17 +135,18 @@ class CollectionDB(CoreDB):
         """
         Add new files to a collection
         :param collection:
-        :param files: list of file tuples [(name, checksum),...]
+        :param files: list of file tuples [(name, size, checksum),...]
         :return: None
         """
         for f in files:
             full_name = f[0]
+            size = f[1]
             try:
-                checksum = f[1]
+                checksum = f[2]
             except IndexError:
                 checksum = ''
             path, name = os.path.split(full_name)
-            self.upload_file_to_collection(collection, name, path, checksum)
+            self.upload_file_to_collection(collection, name, path, checksum, size)
 
     def remove_file_from_collection(self, collection, file):
         raise NotImplementedError
@@ -139,6 +154,4 @@ class CollectionDB(CoreDB):
     @property
     def tables(self):
         return self.engine.table_names()
-
-
 

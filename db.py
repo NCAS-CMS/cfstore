@@ -15,6 +15,11 @@ from sqlalchemy.ext.declarative import declarative_base
 
 #FIXME: Does not yet include B metadata support, although that could probably be done via collection properties.
 
+# Would like to add "ubercollection" to be associated with a GWS and a user.
+# Need to be able to total the unique volumes associated with eash user and GWS.
+# This will need new tables and data counting on addinng and subtracting files.
+
+
 Base = declarative_base()
 
 collection_files_associations = Table(
@@ -121,7 +126,6 @@ class Collection(ProxiedDictMixin, Base):
         return self.properties.any(key=key, value=value)
 
 
-
 class Tag(Base):
     """
     User defined tags for collections
@@ -146,11 +150,15 @@ class File(Base):
     name = Column(String)
     path = Column(String)
     checksum = Column(String)
+    size = Column(Integer)
     initial_collection = Column(Integer, ForeignKey('collections.id'))
     in_collections = relationship(
         "Collection",
         secondary=collection_files_associations,
         back_populates="holds_files")
+
+    def __repr__(self):
+        return os.path.join(self.path, self.name)
 
 
 class CoreDB:
@@ -160,6 +168,7 @@ class CoreDB:
     conn_string = None
     collections = []
     metadata = MetaData()
+    session = None
 
     def init(self, conn_string):
         self.engine = create_engine(conn_string or self.conn_string)
