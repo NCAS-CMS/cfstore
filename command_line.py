@@ -54,13 +54,20 @@ def _set_context(ctx, collection):
     return view_state, db
 
 
-
 def _naked(db_name, display=False):
     """ Strip protocol gubbins from database connection string"""
     f = urlparse(db_name).path[1:]
     if display:
         print(f)
     return f
+
+
+def _print(lines, prop=None):
+    for line in lines:
+        if prop:
+            print(getattr(line,prop))
+        else:
+            print(line)
 
 def safe_cli():
     """
@@ -195,9 +202,9 @@ def findc(ctx, match, tagname):
     if (not match and not tagname) or (match and tagname):
         click.echo(ctx.get_help())
     elif match:
-        db.retrieve_collections(name_contains=match)
+        _print(db.retrieve_collections(name_contains=match), 'name')
     elif tagname:
-        db.retrieve_collections(tag=tagname)
+        _print(db.retrieve_collections(tagname=tagname), 'name')
 
 
 

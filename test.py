@@ -230,7 +230,6 @@ class TestClick(unittest.TestCase):
             result = runner.invoke(cli, ['ls', '--collection=dummy4'])
             self._check(result, 12)
 
-
     def test_tag(self):
         """
         Test we can tag a collection, and then retrieve that collection via its tag
@@ -240,6 +239,10 @@ class TestClick(unittest.TestCase):
             self._mysetup(runner)
             result = runner.invoke(cli, ['tag', 'dummy3', 'interesting'])
             self._check(result)
+            result = runner.invoke(cli, ['findc', '--tagname=interesting'])
+            lines = self._check(result, 1)
+            self.assertEqual('dummy3', lines[0])
+
 
 
 if __name__ == "__main__":
