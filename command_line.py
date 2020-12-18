@@ -108,11 +108,11 @@ def ls(ctx, collection):
     view_state, db = _set_context(ctx, collection)
 
     if view_state['collection']:
-        files = db.get_files_in_collection(view_state['collection'])
+        files = db.retrieve_files_in_collection(view_state['collection'])
         for f in files:
             print(f)
     else:
-        collections = db.get_collections()
+        collections = db.retrieve_collections()
         _naked(view_state['db'], display=True)
         for c in collections:
             print(c)
@@ -124,7 +124,7 @@ def ls(ctx, collection):
 @click.pass_context
 @click.option('--collection', default=None, help='Look in collection (use and make default)')
 @click.argument('match')
-def find(ctx, match, collection):
+def findf(ctx, match, collection):
     """
     Find files in collection (or entire database if --collection=all), which include MATCH
     anywhere in their path and filename.
@@ -132,7 +132,7 @@ def find(ctx, match, collection):
     view_state, db = _set_context(ctx, collection)
     collection = view_state['collection']
     if collection:
-        files = db.get_files_in_collection(collection, match=match)
+        files = db.retrieve_files_in_collection(collection, match=match)
         for f in files:
             print(f)
     else:
@@ -168,6 +168,36 @@ def organise(ctx, collection, description_file):
     db.organise(collection, files, description=description)
 
     _save(view_state)
+
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+@click.argument('tagname')
+def tag(ctx, collection, tagname):
+    """
+    Tag a COLLECTION with TAGNAME
+    (and save collection as current default collection)
+    """
+    view_state, db = _set_context(ctx, collection)
+    db.tag_collection(view_state['collection'], tagname)
+    _save(view_state)
+
+@cli.command()
+@click.pass_context
+@click.option('--match', default=None, help='return collections which with MATCH somewhere in the name ')
+@click.option('--tagname', default=None, help='return collections which have TAGNAME associated with them')
+def findc(ctx, match, tagname):
+    """
+    Find all collections which either have MATCH in their name, or
+    are tagged with TAGNAME
+    """
+    view_state, db = _set_context(ctx, 'all')
+    if (not match and not tagname) or (match and tagname):
+        click.echo(ctx.get_help())
+    elif match:
+        db.retrieve_collections(name_contains=match)
+    elif tagname:
+        db.retrieve_collections(tag=tagname)
 
 
 

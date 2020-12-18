@@ -26,6 +26,15 @@ class CollectionDB(CoreDB):
                 raise
         return c
 
+    def create_tag(self, tagname):
+        """
+        Create a tag and insert into a database
+        """
+        t = Tag(name=tagname)
+        self.session.add(t)
+        self.session.commit()
+
+
     def retrieve_collection(self, collection_name):
         try:
             c = self.session.query(Collection).filter_by(name=collection_name).one()
@@ -34,11 +43,37 @@ class CollectionDB(CoreDB):
         assert c.name == collection_name
         return c
 
-    def delete_collection(self, collection_name):
-        # Will need to worry about files and whether they will be left hanging
-        raise NotImplementedError
+    def retrieve_collections(self, name_contains=None, description_contains=None, tagname=None):
+        """
+        Return a list of all collections as collection instances
+        optionally including those which contain
+            the string <name_contains> somewhere in their name OR
+            <description_contains> somewhere in their description OR
+            with specific tagname
+        """
+        if [name_contains, description_contains, tagname].count(None) < 2:
+            raise ValueError('Invalid request to <get_collections>, cannot search on more than one of name, description, tag')
 
-    def get_files_in_collection(self, collection, match=None):
+        if name_contains:
+            return self.session.query(Collection).filter(Collection.name.like(f'%{name_contains}%')).all()
+        elif description_contains:
+            return self.session.query(Collection).filter(Collection.description.like(f'%{description_contains}%')).all()
+        elif tagname:
+            tag = self.session.query(Tag).filter_by(name=tagname).one()
+            return tag.in_collections
+            #return self.session.query(Collection).join(Collection.tags).filter_by(name=tagname).all()
+        else:
+            return self.session.query(Collection).all()
+
+    def retrieve_file(self, filename):
+        path, name = os.path.split(filename)
+        return self.session.query(File).filter(and_(File.name == name, File.path == path)).one()
+
+    def retrieve_files_which_match(self, match):
+        m = f'%{match}%'
+        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
+
+    def retrieve_files_in_collection(self, collection, match=None):
         """
         List files in a particular collection
         """
@@ -56,10 +91,17 @@ class CollectionDB(CoreDB):
                 File.in_collections).filter_by(name=collection).all()
             return files
 
-    def retrieve_files_which_match(self, match):
-        m = f'%{match}%'
-        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
+    def delete_collection(self, collection_name):
+        # Will need to worry about files and whether they will be left hanging
+        raise NotImplementedError
 
+    def delete_tag(self, tagname):
+        """
+        Delete a tag, from wherever it is used
+        """
+        t = self.session.query(Tag).filter(name=tagname)
+        self.session.delete(t)
+        self.session.commit()
 
     def add_file_to_collection(self, collection, file):
         """
@@ -84,22 +126,6 @@ class CollectionDB(CoreDB):
 
         return str(c), [str(k) for k in c.tags]
 
-    def get_collections(self, name_contains=None, description_contains=None):
-        """
-        Return a list of all collections as collection instances
-        optionally including those which contain the string <name_contains>
-        somewhere in their name OR <description_contains> somewhere in their description.
-        """
-        if name_contains and description_contains:
-            raise ValueError('Invalid request to <get_collections>, cannot search on both name and description')
-
-        if name_contains:
-            return self.session.query(Collection).filter(Collection.name.like(f'%{name_contains}%')).all()
-        elif description_contains:
-            return self.session.query(Collection).filter(Collection.description.like(f'%{description_contains}%')).all()
-        else:
-            return self.session.query(Collection).all()
-
     def organise(self, collection, files, description):
         """
         Organise files already known to the environment into collection,
@@ -116,30 +142,11 @@ class CollectionDB(CoreDB):
             c.holds_files.append(ff)
         self.session.commit()
 
-
-    ### tag API
-
-    def create_tag(self, tagname):
-        """
-        Create a tag and insert into a database
-        """
-        t = Tag(name=tagname)
-        self.session.add(t)
-        self.session.commit()
-
-    def delete_tag(self, tagname):
-        """
-        Delete a tag, from wherever it is used
-        """
-        t = self.session.query(Tag).filter(name=tagname)
-        self.session.delete(t)
-        self.session.commit()
-
-    def tag_collection(self, tagname, collection_name):
+    def tag_collection(self, collection_name, tagname):
         """
         Associate a tag with a collection
         """
-        tag = self.session.query(Tag).filter_by(name=tagname).one()
+        tag = self.session.query(Tag).filter_by(name=tagname).first()
         if not tag:
             tag = Tag(name=tagname)
             self.session.add(tag)
@@ -153,17 +160,6 @@ class CollectionDB(CoreDB):
         """
         c = self.retrieve_collection(collection_name)
         print(c)
-
-    def list_collections_with_tag(self, tag):
-        """
-        Find all collections with a given tag
-        """
-        tag = self.session.query(Tag).filter_by(name=tag).one()
-        return tag.in_collections
-
-    ###
-    # Files API
-    ###
 
     def upload_file_to_collection(self, collection, name, path, checksum, size):
         """
@@ -194,9 +190,7 @@ class CollectionDB(CoreDB):
     def remove_file_from_collection(self, collection, file):
         raise NotImplementedError
 
-    def retrieve_file(self, filename):
-        path, name = os.path.split(filename)
-        return self.session.query(File).filter(and_(File.name==name,File.path==path)).one()
+
 
     @property
     def tables(self):
