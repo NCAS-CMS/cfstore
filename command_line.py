@@ -206,6 +206,29 @@ def findc(ctx, match, tagname):
     elif tagname:
         _print(db.retrieve_collections(tagname=tagname), 'name')
 
+@cli.command()
+@click.pass_context
+@click.argument('key')
+@click.argument('value')
+@click.option('--collection', default=None, help='Collection to which to apply/remove facet')
+@click.option('-r','--remove', is_flag=True, help="If present, remove property from collection")
+def facet(ctx, key, value, collection, remove):
+    """
+    Add key,value to the properties (facets) of a collection
+    (or remove if -r/--remove is present)
+    As usual, do this with current default collection or be specific with
+    --collection=collection
+    """
+    view_state, db = _set_context(ctx, collection)
+    if not view_state['collection']:
+        raise ValueError('Cannot use facet without defining a collection')
+    if remove:
+        raise NotImplementedError
+
+    c = db.retrieve_collection(view_state['collection'])
+    c[key] = value
+    db.session.commit()
+    _save(view_state)
 
 
 if __name__ == "__main__":

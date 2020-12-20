@@ -43,16 +43,18 @@ class CollectionDB(CoreDB):
         assert c.name == collection_name
         return c
 
-    def retrieve_collections(self, name_contains=None, description_contains=None, tagname=None):
+    def retrieve_collections(self, name_contains=None, description_contains=None, tagname=None, property_is=None):
         """
         Return a list of all collections as collection instances
         optionally including those which contain
             the string <name_contains> somewhere in their name OR
             <description_contains> somewhere in their description OR
-            with specific tagname
+            with specific tagname OR
+            the properties dictionary for the collection contains key with value - property_is= (key,value)
         """
-        if [name_contains, description_contains, tagname].count(None) < 2:
-            raise ValueError('Invalid request to <get_collections>, cannot search on more than one of name, description, tag')
+        if [name_contains, description_contains, tagname, property_is].count(None) < 3:
+            raise ValueError(
+                'Invalid request to <get_collections>, cannot search on more than one of name, description, tag, property_is')
 
         if name_contains:
             return self.session.query(Collection).filter(Collection.name.like(f'%{name_contains}%')).all()
@@ -62,6 +64,9 @@ class CollectionDB(CoreDB):
             tag = self.session.query(Tag).filter_by(name=tagname).one()
             return tag.in_collections
             #return self.session.query(Collection).join(Collection.tags).filter_by(name=tagname).all()
+        elif property_is:
+            key, value = property_is
+            return self.session.query(Collection).filter(Collection.with_property(key, value)).all()
         else:
             return self.session.query(Collection).all()
 

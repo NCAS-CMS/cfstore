@@ -91,6 +91,18 @@ class BasicStructure(unittest.TestCase):
             c = self.db.retrieve_collection('Fred')
             self.assertTrue('No such collection' in str(context))
 
+    def test_collection_properties(self):
+        """
+        Test ability to create properties on collections and query against them.
+        """
+        _dummy(self.db)
+        choice = ['dummy2', 'dummy3']
+        for c in choice:
+            cc = self.db.retrieve_collection(c)
+            cc['color'] = 'green'
+        r = self.db.retrieve_collections(property_is=('color','green'))
+        self.assertEqual(choice, [x.name for x in r])
+
     def test_get_files_match(self):
         """
         Make sure we can get files in a collection AND
@@ -243,6 +255,20 @@ class TestClick(unittest.TestCase):
             lines = self._check(result, 1)
             self.assertEqual('dummy3', lines[0])
 
+    def test_facet(self):
+        """
+        Test we can add and remove facets from a collection
+        :return:
+        """
+        raise NotImplementedError
+
+    def test_findc(self):
+        """
+        findc --match=abc
+        findc --tag=def
+        findc --facet=(key,value)
+        """
+        raise NotImplementedError
 
 
 if __name__ == "__main__":

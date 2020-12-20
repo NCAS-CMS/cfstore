@@ -152,6 +152,7 @@ class File(Base):
     checksum = Column(String)
     size = Column(Integer)
     initial_collection = Column(Integer, ForeignKey('collections.id'))
+    # V0.2 format = Column(String)
     in_collections = relationship(
         "Collection",
         secondary=collection_files_associations,
