@@ -43,29 +43,34 @@ class CollectionDB(CoreDB):
         assert c.name == collection_name
         return c
 
-    def retrieve_collections(self, name_contains=None, description_contains=None, tagname=None, property_is=None):
+    def retrieve_collections(self, name_contains=None, description_contains=None, contains=None, tagname=None, facet=None):
         """
         Return a list of all collections as collection instances
         optionally including those which contain
             the string <name_contains> somewhere in their name OR
             <description_contains> somewhere in their description OR
+            the string <contains> is either in the name or the description OR
             with specific tagname OR
-            the properties dictionary for the collection contains key with value - property_is= (key,value)
+            the properties dictionary for the collection contains key with value - facet = (key,value)
         """
-        if [name_contains, description_contains, tagname, property_is].count(None) < 3:
+        if [name_contains, description_contains, contains, tagname, facet].count(None) <= 3:
             raise ValueError(
-                'Invalid request to <get_collections>, cannot search on more than one of name, description, tag, property_is')
+                'Invalid request to <get_collections>, cannot search on more than one of name, description, tag, facet')
 
         if name_contains:
             return self.session.query(Collection).filter(Collection.name.like(f'%{name_contains}%')).all()
         elif description_contains:
             return self.session.query(Collection).filter(Collection.description.like(f'%{description_contains}%')).all()
+        elif contains:
+            contains = f'%{contains}%'
+            return self.session.query(Collection).filter(or_(Collection.description.like(contains),
+                Collection.name.like(contains))).all()
         elif tagname:
             tag = self.session.query(Tag).filter_by(name=tagname).one()
             return tag.in_collections
             #return self.session.query(Collection).join(Collection.tags).filter_by(name=tagname).all()
-        elif property_is:
-            key, value = property_is
+        elif facet:
+            key, value = facet
             return self.session.query(Collection).filter(Collection.with_property(key, value)).all()
         else:
             return self.session.query(Collection).all()

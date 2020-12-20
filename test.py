@@ -100,7 +100,7 @@ class BasicStructure(unittest.TestCase):
         for c in choice:
             cc = self.db.retrieve_collection(c)
             cc['color'] = 'green'
-        r = self.db.retrieve_collections(property_is=('color','green'))
+        r = self.db.retrieve_collections(facet=('color', 'green'))
         self.assertEqual(choice, [x.name for x in r])
 
     def test_get_files_match(self):
@@ -203,7 +203,7 @@ class TestClick(unittest.TestCase):
             result = runner.invoke(cli, ['findf', 'file1'])
             lines = self._check(result, 1)
 
-    def test_find_across_collections(self):
+    def test_findf_across_collections(self):
         """
         test command line "find" method using
              findf file2 --collection=all
@@ -260,15 +260,30 @@ class TestClick(unittest.TestCase):
         Test we can add and remove facets from a collection
         :return:
         """
-        raise NotImplementedError
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            result = runner.invoke(cli, ['facet', 'color', 'green', '--collection=dummy1'])
+            self._check(result)
+            result = runner.invoke(cli, ['findc', '--facet', 'color', 'green'])
+            lines = self._check(result, 1)
+            self.assertEqual('dummy1', lines[0])
+
 
     def test_findc(self):
         """
-        findc --match=abc
-        findc --tag=def
-        findc --facet=(key,value)
+        Test matching on content in name or description
+            findc --match=abc
+        These two following options are tested in tag and facet tests:
+            findc --tag=def
+            findc --facet=(key,value)
         """
-        raise NotImplementedError
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            result = runner.invoke(cli, ['findc', '--match=my3'])
+            lines = self._check(result,1)
+            self.assertEqual('dummy3',lines[0])
 
 
 if __name__ == "__main__":

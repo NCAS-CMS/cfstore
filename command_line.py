@@ -191,20 +191,25 @@ def tag(ctx, collection, tagname):
 
 @cli.command()
 @click.pass_context
-@click.option('--match', default=None, help='return collections which with MATCH somewhere in the name ')
+@click.option('--match', default=None, help='return collections which with MATCH somewhere in the name or description')
 @click.option('--tagname', default=None, help='return collections which have TAGNAME associated with them')
-def findc(ctx, match, tagname):
+@click.option('--facet', nargs=2, type=str, help='return collection where facet  key=value --facet key value')
+def findc(ctx, match, tagname, facet):
     """
     Find all collections which either have MATCH in their name, or
     are tagged with TAGNAME
     """
     view_state, db = _set_context(ctx, 'all')
-    if (not match and not tagname) or (match and tagname):
+    if facet == ():
+        facet = None
+    if [match, tagname, facet].count(None) < 2:
         click.echo(ctx.get_help())
     elif match:
-        _print(db.retrieve_collections(name_contains=match), 'name')
+        _print(db.retrieve_collections(contains=match), 'name')
     elif tagname:
         _print(db.retrieve_collections(tagname=tagname), 'name')
+    elif facet:
+        _print(db.retrieve_collections(facet=facet), 'name')
 
 @cli.command()
 @click.pass_context
