@@ -9,11 +9,12 @@ def _dummy(db):
     """ Set up a dummy dataset in db with accessible
     structure for testing
     """
+    db.create_location('testing')
     for i in range(5):
         c = f'dummy{i}'
         db.create_collection(c,'no description', {})
         files = [(f'/somewhere/in/unix_land/file{j}{i}', 0, ) for j in range(10)]
-        db.upload_files_to_collection(c, files)
+        db.upload_files_to_collection('testing', c, files)
 
 
 class BasicStructure(unittest.TestCase):
@@ -40,8 +41,9 @@ class BasicStructure(unittest.TestCase):
     def test_fileupload(self):
         """ Test uploading files """
         self.db.create_collection('mrun1', 'no real description', {})
+        self.db.create_location('testing')
         files = [(f'/somewhere/in/unix_land/file{i}', 0, ) for i in range(10)]
-        self.db.upload_files_to_collection('mrun1', files)
+        self.db.upload_files_to_collection('testing', 'mrun1', files)
 
         self.assertEquals(len(self.db.retrieve_files_in_collection('mrun1')), len(files))
 
@@ -58,7 +60,6 @@ class BasicStructure(unittest.TestCase):
         tagged = self.db.retrieve_collections(tagname=tagname)
         assert ['mrun1', 'mrun3'] == [x.name for x in tagged]
 
-
     def test_get_collections(self):
         """
         Test ability to get a subset of collections via name and/or description
@@ -73,7 +74,6 @@ class BasicStructure(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             self.db.retrieve_collections(description_contains='real', name_contains='x')
             self.assertTrue('Invalid Request' in str(context))
-
 
     def test_get_collection_fails(self):
         """
@@ -268,7 +268,6 @@ class TestClick(unittest.TestCase):
             result = runner.invoke(cli, ['findc', '--facet', 'color', 'green'])
             lines = self._check(result, 1)
             self.assertEqual('dummy1', lines[0])
-
 
     def test_findc(self):
         """

@@ -26,6 +26,7 @@ def _load():
     else:
         raise FileNotFoundError('No existing configuration file found')
 
+
 def _set_context(ctx, collection):
     """
     Set the view_state context

@@ -36,6 +36,13 @@ collection_tags_associations = Table(
     Column('tags_id',Integer, ForeignKey('tags.id'), primary_key=True)
 )
 
+storage_files_associations = Table(
+    'storage_files_associations',
+    Base.metadata,
+    Column('locations_id', Integer, ForeignKey('locations.id'), primary_key=True),
+    Column('files_id', Integer, ForeignKey('files.id'), primary_key=True)
+)
+
 
 class ProxiedDictMixin:
     """Adds obj[key] access to a mapped class.
@@ -141,6 +148,18 @@ class Tag(Base):
         return self.name
 
 
+class StorageLocation(Base):
+    """
+    Holds the list of available storage locations.
+    """
+    __tablename__ = "locations"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    volume = Column(Integer)
+    files = relationship('File',
+                         secondary=storage_files_associations,
+                         back_populates='replicas')
+
 class File(Base):
     """
     Representation of a file
@@ -152,7 +171,10 @@ class File(Base):
     checksum = Column(String)
     size = Column(Integer)
     initial_collection = Column(Integer, ForeignKey('collections.id'))
-    # V0.2 format = Column(String)
+    format = Column(String)
+    replicas = relationship('StorageLocation',
+                            secondary=storage_files_associations,
+                            back_populates='files')
     in_collections = relationship(
         "Collection",
         secondary=collection_files_associations,
