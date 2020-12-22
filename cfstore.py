@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
 
+
 def _save(view_state):
     """ Save view state if valid"""
     if not view_state['db']:

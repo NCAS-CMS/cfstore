@@ -55,13 +55,15 @@ class CollectionDB(CoreDB):
 
     def retrieve_collections(self, name_contains=None, description_contains=None, contains=None, tagname=None, facet=None):
         """
-        Return a list of all collections as collection instances
-        optionally including those which contain
-            the string <name_contains> somewhere in their name OR
-            <description_contains> somewhere in their description OR
-            the string <contains> is either in the name or the description OR
-            with specific tagname OR
-            the properties dictionary for the collection contains key with value - facet = (key,value)
+        Return a list of all collections as collection instances,
+        optionally including those which contain:
+
+        - the string <name_contains> somewhere in their name OR
+        - <description_contains> somewhere in their description OR
+        - the string <contains> is either in the name or the description OR
+        - with specific tagname OR
+        - the properties dictionary for the collection contains key with value - facet = (key,value)
+
         """
         if [name_contains, description_contains, contains, tagname, facet].count(None) <= 3:
             raise ValueError(
