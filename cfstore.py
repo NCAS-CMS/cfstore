@@ -1,4 +1,6 @@
-from interface import CollectionDB
+#!/usr/bin/env python3
+
+from lib.interface import CollectionDB
 import os, json, sys
 import click
 from urllib.parse import urlparse

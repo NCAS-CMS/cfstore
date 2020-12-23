@@ -68,7 +68,7 @@ class Batch:
             ET_Holdings_Summary.php?workspace=X&level=batches
         """
         self.workspace = workspace
-        link = row.find('a')
+        link = row.findf('a')
         self.name = link.text[-4:].strip()
         td = row.find_all('td')
         self.creation_time = td[3].text
@@ -97,7 +97,7 @@ class TransferSummary:
             http://et-monitor.fds.rl.ac.uk/et_user/
             ET_Batch_Input_Summary.php?workspace=X&caller=etjasmin&batch=Y
         """
-        link = row.find('a')
+        link = row.findf('a')
         self.name = link.text
         td = row.find_all('td')
         self.status = td[1].text
@@ -174,7 +174,7 @@ class Transfer:
         file_table = soup.find_all('table', id='Aggregation details')[1]
         for f in file_table.find_all('tr')[1:]:
             td = f.find_all('td')
-            self.files.append(File(name=td[0].find('a').text, size=int(td[1].text)))
+            self.files.append(File(name=td[0].findf('a').text, size=int(td[1].text)))
 
     def __str__(self):
         return '\n'.join([str(t) for t in self.transitions])

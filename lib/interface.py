@@ -1,5 +1,5 @@
 import os, sys
-from db import StorageLocation, Collection, CoreDB, File, Tag
+from .db import StorageLocation, Collection, CoreDB, File, Tag
 from sqlalchemy import or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 
