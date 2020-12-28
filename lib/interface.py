@@ -17,6 +17,7 @@ class CollectionDB(CoreDB):
         c2 = self.retrieve_collection(collection_two)
         c1.add_relationship(relationship, c2)
         c2.add_relationship(relationship, c1)
+        self.session.commit()
 
     def add_relationships(self, collection_one, collection_two, relationship_12, relationship_21):
         """
@@ -24,11 +25,14 @@ class CollectionDB(CoreDB):
         collection_one has relationship_12 to collection_two and
         collection_two is a relationship_21 to collection_one.
           e.g. add_relationship('father_x','son_y','parent_of','child_of')
+          (It is possible to add a one way relationship by passing relationship_21=None)
         """
         c1 = self.retrieve_collection(collection_one)
         c2 = self.retrieve_collection(collection_two)
         c1.add_relationship(relationship_12, c2)
-        c2.add_relationship(relationship_21, c1)
+        if relationship_21 is not None:
+            c2.add_relationship(relationship_21, c1)
+        self.session.commit()
 
     def create_collection(self, collection_name, description, kw):
         """
@@ -144,7 +148,11 @@ class CollectionDB(CoreDB):
         <relationship> as the predicate.
         """
         c = self.session.query(Collection).filter_by(name=collection).one()
-        return c.related[relationship]
+        try:
+            r = c.related[relationship]
+            return r
+        except KeyError:
+            return []
 
     def retrieve_files_which_match(self, match):
         """

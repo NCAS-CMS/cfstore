@@ -153,6 +153,7 @@ class TestClick(unittest.TestCase):
         db.init(database)
         _dummy(db)
 
+
     def _check(self, result, linecount=None):
         """
         Make sure we have a proper result, and optionally break into lines and check there is an expected number
@@ -305,6 +306,32 @@ class TestClick(unittest.TestCase):
             result = runner.invoke(cli, ['findc', '--match=my3'])
             lines = self._check(result,1)
             self.assertEqual('dummy3',lines[0])
+
+    def test_linkto(self):
+        """ test asymmetric linking and findr"""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            result = runner.invoke(cli, ['linkto', 'dummy1', 'brother', 'dummy2'])
+            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy1'])
+            lines = self._check(result, 1)
+            self.assertEqual('dummy2', lines[0])
+            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
+            lines = self._check(result, 0)
+
+
+    def test_linkbetween(self):
+        """ test symmetric linking and findr"""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self._mysetup(runner)
+            result = runner.invoke(cli, ['linkbetween', 'dummy1', 'brother', 'dummy2'])
+            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy1'])
+            lines = self._check(result, 1)
+            self.assertEqual('dummy2', lines[0])
+            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
+            lines = self._check(result, 1)
+            self.assertEqual('dummy1', lines[0])
 
 
 if __name__ == "__main__":

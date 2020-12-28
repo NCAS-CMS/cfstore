@@ -88,7 +88,7 @@ class CollectionProperty(Base):
     collection_id = Column(ForeignKey('collections.id'), primary_key=True)
 
     # 128 characters would seem to allow plenty of room for "interesting" keys
-    # could serialise json into value if necessary
+    # could serialise json into value if necessaryprint(
     key = Column(Unicode(128), primary_key=True)
     value = Column(UnicodeText)
 

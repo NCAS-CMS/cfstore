@@ -240,5 +240,56 @@ def facet(ctx, key, value, collection, remove):
     _save(view_state)
 
 
+@cli.command()
+@click.pass_context
+@click.argument('col1')
+@click.argument('link')
+@click.argument('col2')
+def linkto(ctx, col1, link, col2):
+    """
+    Add a one way connection between col1 and col2.
+    e.g. col1 parent_of col2, would be
+    linkto (col1, 'parent_of, col2)
+    Makes no reciprocal links. This link can only
+    be discovered from col1.
+    """
+    view_state, db = _set_context(ctx, col1)
+    db.add_relationships(col1, col2, link, None)
+
+@cli.command()
+@click.pass_context
+@click.argument('col1')
+@click.argument('link')
+@click.argument('col2')
+def linkbetween(ctx, col1, link, col2):
+    """
+    Add a symmetric link between col1 and col2.
+    e.g. linkbetween (col1, 'brother_of', col2) would
+    result in being able to find all collections
+    which are "brother_of" col2 (which would be col1), and
+    vice versa.
+    """
+    view_state, db = _set_context(ctx, col1)
+    db.add_relationship(col1, col2, link)
+
+
+@cli.command()
+@click.pass_context
+@click.argument('link')
+@click.option('--collection', default=None, help='Collection from which to find relationships')
+def findr(ctx, link, collection):
+    """
+    Find all collections related to <collection> via the <link> relationship.
+    e.g.
+       findr parent_of
+    would find all the related object collections for the subject/predicate/object
+    relationship collection/parent_of/*
+    """
+    view_state, db = _set_context(ctx, collection)
+    collection = view_state['collection']
+    _print(db.retrieve_related(collection, link), 'name')
+    _save(view_state)
+
+
 if __name__ == "__main__":
     safe_cli()
