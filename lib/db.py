@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData
 from sqlalchemy import create_engine
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship, Session, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.associationproxy import association_proxy
 
@@ -41,6 +41,13 @@ storage_files_associations = Table(
     Base.metadata,
     Column('locations_id', Integer, ForeignKey('locations.id'), primary_key=True),
     Column('files_id', Integer, ForeignKey('files.id'), primary_key=True)
+)
+
+relationship_associations = Table(
+    'related_objects',
+    Base.metadata,
+    Column('relationship_id', Integer, ForeignKey('relationship.id'), primary_key=True),
+    Column('objects_id', Integer, ForeignKey('collections.id'), primary_key=True)
 )
 
 
@@ -96,6 +103,12 @@ class Collection(ProxiedDictMixin, Base):
     description = Column(UnicodeText)
     volume = Column(Integer)
 
+    # Use the triple mechanism to hold a relationship (the method which creates
+    # relationships is responsible for sorting out the backward relationships, if any.)
+    related = association_proxy(
+        'collection_relationships', 'objects',
+        creator=lambda p, o: Relationship(predicate=p, objects=o))
+
     holds_files = relationship(
         "File",
         secondary=collection_files_associations,
@@ -124,6 +137,12 @@ class Collection(ProxiedDictMixin, Base):
             self.volume = 0
         return f'Collection <{self.name}> has  {self.volume/9e6}GB in {self.filecount} files'
 
+    def add_relationship(self, predicate, object):
+        if predicate in self.related:
+            self.related[predicate].append(object)
+        else:
+            self.related[predicate] = [object]
+
     @property
     def filecount(self):
         return len(self.holds_files)
@@ -131,6 +150,23 @@ class Collection(ProxiedDictMixin, Base):
     @classmethod
     def with_property(self, key, value):
         return self.properties.any(key=key, value=value)
+
+
+class Relationship(Base):
+    __tablename__ = "relationship"
+    id = Column(Integer, primary_key=True)
+    # one relationship
+    predicate = Column(String(50))
+    subject_id = Column(Integer, ForeignKey('collections.id'))
+    subject = relationship(Collection,
+                           backref=backref("collection_relationships",
+                                           collection_class=attribute_mapped_collection('predicate')),
+                           foreign_keys="Relationship.subject_id")
+    # many possible objects (targets)
+    objects = relationship(Collection, secondary=relationship_associations)
+
+    def __repr__(self):
+        return f'{self.subject}-{self.predicate}-{self.objects}'
 
 
 class Tag(Base):

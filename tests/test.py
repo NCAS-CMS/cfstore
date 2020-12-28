@@ -1,8 +1,8 @@
 import unittest
-from interface import CollectionDB
+from lib.interface import CollectionDB
 from click.testing import CliRunner
 import os
-from command_line import cli
+from cfstore import cli
 
 
 def _dummy(db):
@@ -114,6 +114,28 @@ class BasicStructure(unittest.TestCase):
         self.assertEqual(len(files), 10)
         files = self.db.retrieve_files_in_collection('dummy3', 'file1')
         self.assertEqual(len(files), 1)
+
+    def test_add_relationship(self):
+        """
+        Make sure we can add relationships between collections which are symmetrical
+        """
+        _dummy(self.db)
+        self.db.add_relationship('dummy1', 'dummy3', 'brother')
+        x = self.db.retrieve_related('dummy1','brother')
+        self.assertEqual('dummy3', x[0].name)
+        x = self.db.retrieve_related('dummy3', 'brother')
+        self.assertEqual('dummy1', x[0].name)
+
+    def test_add_relationships(self):
+        """
+        Make sure we can add and use assymetric relationships between collections
+        """
+        _dummy(self.db)
+        self.db.add_relationships('dummy1', 'dummy3', 'parent_of', 'child_of')
+        x = self.db.retrieve_related('dummy1', 'parent_of')
+        self.assertEqual(['dummy3'], [j.name for j in x])
+        x = self.db.retrieve_related('dummy3', 'child_of')
+        self.assertEqual(['dummy1', ], [j.name for j in x])
 
 
 class TestClick(unittest.TestCase):
