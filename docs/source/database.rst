@@ -1,10 +1,11 @@
-Python Interface to Database
-----------------------------
+Database Structure
+------------------
 
-This is intended to be used directly from Python scripts instead of
-using the command line interface (which itself uses this interface
-anyway).
+The database is constructed using the `sqlalchemy <https://sqlalchemy.org>`_
+object relational mapper.
 
+The database structure is:
 
-.. automodule:: interface
-   :members:
+.. image:: lib/cfstore-db-dbview.png
+    :width: 800
+    :alt: Database Entity Relationship Diagram

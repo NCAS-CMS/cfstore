@@ -11,6 +11,7 @@ Welcome to cfstore's documentation!
    :caption: Contents:
 
    cmdline
+   interface
    database
 
 Concept
@@ -41,12 +42,16 @@ text tags, and textual key/value pairs.
 
 See :doc:`cmdline`
 
-
 Database Interface
 ------------------
 
-See :doc:`database`
+See :doc:`interface`
 
+Database Structure
+------------------
+
+The database structure is described at :doc:`database.rst`.
+That structure should only be of interest to those maintaining this software.
 
 
 Indices and tables

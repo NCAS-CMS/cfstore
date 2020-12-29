@@ -235,4 +235,6 @@ class CoreDB:
         self.connection = self.engine.connect()
         self.session = Session(bind=self.connection)
 
-
+if __name__=="__main__":
+    from eralchemy import render_er
+    render_er(Base,'cfstore-db-dbview.png')
