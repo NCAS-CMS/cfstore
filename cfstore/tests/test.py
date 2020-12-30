@@ -1,8 +1,8 @@
 import unittest
-from lib.interface import CollectionDB
+from cfstore.lib.interface import CollectionDB
 from click.testing import CliRunner
 import os
-from cfstore import cli
+from cfstore.cfdb import cli
 
 
 def _dummy(db):

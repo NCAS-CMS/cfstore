@@ -3,8 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='cfstore',
     version='0.2.0',
-    scripts=['cfstore'],
-    packages=find_packages(),
+    packages=['cfstore'],
     url='',
     license='MIT',
     author='Bryan Lawrence',
@@ -17,5 +16,14 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS"
-    ]
+    ],
+    install_requires=[
+        'SQLAlchemy',
+        'eralchemy',
+    ],
+    entry_points = {
+        'console_scripts': [
+            'cfstore=cfstore.cfdb:safe_cli',
+        ],
+    },
 )
