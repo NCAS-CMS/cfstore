@@ -37,7 +37,7 @@ class CollectionDB(CoreDB):
         """
         Add a collection and any properties, and return instance
         """
-        c = Collection(name=collection_name, description=description)
+        c = Collection(name=collection_name, volume=0, description=description)
 
         for k in kw:
             c[k] = kw[k]
@@ -253,10 +253,9 @@ class CollectionDB(CoreDB):
         c = self.retrieve_collection(collection_name)
         print(c)
 
-    def upload_file_to_collection(self, location, collection,
-                                  name, path, checksum, size, lazy=0, update=False):
+    def upload_file_to_collection(self, location, collection, f,  lazy=0, update=False):
         """
-        Add a (potentially) new file from <location> into the database, and add details to <collection>
+        Add a (potentially) new file <f> from <location> into the database, and add details to <collection>
         (both of which must already be known to the system).
 
         The assumption here is that the file is _new_, as otherwise we would be us using
@@ -278,6 +277,10 @@ class CollectionDB(CoreDB):
         except NoResultFound:
             raise ValueError('Either location or collection not yet available in database')
 
+        if 'checksum' not in f:
+            f['checksum'] = 'None'
+        name, path, size, checksum = f['name'], f['path'], f['size'], f['checksum']
+
         if lazy == 0:
             check = self.retrieve_file(path, name)
         elif lazy == 1:
@@ -294,9 +297,14 @@ class CollectionDB(CoreDB):
                 check.replicas.append(location)
                 c.holds_files.append(check)
         else:
-            f = File(name=name, path=path, checksum=checksum, size=size, initial_collection=c.id)
+            try:
+                fmt = f['format']
+            except KeyError:
+                fmt = os.path.splitext(name)[1]
+            f = File(name=name, path=path, checksum=checksum, size=size, format=fmt, initial_collection=c.id)
             f.replicas.append(loc)
             c.holds_files.append(f)
+            c.volume += f.size
         self.session.commit()
 
     def upload_files_to_collection(self, location, collection, files):
@@ -304,17 +312,12 @@ class CollectionDB(CoreDB):
         Add new files which exist at <location> to a <collection>. Both
         location and collection must already exist.
 
-        <files>: list of file tuples [(name, size, checksum),...]
+        <files>: list of file dictionaries
+            {name:..., path: ..., checksum: ..., size: ..., format: ...}
+
         """
         for f in files:
-            full_name = f[0]
-            size = f[1]
-            try:
-                checksum = f[2]
-            except IndexError:
-                checksum = ''
-            path, name = os.path.split(full_name)
-            self.upload_file_to_collection(location, collection, name, path, checksum, size)
+            self.upload_file_to_collection(location, collection, f)
 
     def remove_file_from_collection(self, collection, file_path, file_name, checksum=None):
         """

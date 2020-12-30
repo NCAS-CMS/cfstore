@@ -51,6 +51,13 @@ relationship_associations = Table(
 )
 
 
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
 class ProxiedDictMixin:
     """Adds obj[key] access to a mapped class.
 
@@ -135,7 +142,7 @@ class Collection(ProxiedDictMixin, Base):
     def __repr__(self):
         if not self.volume:
             self.volume = 0
-        return f'Collection <{self.name}> has  {self.volume/9e6}GB in {self.filecount} files'
+        return f'Collection <{self.name}> has  {sizeof_fmt(self.volume)} in {self.filecount} files'
 
     def add_relationship(self, predicate, object):
         if predicate in self.related:

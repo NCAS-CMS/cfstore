@@ -46,7 +46,8 @@ def _set_context(ctx, collection):
             view_state['collection'] = ctx.obj['collection']
     except FileNotFoundError:
         view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
-
+    if view_state['db'] is None:
+        raise ValueError('Please set database with --db=xxx command')
     # now override default with arguments to ls
     if collection:
         view_state['collection'] = collection

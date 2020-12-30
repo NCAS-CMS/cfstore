@@ -13,7 +13,7 @@ def _dummy(db):
     for i in range(5):
         c = f'dummy{i}'
         db.create_collection(c,'no description', {})
-        files = [(f'/somewhere/in/unix_land/file{j}{i}', 0, ) for j in range(10)]
+        files = [{'path':'/somewhere/in/unix_land', 'name':f'file{j}{i}', 'size':0} for j in range(10)]
         db.upload_files_to_collection('testing', c, files)
 
 
@@ -42,7 +42,7 @@ class BasicStructure(unittest.TestCase):
         """ Test uploading files """
         self.db.create_collection('mrun1', 'no real description', {})
         self.db.create_location('testing')
-        files = [(f'/somewhere/in/unix_land/file{i}', 0, ) for i in range(10)]
+        files = [{'path': '/somewhere/in/unix_land', 'name': f'file{i}', 'size': 0} for i in range(10)]
         self.db.upload_files_to_collection('testing', 'mrun1', files)
 
         self.assertEquals(len(self.db.retrieve_files_in_collection('mrun1')), len(files))
