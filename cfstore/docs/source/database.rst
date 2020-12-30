@@ -6,6 +6,6 @@ object relational mapper.
 
 The database structure is:
 
-.. image:: lib/cfstore-db-dbview.png
+.. image:: img/cfstore-db-dbview.png
     :width: 800
     :alt: Database Entity Relationship Diagram

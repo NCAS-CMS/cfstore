@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from cfstore.lib.interface import CollectionDB
+from cfstore.interface import CollectionDB
 import os, json, sys
 import click
 from urllib.parse import urlparse
@@ -280,8 +280,7 @@ def linkbetween(ctx, col1, link, col2):
 def findr(ctx, link, collection):
     """
     Find all collections related to <collection> via the <link> relationship.
-    e.g.
-       findr parent_of
+    e.g. findr parent_of
     would find all the related object collections for the subject/predicate/object
     relationship collection/parent_of/*
     """

@@ -8,8 +8,7 @@ class CollectionDB(CoreDB):
 
     def add_relationship(self, collection_one, collection_two, relationship):
         """
-        Add a symmetrical <relationship> between <collection_one> and
-        <collection_two>.
+        Add a symmetrical <relationship> between <collection_one> and <collection_two>.
         e.g. add_relationship('romulus','remus','brother')
         romulus is a brother of remus and vice versa.
         """
@@ -24,8 +23,8 @@ class CollectionDB(CoreDB):
         Add a pair of relationships between <collection_one>  and <collection_two> such that
         collection_one has relationship_12 to collection_two and
         collection_two is a relationship_21 to collection_one.
-          e.g. add_relationship('father_x','son_y','parent_of','child_of')
-          (It is possible to add a one way relationship by passing relationship_21=None)
+        e.g. add_relationship('father_x','son_y','parent_of','child_of')
+        (It is possible to add a one way relationship by passing relationship_21=None)
         """
         c1 = self.retrieve_collection(collection_one)
         c2 = self.retrieve_collection(collection_two)

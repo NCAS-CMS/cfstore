@@ -50,7 +50,7 @@ See :doc:`interface`
 Database Structure
 ------------------
 
-The database structure is described at :doc:`database.rst`.
+The database structure is described at :doc:`database`.
 That structure should only be of interest to those maintaining this software.
 
 

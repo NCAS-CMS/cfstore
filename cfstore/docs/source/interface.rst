@@ -6,5 +6,5 @@ using the command line interface (which itself uses this interface
 anyway).
 
 
-.. automodule:: interface
+.. automodule:: cfstore.interface
    :members:

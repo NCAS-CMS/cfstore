@@ -1,5 +1,5 @@
 # Minimal makefile for Sphinx documentation
-#
+# NB: Need to manually copy image files to img directory in source.
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.

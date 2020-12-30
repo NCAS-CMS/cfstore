@@ -1,6 +1,6 @@
 Command Line Interface
 ----------------------
 
-.. click:: cfstore:cli
+.. click:: cfstore.cfdb:cli
    :prog: cfstore
    :nested: full
