@@ -1,5 +1,5 @@
 import unittest
-from cfstore.lib.interface import CollectionDB
+from cfstore.interface import CollectionDB
 from click.testing import CliRunner
 import os
 from cfstore.cfdb import cli

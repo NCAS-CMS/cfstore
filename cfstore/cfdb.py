@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from cfstore.interface import CollectionDB
+from cfstore.plugins.et_main import et_main
 import os, json, sys
 import click
 from urllib.parse import urlparse
@@ -287,6 +288,23 @@ def findr(ctx, link, collection):
     view_state, db = _set_context(ctx, collection)
     collection = view_state['collection']
     _print(db.retrieve_related(collection, link), 'name')
+    _save(view_state)
+
+
+@cli.command()
+@click.pass_context
+@click.argument('operation')
+@click.argument('gws')
+def et(ctx, operation, gws):
+    """
+    Operations on an elastic tape backend for the <gws> group workspace.
+    <Operation> can be one of:
+        1. init - initialise an elastic tape view of a group workspace
+        2. update - Update an existing view of an elastic tape group workspace
+    """
+    collection = None
+    view_state, db = _set_context(ctx, collection)
+    et_main(db, operation, gws)
     _save(view_state)
 
 

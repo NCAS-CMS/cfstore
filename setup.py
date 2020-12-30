@@ -20,6 +20,8 @@ setup(
     install_requires=[
         'SQLAlchemy',
         'eralchemy',
+        'click',
+        'BeautifulSoup4',
     ],
     entry_points = {
         'console_scripts': [

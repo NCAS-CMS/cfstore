@@ -68,7 +68,7 @@ class Batch:
             ET_Holdings_Summary.php?workspace=X&level=batches
         """
         self.workspace = workspace
-        link = row.findf('a')
+        link = row.find('a')
         self.name = link.text[-4:].strip()
         td = row.find_all('td')
         self.creation_time = td[3].text

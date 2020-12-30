@@ -9,3 +9,8 @@ The database structure is:
 .. image:: img/cfstore-db-dbview.png
     :width: 800
     :alt: Database Entity Relationship Diagram
+
+
+The database should only be manipulated via the
+interface provided, the structural information is only provided for
+software maintenance purposes.
