@@ -19,9 +19,11 @@ setup(
     ],
     install_requires=[
         'SQLAlchemy',
-        'eralchemy',
+#        'pygraphviz',
+#        'eralchemy',
         'click',
         'BeautifulSoup4',
+
     ],
     entry_points = {
         'console_scripts': [
