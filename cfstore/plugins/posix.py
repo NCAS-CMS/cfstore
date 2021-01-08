@@ -111,14 +111,6 @@ class RemotePosix(Posix):
         self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
 
-if __name__ == "__main__":
-
-    from cfstore.interface import CollectionDB
-    db = CollectionDB()
-    db.init('sqlite:///jasmin.db')
-    x = RemotePosix(db, 'jasmin')
-    x.configure('xfer1', 'lawrence')
-    x.add_collection('hiresgw/xjanp','xjanp','test stuff')
 
 
 

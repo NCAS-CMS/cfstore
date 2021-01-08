@@ -3,6 +3,10 @@ from .db import StorageLocation, Collection, CoreDB, File, Tag
 from sqlalchemy import or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 
+class CollectionError(Exception):
+    def __init__(self, name, message):
+        super().__init__(f'(Collection {name} {message}')
+
 
 class CollectionDB(CoreDB):
 
@@ -144,7 +148,7 @@ class CollectionDB(CoreDB):
             assert len(x) == 1
             return x[0]
         else:
-            return None
+            raise FileNotFoundError  #(f'File "{path}/{name}" not found')
 
     def retrieve_related(self, collection, relationship):
         """
@@ -185,29 +189,27 @@ class CollectionDB(CoreDB):
 
     def delete_collection(self, collection_name):
         """
-        Remove a collection from the database, ensuring that if it is primary upload
-        collection, that all files have already been removed first.
+        Remove a collection from the database, ensuring all files have already been removed first.
         """
-        # Will need to worry about files and whether they will be left hanging
-        raise NotImplementedError
+        files = self.retrieve_files_in_collection(collection_name)
+        if files:
+            raise CollectionError(collection_name, f'not empty (contains {len(files)} files)')
+        else:
+            c = self.retrieve_collection(collection_name)
+            self.session.delete(c)
+            self.session.commit()
 
     def delete_tag(self, tagname):
         """
         Delete a tag, from wherever it is used
         """
-        t = self.session.query(Tag).filter(name=tagname)
+        t = self.session.query(Tag).filter_by(name=tagname)
         self.session.delete(t)
         self.session.commit()
 
     def add_file_to_collection(self, collection, file):
         """
         Add file to a collection
-        """
-        raise NotImplementedError
-
-    def remove_file_from_collection(self, collection, file):
-        """
-        Remove a file from a collection.
         """
         raise NotImplementedError
 
@@ -286,14 +288,17 @@ class CollectionDB(CoreDB):
             f['checksum'] = 'None'
         name, path, size, checksum = f['name'], f['path'], f['size'], f['checksum']
 
-        if lazy == 0:
-            check = self.retrieve_file(path, name)
-        elif lazy == 1:
-            check = self.retrieve_file(path, name, size=size)
-        elif lazy == 2:
-            check = self.retrieve_file(path, name, checksum=checksum)
-        else:
-            raise ValueError(f'Unexpected value of lazy {lazy}')
+        try:
+            if lazy == 0:
+                check = self.retrieve_file(path, name)
+            elif lazy == 1:
+                check = self.retrieve_file(path, name, size=size)
+            elif lazy == 2:
+                check = self.retrieve_file(path, name, checksum=checksum)
+            else:
+                raise ValueError(f'Unexpected value of lazy {lazy}')
+        except FileNotFoundError:
+            check = False
 
         if check:
             if update:
@@ -327,11 +332,17 @@ class CollectionDB(CoreDB):
     def remove_file_from_collection(self, collection, file_path, file_name, checksum=None):
         """
         Remove a file described by <path_name> and <file_name> (and optionally <checksum> from a particular
-        <collection>.
-
-        If it no longer belongs to any collection, it will be removed completely from the database
+        <collection>. Raise an error if already removed from collection (or, I suppose, if it was never
+        in that collection, the database wont know!)
         """
-        raise NotImplementedError
+        f = self.retrieve_file(file_path, file_name)
+        c = self.retrieve_collection(collection)
+        try:
+            index = f.in_collections.index(c)
+        except ValueError:
+            raise CollectionError(collection, f' - file {file_path}/{file_name} not present!')
+        del f.in_collections[index]
+
 
 
     @property

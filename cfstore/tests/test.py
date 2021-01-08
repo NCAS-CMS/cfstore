@@ -1,5 +1,5 @@
 import unittest
-from cfstore.interface import CollectionDB
+from cfstore.interface import CollectionDB, CollectionError
 from click.testing import CliRunner
 import os
 from cfstore.cfdb import cli
@@ -137,6 +137,54 @@ class BasicStructure(unittest.TestCase):
         x = self.db.retrieve_related('dummy3', 'child_of')
         self.assertEqual(['dummy1', ], [j.name for j in x])
 
+    def test_delete_collection(self):
+        """
+        Make sure delete collection works and respects files in collection
+        """
+        _dummy(self.db)
+        with self.assertRaises(CollectionError) as context:
+            self.db.delete_collection('dummy1')
+        files = self.db.retrieve_files_in_collection('dummy1')
+        for f in files:
+            self.db.remove_file_from_collection('dummy1', f.path, f.name)
+        self.db.delete_collection('dummy1')
+        with self.assertRaises(ValueError) as context:
+            c = self.db.retrieve_collection('dummy1')
+
+    def test_remove_from_collection(self):
+        """
+        Test removing file from a collection
+        """
+        _dummy(self.db)
+        path = '/somewhere/in/unix_land'
+        files = self.db.retrieve_files_in_collection('dummy1')
+        # first let's make sure the right thing happens if the file doesn't exist
+        with self.assertRaises(FileNotFoundError):
+            self.db.remove_file_from_collection('dummy1', path, 'abc123')
+        # if it isn't in the collection
+        with self.assertRaises(CollectionError):
+            self.db.remove_file_from_collection('dummy2', path, 'file33')
+        for f in files:
+            self.db.remove_file_from_collection('dummy1', f.path, f.name)
+            # this checks it's no longer in the collection
+            with self.assertRaises(CollectionError):
+                self.db.remove_file_from_collection('dummy1', f.path, f.name)
+        # and this checks it still exists
+        for f in files:
+            f = self.db.retrieve_file(f.path, f.name)
+
+    def test_retrieve_file(self):
+        """
+        Test retrieving files
+        """
+        _dummy(self.db)
+        path = '/somewhere/in/unix_land'
+        # first let's make sure the right thing happens if the file doesn't exist
+        with self.assertRaises(FileNotFoundError) as context:
+            f = self.db.retrieve_file(path, 'abc123')
+        # now check we can find a particular file
+        f = self.db.retrieve_file(path, 'file01')
+        self.assertEqual(f.name, 'file01')
 
 class TestClick(unittest.TestCase):
     """
