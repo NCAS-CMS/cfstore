@@ -33,7 +33,7 @@ class CollectionDB(CoreDB):
             c2.add_relationship(relationship_21, c1)
         self.session.commit()
 
-    def create_collection(self, collection_name, description, kw):
+    def create_collection(self, collection_name, description, kw={}):
         """
         Add a collection and any properties, and return instance
         """
@@ -55,11 +55,16 @@ class CollectionDB(CoreDB):
 
     def create_location(self, location):
         """
-        Create a storage location
+        Create a storage location, raise an error if already exists.
         """
-        loc = StorageLocation(name=location)
-        self.session.add(loc)
-        self.session.commit()
+        try:
+            loc = self.session.query(StorageLocation).filter_by(name=location).one()
+        except NoResultFound:
+            loc = StorageLocation(name=location)
+            self.session.add(loc)
+            self.session.commit()
+        else:
+            raise ValueError(f'{location} already exists')
 
     def create_tag(self, tagname):
         """
