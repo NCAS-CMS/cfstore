@@ -3,7 +3,8 @@ import posixpath
 from stat import S_ISREG, S_ISDIR
 import time
 
-class SSHLight:
+
+class SSHlite:
     """
     Provides a lightweight interface to some paramiko and pysftp like
     functionality, *assuming there is a running ssh agent on the client
@@ -121,7 +122,7 @@ class SSHLight:
 
 if __name__ == "__main__":
 
-    s = SSHLight('xfer1','lawrence')
+    s = SSHlite('xfer1','lawrence')
     flist = s.get_files_and_sizes('hiresgw/xjanp')
     print(flist)
 
