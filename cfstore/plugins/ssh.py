@@ -1,5 +1,6 @@
 import paramiko
-import posixpath
+import posixpath, os, glob, fnmatch
+from itertools import product
 from stat import S_ISREG, S_ISDIR
 import time
 
@@ -119,10 +120,81 @@ class SSHlite:
 
         return files
 
+    def globish(self, remotepath, expression):
+        """
+        Approximate match for globbing  <expression> against information from <remotepath> remote directory.
+        Without recursion!
+        """
+        paths = self._sftp.listdir(remotepath)
+        return find_matching_paths(paths, expression)
+
+
+def find_matching_paths(pathlist, pattern):
+    """
+    Given a list of paths, return a list of those paths which match
+    the input pattern.  The pattern should be expressed using the
+    Python glob pattern matching syntax for a unix file system.
+
+    """
+
+    def _in_trie(trie, pth):
+        """Determine if path is completely in trie"""
+        curr = trie
+        for e in pth:
+            try:
+                curr = curr[e]
+            except KeyError:
+                return False
+        return None in curr
+
+    if os.altsep:  # normalise
+        pattern = pattern.replace(os.altsep, os.sep)
+    pattern = pattern.split(os.sep)
+
+    # build a trie out of path elements; efficiently search on prefixes
+    path_trie = {}
+    for path in pathlist:
+        if os.altsep:  # normalise
+            path = path.replace(os.altsep, os.sep)
+        _, path = os.path.splitdrive(path)
+        elems = path.split(os.sep)
+        current = path_trie
+        for elem in elems:
+            current = current.setdefault(elem, {})
+        current.setdefault(None, None)  # sentinel
+
+    matching = []
+
+    current_level = [path_trie]
+    for subpattern in pattern:
+        if not glob.has_magic(subpattern):
+            # plain element, element must be in the trie or there are 0 matches
+            if not any(subpattern in d for d in current_level):
+                return []
+            matching.append([subpattern])
+            current_level = [d[subpattern] for d in current_level if subpattern in d]
+        else:
+            # match all next levels in the trie that match the pattern
+            matched_names = fnmatch.filter({k for d in current_level for k in d}, subpattern)
+            if not matched_names:
+                # nothing found
+                return []
+            matching.append(matched_names)
+            current_level = [d[n] for d in current_level for n in d.keys() & set(matched_names)]
+
+    return [os.sep.join(p) for p in product(*matching)
+            if _in_trie(path_trie, p)]
 
 if __name__ == "__main__":
 
     s = SSHlite('xfer1','lawrence')
+
+    dlist = s.globish('hiresgw','xj*')
+    print(dlist)
+
+    dlist = s.globish('hiresgw', 'xj???')
+    print(dlist)
+
     flist = s.get_files_and_sizes('hiresgw/xjanp')
     print(flist)
 
