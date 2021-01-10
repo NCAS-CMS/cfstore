@@ -2,70 +2,33 @@
 
 from cfstore.interface import CollectionDB
 from cfstore.plugins.et_main import et_main
+from cfstore.config import CFSconfig
 import os, json, sys
 import click
 from urllib.parse import urlparse
 
-STATE_FILE = '.cftape'
-
-
-def _save(view_state):
-    """ Save view state if valid"""
-    if not view_state['db']:
-        raise ValueError('Save option requires default database value')
-    with open(STATE_FILE,'w') as f:
-        json.dump(view_state, f)
-
 
 def _load():
     """ Load existing view state"""
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE,'r') as f:
-            view_state = json.load(f)
-        actual_file = _naked(view_state['db'])
-        if os.path.exists(actual_file):
-            return view_state
-        else:
-            raise ValueError(f"Configuration file {STATE_FILE} does not have valid database ({view_state['db']}")
-    else:
-        raise FileNotFoundError('No existing configuration file found')
+    return CFSconfig()
 
 
 def _set_context(ctx, collection):
     """
-    Set the view_state context
+    Set the config_state context
     """
-    try:
-        view_state = _load()
-        for k in ['db', 'collection']:
-            if ctx.obj[k]:
-                view_state[k] = ctx.obj[k]
-    except ValueError:
-        view_state = {'db': ctx.obj['db'], 'collection': None}
-        if ctx.obj['collection']:
-            view_state['collection'] = ctx.obj['collection']
-    except FileNotFoundError:
-        view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
-    if view_state['db'] is None:
-        raise ValueError('Please set database with --db=xxx command')
-    # now override default with arguments to ls
+    config_state = _load()
+    # coming in from context before particular option (e.g. ls)
+    if ctx.obj['collection']:
+        config_state['last_collection'] = ctx.obj['collection']
+    # now override default with arguments to option (e.g. ls)
     if collection:
-        view_state['collection'] = collection
+        if collection == 'all':
+            config_state['last_collection'] = ''
+        else:
+            config_state['last_collection'] = collection
 
-    db = CollectionDB()
-    db.init(view_state['db'])
-    if view_state['collection'] == 'all':
-        view_state['collection'] = None
-
-    return view_state, db
-
-
-def _naked(db_name, display=False):
-    """ Strip protocol gubbins from database connection string"""
-    f = urlparse(db_name).path[1:]
-    if display:
-        print(f)
-    return f
+    return config_state, config_state.db
 
 
 def _print(lines, prop=None):
@@ -87,15 +50,13 @@ def safe_cli():
 
 
 @click.group()
-@click.option('--db', default=None, help='New default database (e.g sqlite///hiresgw.db) ')
 @click.option('--collection', default=None, help='Current collection (make default)')
 @click.pass_context
-def cli(ctx, db, collection):
+def cli(ctx, collection):
     """
     Provides the overall group context for command line arguments
     """
     ctx.ensure_object(dict)
-    ctx.obj['db'] = db
     ctx.obj['collection'] = collection
 
 
@@ -106,7 +67,7 @@ def save(ctx):
     Save current db choice and last used collection (which becomes default).
     """
     view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
@@ -120,17 +81,17 @@ def ls(ctx, collection):
     """
     view_state, db = _set_context(ctx, collection)
 
-    if view_state['collection']:
-        files = db.retrieve_files_in_collection(view_state['collection'])
+    if view_state.collection:
+        files = db.retrieve_files_in_collection(view_state.collection)
         for f in files:
             print(f)
     else:
         collections = db.retrieve_collections()
-        _naked(view_state['db'], display=True)
+        print(view_state.name)
         for c in collections:
             print(c)
 
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
@@ -143,7 +104,7 @@ def findf(ctx, match, collection):
     anywhere in their path and filename.
     """
     view_state, db = _set_context(ctx, collection)
-    collection = view_state['collection']
+    collection = view_state.collection
     if collection:
         files = db.retrieve_files_in_collection(collection, match=match)
         for f in files:
@@ -153,7 +114,7 @@ def findf(ctx, match, collection):
         for f in files:
             print(f)
 
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
@@ -180,7 +141,7 @@ def organise(ctx, collection, description_file):
     files = [f.strip() for f in sys.stdin.readlines()]
     db.organise(collection, files, description=description)
 
-    _save(view_state)
+    view_state.save()
 
 @cli.command()
 @click.pass_context
@@ -192,8 +153,8 @@ def tag(ctx, collection, tagname):
     (and save collection as current default collection)
     """
     view_state, db = _set_context(ctx, collection)
-    db.tag_collection(view_state['collection'], tagname)
-    _save(view_state)
+    db.tag_collection(view_state.collection, tagname)
+    view_state.save()
 
 @cli.command()
 @click.pass_context
@@ -231,15 +192,15 @@ def facet(ctx, key, value, collection, remove):
     --collection=collection
     """
     view_state, db = _set_context(ctx, collection)
-    if not view_state['collection']:
+    if not view_state.collection:
         raise ValueError('Cannot use facet without defining a collection')
     if remove:
         raise NotImplementedError
 
-    c = db.retrieve_collection(view_state['collection'])
+    c = db.retrieve_collection(view_state.collection)
     c[key] = value
     db.session.commit()
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
@@ -287,26 +248,35 @@ def findr(ctx, link, collection):
     relationship collection/parent_of/*
     """
     view_state, db = _set_context(ctx, collection)
-    collection = view_state['collection']
+    collection = view_state.collection
     _print(db.retrieve_related(collection, link), 'name')
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
 @click.pass_context
 @click.argument('operation')
 @click.argument('gws')
-def et(ctx, operation, gws):
+def add_et(ctx, operation, gws):
     """
     Operations on an elastic tape backend for the <gws> group workspace.
     <Operation> can be one of:
-        1. init - initialise an elastic tape view of a group workspace
-        2. update - Update an existing view of an elastic tape group workspace
+    1. init - initialise an elastic tape view of a group workspace
+    2. update - Update an existing view of an elastic tape group workspace
     """
     collection = None
     view_state, db = _set_context(ctx, collection)
     et_main(db, operation, gws)
-    _save(view_state)
+    view_state.save()
+
+
+@cli.command()
+@click.pass_context
+@click.argument('operation')
+@click.argument('gws')
+def add_posix(ctx, operation, gws):
+    pass
+
 
 
 if __name__ == "__main__":

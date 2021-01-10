@@ -3,6 +3,7 @@ from .db import StorageLocation, Collection, CoreDB, File, Tag
 from sqlalchemy import or_, and_
 from sqlalchemy.orm.exc import NoResultFound
 
+
 class CollectionError(Exception):
     def __init__(self, name, message):
         super().__init__(f'(Collection {name} {message}')
@@ -59,7 +60,8 @@ class CollectionDB(CoreDB):
 
     def create_location(self, location):
         """
-        Create a storage location, raise an error if already exists.
+        Create a storage <location>. The database is ignorant about what
+        "location" means. Other layers of software care about that.
         """
         try:
             loc = self.session.query(StorageLocation).filter_by(name=location).one()
