@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
-from cfstore.interface import CollectionDB
-from cfstore.plugins.et_main import et_main
 from cfstore.config import CFSconfig
-import os, json, sys
+import os, sys
 import click
-from urllib.parse import urlparse
 
 
 def _load():
@@ -251,32 +248,6 @@ def findr(ctx, link, collection):
     collection = view_state.collection
     _print(db.retrieve_related(collection, link), 'name')
     view_state.save()
-
-
-@cli.command()
-@click.pass_context
-@click.argument('operation')
-@click.argument('gws')
-def add_et(ctx, operation, gws):
-    """
-    Operations on an elastic tape backend for the <gws> group workspace.
-    <Operation> can be one of:
-    1. init - initialise an elastic tape view of a group workspace
-    2. update - Update an existing view of an elastic tape group workspace
-    """
-    collection = None
-    view_state, db = _set_context(ctx, collection)
-    et_main(db, operation, gws)
-    view_state.save()
-
-
-@cli.command()
-@click.pass_context
-@click.argument('operation')
-@click.argument('gws')
-def add_posix(ctx, operation, gws):
-    pass
-
 
 
 if __name__ == "__main__":

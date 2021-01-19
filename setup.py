@@ -27,7 +27,8 @@ setup(
     ],
     entry_points = {
         'console_scripts': [
-            'cfstore=cfstore.cfdb:safe_cli',
+            'cfsdb=cfstore.cfdb:safe_cli',
+            'cfin=cfstore.cfin:safe_cli',
         ],
     },
 )

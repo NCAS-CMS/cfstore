@@ -25,7 +25,7 @@ class CFSconfig:
             self.filepath = Path(filename)
         self.config = configparser.ConfigParser()
         if not self.filepath.exists():
-            self.config.readfp(io.StringIO(self._default()))
+            self.config.read_file(io.StringIO(self._default()))
             with open(self.filepath,'w') as fp:
                 self.config.write(fp)
         else:
@@ -87,7 +87,7 @@ class CFSconfig:
         Will overwrite existing location if it exists!
         """
         if location in self.interfaces:
-            print(f'WARNING: Interface {location} already exists')
+            raise ValueError(f'WARNING: Interface {location} already exists')
         template = self.get_template(fstype)
         try:
             assert set(kw.keys()) == set(template.keys()) - set(['fstype',])
@@ -95,6 +95,9 @@ class CFSconfig:
             raise ValueError(f'Improper configuration for fstype {fstype}')
         self.config[location] = kw
         self.config[location]['fstype'] = fstype
+
+    def get_location(self, location):
+        return self.config[location]
 
     def save(self):
         with open(self.filepath,'w') as fp:
@@ -119,11 +122,10 @@ fstype = Posix
 fstype = ElasticTape
 gws = 
 
-[template_RemotePosix]
+[template_rp]
 fstype = RemotePosix
-gws = 
-user = 
 host = 
+user = 
 
 [template_S3]
 fstype: S3
