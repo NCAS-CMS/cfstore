@@ -186,6 +186,15 @@ class BasicStructure(unittest.TestCase):
         f = self.db.retrieve_file(path, 'file01')
         self.assertEqual(f.name, 'file01')
 
+    def test_file_match(self):
+        """
+        Test what happens when we add files which have common characteristics in two different locations.
+        What we want to happen is that the files appear as one file, with two different replicants.
+        We also want to be able to find such files, so we test that here too.
+        """
+        # _dummy(self.db)
+        raise NotImplementedError
+
 
 if __name__ == "__main__":
     unittest.main()

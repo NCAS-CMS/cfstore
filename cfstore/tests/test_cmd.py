@@ -106,18 +106,18 @@ class Test_cfdb(TestCase):
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, option3)
-            _check(result, 6)
+            _check(self, result, 6)
         runner = CliRunner()
         # we have two bites of this cherry because of some subtle thing to do with
         # database flushing which only arises in tests (AFIK) ...
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, option2)
-            _check(result, 10)
+            _check(self, result, 10)
             result = runner.invoke(cli, option3)
-            _check(result, 10)
+            _check(self, result, 10)
             result = runner.invoke(cli, option1)
-            _check(result, 6)
+            _check(self, result, 6)
 
     def test_findf_in_collection(self):
         """
@@ -132,11 +132,11 @@ class Test_cfdb(TestCase):
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, ['findf', 'file1', '--collection=dummy3'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
             self.assertTrue(lines[0].find('file1') != -1)
             # now do it again and make sure we are looking at the default
             result = runner.invoke(cli, ['findf', 'file1'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
 
     def test_findf_across_collections(self):
         """
@@ -148,7 +148,7 @@ class Test_cfdb(TestCase):
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, ['findf', 'file2', '--collection=all'])
-            lines = _check(result, 5)
+            lines = _check(self, result, 5)
 
     def test_organise_new(self):
         """
@@ -159,9 +159,9 @@ class Test_cfdb(TestCase):
             _mysetup()
             dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file23\n'
             result = runner.invoke(cli, ['organise', 'newc'], input=dummy_input)
-            _check(result)
+            _check(self, result)
             result = runner.invoke(cli, ['ls','--collection=newc'])
-            _check(result, 2)
+            _check(self, result, 2)
             self.assertEqual(dummy_input, result.output)
 
     def test_organise_existing(self):
@@ -173,9 +173,9 @@ class Test_cfdb(TestCase):
             _mysetup()
             dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file13\n'
             result = runner.invoke(cli, ['organise', 'dummy4'], input=dummy_input)
-            _check(result)
+            _check(self, result)
             result = runner.invoke(cli, ['ls', '--collection=dummy4'])
-            _check(result, 12)
+            _check(self, result, 12)
 
     def test_tag(self):
         """
@@ -185,9 +185,9 @@ class Test_cfdb(TestCase):
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, ['tag', 'dummy3', 'interesting'])
-            _check(result)
+            _check(self, result)
             result = runner.invoke(cli, ['findc', '--tagname=interesting'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
             self.assertEqual('dummy3', lines[0])
 
     def test_facet(self):
@@ -199,9 +199,9 @@ class Test_cfdb(TestCase):
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, ['facet', 'color', 'green', '--collection=dummy1'])
-            _check(result)
+            _check(self, result)
             result = runner.invoke(cli, ['findc', '--facet', 'color', 'green'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
             self.assertEqual('dummy1', lines[0])
 
     def test_findc(self):
@@ -216,7 +216,7 @@ class Test_cfdb(TestCase):
         with runner.isolated_filesystem():
             _mysetup()
             result = runner.invoke(cli, ['findc', '--match=my3'])
-            lines = _check(result,1)
+            lines = _check(self, result,1)
             self.assertEqual('dummy3',lines[0])
 
     def test_linkto(self):
@@ -226,11 +226,10 @@ class Test_cfdb(TestCase):
             _mysetup()
             result = runner.invoke(cli, ['linkto', 'dummy1', 'brother', 'dummy2'])
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy1'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
             self.assertEqual('dummy2', lines[0])
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
-            lines = _check(result, 0)
-
+            lines = _check(self, result, 0)
 
     def test_linkbetween(self):
         """ test symmetric linking and findr"""
@@ -239,10 +238,10 @@ class Test_cfdb(TestCase):
             _mysetup()
             result = runner.invoke(cli, ['linkbetween', 'dummy1', 'brother', 'dummy2'])
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy1'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
             self.assertEqual('dummy2', lines[0])
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
-            lines = _check(result, 1)
+            lines = _check(self, result, 1)
             self.assertEqual('dummy1', lines[0])
 
 
