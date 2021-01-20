@@ -13,8 +13,7 @@ db = CollectionDB()
 db.init(testdb)
 
 x = RemotePosix(db, 'jasmin')
-x.configure('xfer1', 'lawrence')
-
+x.configure('xfer3', 'lawrence')
 
 
 tick = time.time()

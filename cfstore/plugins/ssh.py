@@ -19,8 +19,8 @@ class SSHlite:
         names for jasmin, so you can use host = xfer1|xfer3.
         """
         jasmin_hosts = {
-            'xfer1':'xfer1.jasmin.ac.uk',
-            'xfer3':'xfer3.jasmin.ac.uk',
+            'xfer1': 'xfer1.jasmin.ac.uk',
+            'xfer3': 'xfer3.jasmin.ac.uk',
         }
         if host in jasmin_hosts:
             host = jasmin_hosts[host]
@@ -34,6 +34,9 @@ class SSHlite:
         client.connect(host, port, username)
         self.transport = client.get_transport()
         self._sftp = paramiko.SFTPClient.from_transport(self.transport)
+
+    def isalive(self):
+        return self.transport.is_active()
 
     def get(self, remotepath, localpath):
        """
@@ -187,7 +190,7 @@ def find_matching_paths(pathlist, pattern):
 
 if __name__ == "__main__":
 
-    s = SSHlite('xfer1','lawrence')
+    s = SSHlite('xfer1', 'lawrence')
 
     dlist = s.globish('hiresgw','xj*')
     print(dlist)
