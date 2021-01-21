@@ -219,6 +219,31 @@ class Test_cfdb(TestCase):
             lines = _check(self, result,1)
             self.assertEqual('dummy3',lines[0])
 
+    def test_findr(self):
+        """
+        Test command line discovery of replicants in a collection
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+
+        _dummy(self.db)
+        # this should create 5x3=15 duplicate files in another location with different collections:
+        _dummy(self.db, location='pseudo tape', collection_stem="tdummy", files_per_collection=3)
+        # now we need to see if these can be found, let's just look for the two replicas in dummy1
+        fset = self.db.retrieve_files_in_collection('dummy1', replicants=True)
+        assert len(fset) == 3
+        assert fset[0].name == 'file01'
+        # now just make sure we can get back the right answer if we go for a match as well
+        # for this we have to muck with our test dataset to get a decent test case.
+        # we add a file which we know to be in collection dummy2 and a replicant
+        fset = self.db.retrieve_files_in_collection('dummy2', match='22', replicants=True)
+        self.db.add_file_to_collection('dummy1', fset[0])
+        fset = self.db.retrieve_files_in_collection('dummy1', replicants=True, match='file2')
+        assert len(fset) == 2  # of the four it would be without the match!
+
+
+
     def test_linkto(self):
         """ test asymmetric linking and findr"""
         runner = CliRunner()
@@ -296,6 +321,8 @@ class Test_cfin(TestCase):
             result = runner.invoke(cli, ['ls', '--collection=test_collection'] )
             # there are supposed to be three files in the test collection
             _check(self, result, 3)
+
+
 
 
 

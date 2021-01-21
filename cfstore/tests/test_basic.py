@@ -5,16 +5,16 @@ import os
 from cfstore.cfdb import cli
 
 
-def _dummy(db):
+def _dummy(db, location='testing', collection_stem="dummy", files_per_collection=10):
     """ Set up a dummy dataset in db with accessible
     structure for testing
     """
-    db.create_location('testing')
+    db.create_location(location)
     for i in range(5):
-        c = f'dummy{i}'
+        c = f'{collection_stem}{i}'
         db.create_collection(c,'no description', {})
-        files = [{'path':'/somewhere/in/unix_land', 'name':f'file{j}{i}', 'size':0} for j in range(10)]
-        db.upload_files_to_collection('testing', c, files)
+        files = [{'path':'/somewhere/in/unix_land', 'name':f'file{j}{i}', 'size':0} for j in range(files_per_collection)]
+        db.upload_files_to_collection(location, c, files)
 
 
 class BasicStructure(unittest.TestCase):
@@ -192,8 +192,20 @@ class BasicStructure(unittest.TestCase):
         What we want to happen is that the files appear as one file, with two different replicants.
         We also want to be able to find such files, so we test that here too.
         """
-        # _dummy(self.db)
-        raise NotImplementedError
+        _dummy(self.db)
+        # this should create 5x3=15 duplicate files in another location with different collections:
+        _dummy(self.db, location='pseudo tape', collection_stem="tdummy", files_per_collection=3)
+        # now we need to see if these can be found, let's just look for the two replicas in dummy1
+        fset = self.db.retrieve_files_in_collection('dummy1', replicants=True)
+        assert len(fset) == 3
+        assert fset[0].name == 'file01'
+        # now just make sure we can get back the right answer if we go for a match as well
+        # for this we have to muck with our test dataset to get a decent test case.
+        # we add a file which we know to be in collection dummy2 and a replicant
+        fset = self.db.retrieve_files_in_collection('dummy2', match='22', replicants=True)
+        self.db.add_file_to_collection('dummy1', fset[0])
+        fset = self.db.retrieve_files_in_collection('dummy1', replicants=True, match='file2')
+        assert len(fset) == 2  # of the four it would be without the match!
 
 
 if __name__ == "__main__":
