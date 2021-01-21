@@ -1,6 +1,6 @@
 import os, sys
 from .db import StorageLocation, Collection, CoreDB, File, Tag
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -171,13 +171,15 @@ class CollectionDB(CoreDB):
         m = f'%{match}%'
         return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
 
-    def retrieve_files_in_collection(self, collection, match=None):
+    def retrieve_files_in_collection(self, collection, match=None, replicants=False):
         """
-        Return a list of files in a particular collection.
+        Return a list of files in a particular collection, possibly including those
+        which match a particular string and/or are replicants.
         """
-        if match is None:
+        # do all the query combinations separately, likely to be more efficient ...
+        if match is None and replicants is False:
             return self.retrieve_collection(collection).holds_files
-        else:
+        elif match and replicants is False:
             m = f'%{match}%'
             # this gives the collection with files that match this ... not what we wanted
             #files = self.session.query(Collection).filter_by(name=collection).join(
@@ -187,6 +189,20 @@ class CollectionDB(CoreDB):
             # could be faster. We can investigate that another day ...
             files = self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).join(
                 File.in_collections).filter_by(name=collection).all()
+            return files
+        elif replicants and match is None:
+            files = self.session.query(File).filter(File.in_collections.any(
+                                Collection.name == collection)).join(
+                                File.replicas).group_by(File).having(
+                                func.count(StorageLocation.id) > 1).all()
+            return files
+        else:
+            m = f'%{match}%'
+            files = self.session.query(File).filter(and_(
+                File.in_collections.any(Collection.name == collection),
+                or_(File.name.like(m), File.path.like(m)))).join(
+                File.replicas).group_by(File).having(
+                func.count(StorageLocation.id) > 1).all()
             return files
 
     def delete_collection(self, collection_name):
@@ -213,7 +229,11 @@ class CollectionDB(CoreDB):
         """
         Add file to a collection
         """
-        raise NotImplementedError
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        if file in c.holds_files:
+            raise ValueError(f"Attempt to add file {file} to collection {c} - but it's already there")
+        c.holds_files.append(file)
+        self.session.commit()
 
     def collection_info(self, name):
         """
@@ -262,7 +282,7 @@ class CollectionDB(CoreDB):
         c = self.retrieve_collection(collection_name)
         print(c)
 
-    def upload_file_to_collection(self, location, collection, f,  lazy=0, update=False):
+    def upload_file_to_collection(self, location, collection, f,  lazy=0, update=True):
         """
         Add a (potentially) new file <f> from <location> into the database, and add details to <collection>
         (both of which must already be known to the system).
@@ -303,10 +323,10 @@ class CollectionDB(CoreDB):
             check = False
 
         if check:
-            if update:
+            if not update:
                 raise ValueError(f'Cannot upload file {os.path.join(path, name)} as it already exists')
             else:
-                check.replicas.append(location)
+                check.replicas.append(loc)
                 c.holds_files.append(check)
         else:
             try:
@@ -316,6 +336,7 @@ class CollectionDB(CoreDB):
             f = File(name=name, path=path, checksum=checksum, size=size, format=fmt, initial_collection=c.id)
             f.replicas.append(loc)
             c.holds_files.append(f)
+            loc.holds_files.append(f)
             c.volume += f.size
         self.session.commit()
 

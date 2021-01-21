@@ -58,6 +58,7 @@ def sizeof_fmt(num, suffix='B'):
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
+
 class ProxiedDictMixin:
     """Adds obj[key] access to a mapped class.
 
@@ -120,7 +121,7 @@ class Collection(ProxiedDictMixin, Base):
         "File",
         secondary=collection_files_associations,
         back_populates="in_collections")
-    association_proxy('holds_files', 'files')
+    #association_proxy('holds_files', 'files')
 
     # collections which correspond to uploaded batches, and which cannot be
     # deleted unless there are no references to the files within it elsewhere
@@ -199,9 +200,12 @@ class StorageLocation(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     volume = Column(Integer)
-    files = relationship('File',
-                         secondary=storage_files_associations,
-                         back_populates='replicas')
+
+    holds_files = relationship('File',
+                               secondary=storage_files_associations,
+                               back_populates='replicas')
+    association_proxy('holds_files', 'files')
+
 
 class File(Base):
     """
@@ -215,9 +219,12 @@ class File(Base):
     size = Column(Integer)
     initial_collection = Column(Integer, ForeignKey('collections.id'))
     format = Column(String)
-    replicas = relationship('StorageLocation',
-                            secondary=storage_files_associations,
-                            back_populates='files')
+
+    replicas = relationship(
+        'StorageLocation',
+        secondary=storage_files_associations,
+        back_populates='holds_files')
+
     in_collections = relationship(
         "Collection",
         secondary=collection_files_associations,

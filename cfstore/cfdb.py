@@ -113,6 +113,31 @@ def findf(ctx, match, collection):
 
     view_state.save()
 
+@cli.command()
+@click.pass_context
+@click.option('--collection', default=None, help='Collection in which replicants are expected')
+@click.argument('match', default=None)
+def findr(ctx, collection, match):
+    """
+
+    Find all replicant files in a collection, optionally including MATCH
+    anywhere in their path and filename.
+
+    (The default collection must be set, or the --collection argument used.)
+
+    """
+    view_state, db = _set_context(ctx, collection)
+    collection = view_state.collection
+    if collection:
+        files = db.retrieve_files_in_collection(collection, replicants=True, match=match)
+        for f in files:
+            print(f)
+    else:
+        click.echo('Replicant file discovery requires a collection to be set')
+        click.echo(ctx.get_help())
+
+    view_state.save()
+
 
 @cli.command()
 @click.pass_context
