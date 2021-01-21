@@ -226,22 +226,22 @@ class Test_cfdb(TestCase):
         runner = CliRunner()
         with runner.isolated_filesystem():
             _mysetup()
-
-        _dummy(self.db)
-        # this should create 5x3=15 duplicate files in another location with different collections:
-        _dummy(self.db, location='pseudo tape', collection_stem="tdummy", files_per_collection=3)
-        # now we need to see if these can be found, let's just look for the two replicas in dummy1
-        fset = self.db.retrieve_files_in_collection('dummy1', replicants=True)
-        assert len(fset) == 3
-        assert fset[0].name == 'file01'
-        # now just make sure we can get back the right answer if we go for a match as well
-        # for this we have to muck with our test dataset to get a decent test case.
-        # we add a file which we know to be in collection dummy2 and a replicant
-        fset = self.db.retrieve_files_in_collection('dummy2', match='22', replicants=True)
-        self.db.add_file_to_collection('dummy1', fset[0])
-        fset = self.db.retrieve_files_in_collection('dummy1', replicants=True, match='file2')
-        assert len(fset) == 2  # of the four it would be without the match!
-
+            config = CFSconfig('tmp.ini')
+            # attempting to replicate the basic test via the command line
+            # this should create 5x3=15 duplicate files in another location with different collections:
+            _dummy(config.db, location='pseudo tape', collection_stem="tdummy", files_per_collection=3)
+            # now we need to see if these can be found, let's just look for the two replicas in dummy1
+            result = runner.invoke(cli, ['findrx','--collection=dummy1'])
+            lines = _check(self, result, 3)
+            assert lines[0].find('file01') != -1
+            # now just make sure we can get back the right answer if we go for a match as well
+            # for this we have to muck with our test dataset to get a decent test case.
+            # we add a file which we know to be in collection dummy2 and a replicant
+            fset = config.db.retrieve_files_in_collection('dummy2', match='22', replicants=True)
+            config.db.add_file_to_collection('dummy1', fset[0])
+            # now do the actual second test
+            result = runner.invoke(cli, ['findrx', 'file2',])
+            lines = _check(self, result, 2)
 
 
     def test_linkto(self):

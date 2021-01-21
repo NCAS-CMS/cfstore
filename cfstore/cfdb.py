@@ -116,8 +116,8 @@ def findf(ctx, match, collection):
 @cli.command()
 @click.pass_context
 @click.option('--collection', default=None, help='Collection in which replicants are expected')
-@click.argument('match', default=None)
-def findr(ctx, collection, match):
+@click.argument('match', nargs=-1)
+def findrx(ctx, collection, match):
     """
 
     Find all replicant files in a collection, optionally including MATCH
@@ -128,6 +128,10 @@ def findr(ctx, collection, match):
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
+    if match == ():
+        match = None
+    else:
+        match = match[0]
     if collection:
         files = db.retrieve_files_in_collection(collection, replicants=True, match=match)
         for f in files:

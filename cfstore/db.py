@@ -206,6 +206,15 @@ class StorageLocation(Base):
                                back_populates='replicas')
     association_proxy('holds_files', 'files')
 
+    def __repr__(self):
+        return self.name
+
+    def info(self):
+        if not self.volume:
+            self.volume = 0
+        return f'Location <{self.name}> has  {sizeof_fmt(self.volume)} in {len(self.holds_files)} files'
+
+
 
 class File(Base):
     """
