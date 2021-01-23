@@ -115,7 +115,11 @@ class SSHlite:
         if self.logging:
             stime = time.time()
 
-        self.walktree(remotepath, callback)
+        try:
+            self.walktree(remotepath, callback)
+        except FileNotFoundError:
+            raise FileNotFoundError(f' check {remotepath} exists?')
+
 
         if self.logging:
             etime = time.time()

@@ -16,6 +16,8 @@ def safe_cli():
         cli()
     except ValueError as e:
         click.echo(e)
+    except FileNotFoundError as e:
+        click.echo('FileNotFoundError: ' + str(e))
 
 @click.group()
 @click.pass_context
