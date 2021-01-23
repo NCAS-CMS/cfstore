@@ -7,6 +7,12 @@ from datetime import datetime
 import click
 
 
+class InputError(Exception):
+    def __init__(self, message, help):
+        self.help = '***\n'+help+'\n***'
+        super().__init__(message)
+
+
 def safe_cli():
     """
     Traps all ValueErrors which bubble up from the things click calls, and
@@ -18,6 +24,10 @@ def safe_cli():
         click.echo(e)
     except FileNotFoundError as e:
         click.echo('FileNotFoundError: ' + str(e))
+    except InputError as e:
+        click.echo(e)
+        click.echo(e.help)
+
 
 @click.group()
 @click.pass_context
@@ -76,6 +86,8 @@ def add(ctx, description, arg1, argm):
             with open(path, 'r') as f:
                 description = f.read()
         else:
+            if len(argm) != 2:
+                raise InputError('InputError: Missing arguments', add.__doc__)
             today = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
             intro = f'\n#### Collection {argm[1]}\n\n(loaded from {argm[0]}, location {arg1},  at {today})\n\n' + \
                     '[Enter description (text or markdown) (maybe using the above and deleting this line)]\n'
