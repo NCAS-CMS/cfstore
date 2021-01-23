@@ -15,16 +15,20 @@ def _set_context(ctx, collection):
     """
     Set the config_state context
     """
+    def doset(c):
+        if c == 'all':
+            config_state['last_collection'] = ''
+        else:
+            config_state['last_collection'] = c
+
     config_state = _load()
     # coming in from context before particular option (e.g. ls)
     if ctx.obj['collection']:
+        doset(ctx.obj['collection'])
         config_state['last_collection'] = ctx.obj['collection']
     # now override default with arguments to option (e.g. ls)
     if collection:
-        if collection == 'all':
-            config_state['last_collection'] = ''
-        else:
-            config_state['last_collection'] = collection
+        doset(collection)
 
     return config_state, config_state.db
 
@@ -61,11 +65,11 @@ def cli(ctx, collection):
 
 @cli.command()
 @click.pass_context
-def save(ctx):
+def setc(ctx):
     """
-    Save current db choice and last used collection (which becomes default).
+    Set collection, or reset to default if --collection=all
     """
-    view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
+    view_state, db = _set_context(ctx, None)
     view_state.save()
 
 
