@@ -79,6 +79,7 @@ def _check(instance, result, linecount=None):
             print(lines)
         instance.assertEqual(linecount, len(lines))
         return lines
+    return []
 
 
 class Test_cfdb(TestCase):
@@ -118,6 +119,24 @@ class Test_cfdb(TestCase):
             _check(self, result, 10)
             result = runner.invoke(cli, option1)
             _check(self, result, 6)
+
+    def test_delete_col(self):
+        """
+        Test removal of an empty collection (and test raising an error for
+        an attempt to raise a collection with contents).
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+            # first add an empty collection to kill
+            config = CFSconfig('tmp.ini')
+            config.db.create_collection('for_the_chop', 'no description')
+            # now, off with it's head
+            result = runner.invoke(cli, ['delete-col', 'for_the_chop'])
+            lines = _check(self, result, 0)
+            result = runner.invoke(cli, ['delete-col', 'dummy1'])
+            assert 'Collection dummy1 not empty' in str(result.exception)
+
 
     def test_findf_in_collection(self):
         """

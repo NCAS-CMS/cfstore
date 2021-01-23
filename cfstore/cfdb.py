@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from cfstore.config import CFSconfig
-import os, sys
+import os
+import sys
 import click
 
 
@@ -29,11 +30,12 @@ def _set_context(ctx, collection):
 
 
 def _print(lines, prop=None):
-    for line in lines:
-        if prop:
-            print(getattr(line,prop))
-        else:
-            print(line)
+    if lines:
+        for line in lines:
+            if prop:
+                print(getattr(line, prop))
+            else:
+                print(line)
 
 def safe_cli():
     """
@@ -276,6 +278,25 @@ def findr(ctx, link, collection):
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
     _print(db.retrieve_related(collection, link), 'name')
+    view_state.save()
+
+
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+def delete_col(ctx, collection):
+    # look out difference between method name _ and usage -
+    # that's a click "feature"
+    """
+
+    Delete an empty <collection>
+    (raising an error if the collection still has files in it)
+
+    Usage: cfsdb delete-col <collection>
+
+    """
+    view_state, db = _set_context(ctx, None)
+    _print(db.delete_collection(collection))
     view_state.save()
 
 
