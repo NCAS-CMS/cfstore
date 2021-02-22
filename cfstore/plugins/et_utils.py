@@ -69,7 +69,7 @@ class Batch:
         """
         self.workspace = workspace
         link = row.find('a')
-        self.name = link.text[-4:].strip()
+        self.name = link.text.split(' ')[-1]
         td = row.find_all('td')
         self.creation_time = td[3].text
         self.file_count = int(td[4].text)
