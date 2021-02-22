@@ -41,10 +41,7 @@ class TestNoConfig(TestCase):
         self.original_config = os.getenv('CFS_CONFIG_FILE')
         os.unsetenv('CFS_CONFIG_FILE')
         # now keep this from the real file system
-        def mockhome(path):
-            return '/abc'
-        mock.patch()
-
+        # TODO: See https://github.com/bnlawrence/cfstore/issues/16
 
     def tearDown(self):
         if self.original_config:
