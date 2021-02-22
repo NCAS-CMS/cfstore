@@ -10,12 +10,13 @@ class CFSconfig:
     def __init__(self, filename=None):
         """
         Initialise configuration from file name provided, or from configuration file, or
-        from file found in default location (~/.csfstore/cfstore.ini).
+        from file found in default location (~/.csfstore/cfstore.ini). If it doesn't exist
+        create a default configuration.
         """
         if not filename:
             filename = os.getenv('CFS_CONFIG_FILE', None)
             if not filename:
-                cfdir = Path.home()/'cfstore'
+                cfdir = Path.home()/'.cfstore'
                 if not cfdir.exists():
                     os.mkdir(cfdir)
                 self.filepath = cfdir/'cfstore.ini'

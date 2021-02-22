@@ -33,6 +33,30 @@ class MissingTestEnvVar(Exception):
     pass
 
 
+class TestNoConfig(TestCase):
+    """ Test handling situation where there is no config file gracefully"""
+
+    def setUp(self):
+        # not sure we really need to worry about pre-existing, but just in case:
+        self.original_config = os.getenv('CFS_CONFIG_FILE')
+        os.unsetenv('CFS_CONFIG_FILE')
+        # now keep this from the real file system
+        def mockhome(path):
+            return '/abc'
+        mock.patch()
+
+
+    def tearDown(self):
+        if self.original_config:
+            os.environ['CFS_CONFIG_FILE'] = self.original_config
+
+    def test_no_config_file(self):
+        " Test absence of a configuration file "
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            r = runner.invoke(cli, ['ls',])
+            assert (r.exit_code == 0)
+
 class TestConfig(TestCase):
     """
     Test raw configuration file
@@ -136,7 +160,6 @@ class Test_cfdb(TestCase):
             lines = _check(self, result, 0)
             result = runner.invoke(cli, ['delete-col', 'dummy1'])
             assert 'Collection dummy1 not empty' in str(result.exception)
-
 
     def test_findf_in_collection(self):
         """
