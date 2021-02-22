@@ -148,6 +148,47 @@ def findrx(ctx, collection, match):
 
     view_state.save()
 
+@cli.command()
+@click.pass_context
+@click.option('--match-full-path', default=True, help='Match full path, if False, match end of path')
+@click.option('--strip-base', default='', help="String to remove from start of collection path")
+@click.option('--collection', default=None, help='Collection in which replicants are expected')
+def locate_replicants(ctx, collection, strip_base, match_full_path):
+    # this is using the capability from the interface locate replicants, so this docstring is duplicated from there
+    """
+    For all the files in a given collection, look for other
+        files in other collections which may be replicants,
+        but which have not been matched because they have no size, and/or
+        their path stem differs.
+
+        Optionally use strip_base to remove the leading path in the collection files which looking for match.
+        This can be used with or without match_full_path.
+        if match_full_path True (default), replicants must match the path given from the input collection
+        whether stripped or no. If False, then matches require the path in the replicant to end with
+        the same structure as provided from the collection (whether stripped or not).
+
+        e.g. given
+
+        input file /blah/path/filex and candidate replicant /foo/path/filex,
+        if strip_base = blah and match_full_path = False, this will match,  all other combinations will not match.
+
+        input file /blah/path/filex and candidate path/file will match with strip-base=/blah/ and any option
+        for match_full_path.
+
+        input file path/filex will match replicant /foo/path/filex with match_full_path=False
+
+        In all cases file names must match.
+
+        We normally assume that there we are looking in a large set of *other* files for matches into a smaller
+        set of collection files. If the collection likely contains more files than exist in the set of others,
+        then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
+    """
+    view_state, db = _set_context(ctx, collection)
+    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path)
+    for c, p in zip(candidates, possibles):
+        print(c, [(x, x.replicas, x.in_collections) for x in p])
+    view_state.save()
+
 
 @cli.command()
 @click.pass_context

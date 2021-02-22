@@ -80,6 +80,59 @@ class CollectionDB(CoreDB):
         self.session.add(t)
         self.session.commit()
 
+    def locate_replicants(self, collection_name,
+                          strip_base='',
+                          match_full_path=True,
+                          try_reverse_for_speed=False):
+        """
+
+
+
+        """
+        def strip(path, stem):
+            """ If path starts with stem, return path without the stem, otherwise return the path"""
+            if path.startswith(stem):
+                return path[len(stem):]
+            else:
+                return path
+
+        if try_reverse_for_speed:
+            raise NotImplementedError
+        else:
+            # basic algorithm is to grab all the candidates, and then do a search on those.
+            # a SQL wizard would do better.
+            c = self.retrieve_collection(collection_name)
+            candidates = self.retrieve_files_in_collection(collection_name)
+            if strip_base:
+                if match_full_path:
+                    # likely occurs because ingest required same checksum and/or size and these were not
+                    # known at ingest time.
+                    possibles = [self.session.query(File).filter(
+                                    and_(File.name == c.name, File.path == strip(c.path, strip_base))).all()
+                                 for c in candidates]
+                    return possibles
+                else:
+                    possibles = [self.session.query(File).filter(
+                        and_(File.name == f.name, File.path.endswith(strip(f.path, strip_base)))).all()
+                                 for f in candidates]
+            else:
+                if match_full_path:
+                    # likely occurs because ingest required same checksum and/or size and these were not
+                    # known at ingest time.
+                    possibles = [self.session.query(File).filter(
+                        and_(File.name == c.name,
+                             File.path == c.path)).filter(
+                             File.in_collections.notin_([c,])).all()
+                                 for c in candidates]
+
+                else:
+                    possibles = [self.session.query(File).filter(
+                        and_(File.name == f.name,
+                             File.path.endswith(f.path),
+                             File.in_collections.not_in([c,]))).all() for f in candidates]
+
+        return candidates, possibles
+
     def retrieve_collection(self, collection_name):
         """
         Retrieve a particular collection via it's name <collection_name>.
