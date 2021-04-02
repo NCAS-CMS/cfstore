@@ -4,20 +4,20 @@ Getting Started
 The ``cfstore`` package provides three sets of tools:
 
 * ``cfin`` is used to ingest information about data held in a number of storage *locations*.
-* ``cfdb`` is used to add, organise and manipulate that information.
+* ``cfsdb`` is used to add, organise and manipulate that information.
 * ``cfmv`` allows you to use that information to move data between the storage *locations*.
 
 Storage locations are places where you keep data. These storage locations will have different properties,
 and you will likely need to provide views of data held in these locations and sometimes migrate
 data between them (e.g. to and from tape).  Some storage locations could be read-only, in which
-case you would mainly use ``cfdb`` to provide views into that data, but most will be read/write, and your
-main use of ``cfdb`` will to organise your thinking about the data, while you use ``cfutils`` to move data around
+case you would mainly use ``cfsdb`` to provide views into that data, but most will be read/write, and your
+main use of ``cfsdb`` will to organise your thinking about the data, while you use ``cfutils`` to move data around
 to meet quota restrictions and/or performance requirements.
 
 Whatever the nature of the storage location, you will need to start by ingesting initial views of the data
 they already hold, using ``cfin``. Once you have that initial information, you will likely then organise
 "virtual views" of that data, perhaps decorating those views with descriptions, tags, and properties,
-all using `cfdb`. With that information you should be able to identify where you have data held in multiple
+all using `cfsdb`. With that information you should be able to identify where you have data held in multiple
 locations, and make good decisions about what data you need where - and then use the `cfmv` tools to
 get the ``cfstore`` servers to move the data accordingly.
 
@@ -89,7 +89,7 @@ like ``/home/user/fred/folder/...``)
 
           cfin rp|local add collection_name_for_path path_to_add < description_file
 
-4. Sometimes you will want to remove the ``cfdb`` representation of files held
+4. Sometimes you will want to remove the ``cfsdb`` representation of files held
    below a specific directory because you've moved/deleted them using different
    tools.
 
@@ -97,9 +97,9 @@ like ``/home/user/fred/folder/...``)
 
         cfin rp|local clean path_to_clean
 
-   - All representations of files held in that location below that path in ``cfdb`` will be
+   - All representations of files held in that location below that path in ``cfsdb`` will be
      removed, no matter which collections they are in.  However, the collections
-     themselves will not be removed, you will need to use ``cfdb`` tools to do that.
+     themselves will not be removed, you will need to use ``cfsdb`` tools to do that.
      You might, or might not, then want to re-add the collection.
 
 
