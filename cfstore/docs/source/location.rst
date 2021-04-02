@@ -25,13 +25,13 @@ There are three sets of command line tools available:
 
 Once the material is loaded into the database:
 
-* cfdb - is a set of tools which allow you to
-    * organise the files in your cfdb into _virtual_ collections, to tag collections, to add properties and descriptions to collections, all without moving data.
+* cfsdb - is a set of tools which allow you to
+    * organise the files in your database into _virtual_ collections, to tag collections, to add properties and descriptions to collections, all without moving data.
     * to create and manipulate the aggregations of files known as *atomic-datasets*.
 
 When you want to manipulate the data,
 
-* cfmove - is a set of tools to move data, or data sub-spaces, between locations.
+* cfmv - is a set of tools to move data, or data sub-spaces, between locations.
 
 Setting up locations
 --------------------
