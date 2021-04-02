@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='cfstore',
-    version='0.2.0',
+    version='0.2.1',
     packages=['cfstore'],
     url='',
     license='MIT',
@@ -23,12 +23,14 @@ setup(
 #        'eralchemy',
         'click',
         'BeautifulSoup4',
+        'paramiko',
 
     ],
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'cfsdb=cfstore.cfdb:safe_cli',
             'cfin=cfstore.cfin:safe_cli',
+            'cfmv=cfstore.cfmv:safe_cli'
         ],
     },
 )
