@@ -2,8 +2,13 @@ from setuptools import setup, find_packages
 
 setup(
     name='cfstore',
+<<<<<<< HEAD
     version='0.3.0',
     packages=find_packages(),
+=======
+    version='0.2.1',
+    packages=['cfstore'],
+>>>>>>> 99dbf20976b4af194133e4e8a9bf180e9c03ae6e
     url='',
     license='MIT',
     author='Bryan Lawrence + George OBrien',
@@ -19,13 +24,18 @@ setup(
     ],
     install_requires=[
         'SQLAlchemy',
-        'eralchemy',
+#        'pygraphviz',
+#        'eralchemy',
         'click',
         'BeautifulSoup4',
+        'paramiko',
+
     ],
-    entry_points = {
+    entry_points={
         'console_scripts': [
-            'cfstore=cfstore.cfdb:safe_cli',
+            'cfsdb=cfstore.cfdb:safe_cli',
+            'cfin=cfstore.cfin:safe_cli',
+            'cfmv=cfstore.cfmv:safe_cli'
         ],
     },
 )

@@ -10,23 +10,34 @@ Welcome to cfstore's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   getting_started
    cmdline
    interface
    database
+   location
 
 Concept
 -------
 This package provides a command line interface to data held in a "cfstore",
 that consists of one or more different storage locations (e.g. POSIX disk,
-object store, tape). The basic concept is that the CF aggregation rules
-are used to provide simplified views of multiple files, and these
-"atomic dataset" views can be organised into virtual collections which can
+object store, tape).  The tools allow you to ingest "views" of the data
+into a "cfstore database", to create and document new views (virtual
+collections) of your data, and where necessary move collections of data
+between storage locations.
+
+As well as the original files, the CF aggregation rules can be used to
+provide simplified views of multiple files, and both the original files
+and these "atomic dataset" can be organised into virtual collections which can
 be tagged and decorated with markdown descriptions and key,value pairs.
 Data can be extracted and moved between storage locations as required.
 
 Currently cfstore knows about POSIX disks and the JASMIN elastic tape
 system. S3 interfaces to object stores will be the next location
 to be supported.
+
+See :doc:`getting_started` and :doc:`location` to understand how to
+get going and work with different storage locations.
+
 
 Command Line Interface
 ----------------------

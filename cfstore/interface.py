@@ -1,7 +1,12 @@
 import os, sys
 from .db import StorageLocation, Collection, CoreDB, File, Tag
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
+
+
+class CollectionError(Exception):
+    def __init__(self, name, message):
+        super().__init__(f'(Collection {name} {message}')
 
 
 class CollectionDB(CoreDB):
@@ -33,7 +38,7 @@ class CollectionDB(CoreDB):
             c2.add_relationship(relationship_21, c1)
         self.session.commit()
 
-    def create_collection(self, collection_name, description, kw):
+    def create_collection(self, collection_name, description, kw={}):
         """
         Add a collection and any properties, and return instance
         """
@@ -55,11 +60,17 @@ class CollectionDB(CoreDB):
 
     def create_location(self, location):
         """
-        Create a storage location
+        Create a storage <location>. The database is ignorant about what
+        "location" means. Other layers of software care about that.
         """
-        loc = StorageLocation(name=location)
-        self.session.add(loc)
-        self.session.commit()
+        try:
+            loc = self.session.query(StorageLocation).filter_by(name=location).one()
+        except NoResultFound:
+            loc = StorageLocation(name=location)
+            self.session.add(loc)
+            self.session.commit()
+        else:
+            raise ValueError(f'{location} already exists')
 
     def create_tag(self, tagname):
         """
@@ -68,6 +79,59 @@ class CollectionDB(CoreDB):
         t = Tag(name=tagname)
         self.session.add(t)
         self.session.commit()
+
+    def locate_replicants(self, collection_name,
+                          strip_base='',
+                          match_full_path=True,
+                          try_reverse_for_speed=False):
+        """
+
+
+
+        """
+        def strip(path, stem):
+            """ If path starts with stem, return path without the stem, otherwise return the path"""
+            if path.startswith(stem):
+                return path[len(stem):]
+            else:
+                return path
+
+        if try_reverse_for_speed:
+            raise NotImplementedError
+        else:
+            # basic algorithm is to grab all the candidates, and then do a search on those.
+            # a SQL wizard would do better.
+            c = self.retrieve_collection(collection_name)
+            candidates = self.retrieve_files_in_collection(collection_name)
+            if strip_base:
+                if match_full_path:
+                    # likely occurs because ingest required same checksum and/or size and these were not
+                    # known at ingest time.
+                    possibles = [self.session.query(File).filter(
+                                    and_(File.name == c.name, File.path == strip(c.path, strip_base))).all()
+                                 for c in candidates]
+                    return possibles
+                else:
+                    possibles = [self.session.query(File).filter(
+                        and_(File.name == f.name, File.path.endswith(strip(f.path, strip_base)))).all()
+                                 for f in candidates]
+            else:
+                if match_full_path:
+                    # likely occurs because ingest required same checksum and/or size and these were not
+                    # known at ingest time.
+                    possibles = [self.session.query(File).filter(
+                        and_(File.name == c.name,
+                             File.path == c.path)).filter(
+                             File.in_collections.notin_([c,])).all()
+                                 for c in candidates]
+
+                else:
+                    possibles = [self.session.query(File).filter(
+                        and_(File.name == f.name,
+                             File.path.endswith(f.path),
+                             File.in_collections.not_in([c,]))).all() for f in candidates]
+
+        return candidates, possibles
 
     def retrieve_collection(self, collection_name):
         """
@@ -139,7 +203,7 @@ class CollectionDB(CoreDB):
             assert len(x) == 1
             return x[0]
         else:
-            return None
+            raise FileNotFoundError  #(f'File "{path}/{name}" not found')
 
     def retrieve_related(self, collection, relationship):
         """
@@ -160,13 +224,15 @@ class CollectionDB(CoreDB):
         m = f'%{match}%'
         return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
 
-    def retrieve_files_in_collection(self, collection, match=None):
+    def retrieve_files_in_collection(self, collection, match=None, replicants=False):
         """
-        Return a list of files in a particular collection.
+        Return a list of files in a particular collection, possibly including those
+        which match a particular string and/or are replicants.
         """
-        if match is None:
+        # do all the query combinations separately, likely to be more efficient ...
+        if match is None and replicants is False:
             return self.retrieve_collection(collection).holds_files
-        else:
+        elif match and replicants is False:
             m = f'%{match}%'
             # this gives the collection with files that match this ... not what we wanted
             #files = self.session.query(Collection).filter_by(name=collection).join(
@@ -177,20 +243,38 @@ class CollectionDB(CoreDB):
             files = self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).join(
                 File.in_collections).filter_by(name=collection).all()
             return files
+        elif replicants and match is None:
+            files = self.session.query(File).filter(File.in_collections.any(
+                                Collection.name == collection)).join(
+                                File.replicas).group_by(File).having(
+                                func.count(StorageLocation.id) > 1).all()
+            return files
+        else:
+            m = f'%{match}%'
+            files = self.session.query(File).filter(and_(
+                File.in_collections.any(Collection.name == collection),
+                or_(File.name.like(m), File.path.like(m)))).join(
+                File.replicas).group_by(File).having(
+                func.count(StorageLocation.id) > 1).all()
+            return files
 
     def delete_collection(self, collection_name):
         """
-        Remove a collection from the database, ensuring that if it is primary upload
-        collection, that all files have already been removed first.
+        Remove a collection from the database, ensuring all files have already been removed first.
         """
-        # Will need to worry about files and whether they will be left hanging
-        raise NotImplementedError
+        files = self.retrieve_files_in_collection(collection_name)
+        if files:
+            raise CollectionError(collection_name, f'not empty (contains {len(files)} files)')
+        else:
+            c = self.retrieve_collection(collection_name)
+            self.session.delete(c)
+            self.session.commit()
 
     def delete_tag(self, tagname):
         """
         Delete a tag, from wherever it is used
         """
-        t = self.session.query(Tag).filter(name=tagname)
+        t = self.session.query(Tag).filter_by(name=tagname)
         self.session.delete(t)
         self.session.commit()
 
@@ -198,13 +282,11 @@ class CollectionDB(CoreDB):
         """
         Add file to a collection
         """
-        raise NotImplementedError
-
-    def remove_file_from_collection(self, collection, file):
-        """
-        Remove a file from a collection.
-        """
-        raise NotImplementedError
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        if file in c.holds_files:
+            raise ValueError(f"Attempt to add file {file} to collection {c} - but it's already there")
+        c.holds_files.append(file)
+        self.session.commit()
 
     def collection_info(self, name):
         """
@@ -253,7 +335,7 @@ class CollectionDB(CoreDB):
         c = self.retrieve_collection(collection_name)
         print(c)
 
-    def upload_file_to_collection(self, location, collection, f,  lazy=0, update=False):
+    def upload_file_to_collection(self, location, collection, f,  lazy=0, update=True):
         """
         Add a (potentially) new file <f> from <location> into the database, and add details to <collection>
         (both of which must already be known to the system).
@@ -281,20 +363,23 @@ class CollectionDB(CoreDB):
             f['checksum'] = 'None'
         name, path, size, checksum = f['name'], f['path'], f['size'], f['checksum']
 
-        if lazy == 0:
-            check = self.retrieve_file(path, name)
-        elif lazy == 1:
-            check = self.retrieve_file(path, name, size=size)
-        elif lazy == 2:
-            check = self.retrieve_file(path, name, checksum=checksum)
-        else:
-            raise ValueError(f'Unexpected value of lazy {lazy}')
+        try:
+            if lazy == 0:
+                check = self.retrieve_file(path, name)
+            elif lazy == 1:
+                check = self.retrieve_file(path, name, size=size)
+            elif lazy == 2:
+                check = self.retrieve_file(path, name, checksum=checksum)
+            else:
+                raise ValueError(f'Unexpected value of lazy {lazy}')
+        except FileNotFoundError:
+            check = False
 
         if check:
-            if update:
+            if not update:
                 raise ValueError(f'Cannot upload file {os.path.join(path, name)} as it already exists')
             else:
-                check.replicas.append(location)
+                check.replicas.append(loc)
                 c.holds_files.append(check)
         else:
             try:
@@ -304,6 +389,7 @@ class CollectionDB(CoreDB):
             f = File(name=name, path=path, checksum=checksum, size=size, format=fmt, initial_collection=c.id)
             f.replicas.append(loc)
             c.holds_files.append(f)
+            loc.holds_files.append(f)
             c.volume += f.size
         self.session.commit()
 
@@ -322,11 +408,17 @@ class CollectionDB(CoreDB):
     def remove_file_from_collection(self, collection, file_path, file_name, checksum=None):
         """
         Remove a file described by <path_name> and <file_name> (and optionally <checksum> from a particular
-        <collection>.
-
-        If it no longer belongs to any collection, it will be removed completely from the database
+        <collection>. Raise an error if already removed from collection (or, I suppose, if it was never
+        in that collection, the database wont know!)
         """
-        raise NotImplementedError
+        f = self.retrieve_file(file_path, file_name)
+        c = self.retrieve_collection(collection)
+        try:
+            index = f.in_collections.index(c)
+        except ValueError:
+            raise CollectionError(collection, f' - file {file_path}/{file_name} not present!')
+        del f.in_collections[index]
+
 
 
     @property
