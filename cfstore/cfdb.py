@@ -4,6 +4,7 @@ from cfstore.interface import CollectionDB
 from cfstore.plugins.et_main import et_main
 import os, json, sys
 import click
+import hashlib
 from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
@@ -241,6 +242,40 @@ def facet(ctx, key, value, collection, remove):
     db.session.commit()
     _save(view_state)
 
+
+@cli.command()
+@click.pass_context
+@click.argument('col1')
+@click.argument('col2')
+def chkeq(ctx,col1,col2):
+    """
+    Compare the equality of two collections
+    """
+    #c1 = db.retrieve_collection(view_state['col1'])
+    #c2 = db.retrieve_collection(view_state['col2'])
+
+
+    a_file = open(col1, "rb")
+
+    sha256_hash = hashlib.sha256()
+    
+
+    for byte_block in iter(lambda: a_file.read(4096),b""):
+        sha256_hash.update(byte_block)
+    a_hash = sha256_hash.hexdigest()
+    
+    b_file = open(col2, "rb")
+    sha256_hash = hashlib.sha256()
+
+    for byte_block in iter(lambda: b_file.read(4096),b""):    
+        sha256_hash.update(byte_block)
+    b_hash = sha256_hash.hexdigest()
+   
+    if a_hash==b_hash:
+        print("The files hashes match")
+    else:
+        print("The files hashes do not match")
+        print("The hashes of the files are ",a_hash," and ", b_hash)
 
 @cli.command()
 @click.pass_context
