@@ -5,17 +5,34 @@ from urllib.request import urlopen
 import pickle, glob, os
 from dateutil.parser import parse as dateparse
 from datetime import datetime
+from cfstore.plugins.ssh import SSHTape
 
 WEBSITE = "http://et-monitor.fds.rl.ac.uk/et_user/"
 
 
-def getsoup(url):
+class Souper:
     """
-    Get a beautifulsoup instance of the content found at <url>
+    Support two routes to getting BeautifulSoup from
+    html content - directly from an accessible web
+    server, or indirectly, via ssh to a host which
+    has access to that content.
     """
-    if not url.startswith('html'):
-        html = urlopen(WEBSITE+url)
-    return BeautifulSoup(html, features='html.parser')
+    def __init__(self, ssh_host, ssh_user):
+        if ssh_host is None:
+            self.ssh = None
+        else:
+            self.ssh = SSHTape(ssh_host, ssh_user)
+
+    def get(self, url):
+        """
+        Return html content
+        """
+        target = WEBSITE + url
+        if self.ssh is None:
+            html = urlopen(target)
+        else:
+            html = self.ssh.get_html(target)
+        return BeautifulSoup(html, features='html.parser')
 
 
 class ET_Workspace:
@@ -23,18 +40,23 @@ class ET_Workspace:
     Collect all file information about a specific workspace.
     This version assumes all data loaded is still present.
     """
-    def __init__(self, workspace_name):
+    def __init__(self, workspace_name, ssh_host=None, ssh_user=None):
+        """
+        Initialise with the GWS/ET workspace, and if necessary, ssh
+        credentials to access remotely.
+        """
         self.name = workspace_name
         self.batches = {}
         self.file_count = 0
         self.quota_allocated = 0
         self.quota_used = 0
         self.volume = 0
+        self.souper = Souper(ssh_host, ssh_user)
         self.load_from_et()
 
     def load_from_et(self):
         url = f"ET_Holdings_Summary.php?workspace={self.name}&level=top"
-        soup = getsoup(url)
+        soup = self.souper.get(url)
         summary_td = soup.find_all('table')[1].find_all('tr')[1].find_all('td')
         self.file_count = summary_td[0]
 
@@ -43,12 +65,12 @@ class ET_Workspace:
         self.quota_used = int(summary_td[5].text)
         self.volume = int(summary_td[6].text)
         url = f"ET_Holdings_Summary.php?workspace={self.name}&level=batches"
-        soup = getsoup(url)
+        soup = self.souper.get(url)
         try:
             rows = soup.find_all('table')[2].find_all('tr')
         except:
             rows = []
-        self.batches = {B.name: B for B in [Batch(r, self.name) for r in rows[1:]]}
+        self.batches = {B.name: B for B in [Batch(r, self) for r in rows[1:]]}
         print(f'{self.name}: {len(self.batches)} batches')
 
     def __str__(self):
@@ -78,14 +100,14 @@ class Batch:
         self.url = link['href']
         self.transfers = []
         file_url = 'ET_Batch_Input_File_Details.php?batch='+self.name
-        soup = getsoup(file_url)
+        soup = self.workspace.souper.get(file_url)
         tables = soup.find_all('table')
         file_rows = tables[1].find_all('tr')[1:]
         file_data = [r.find_all('td') for r in file_rows]
         self.files = {f[0].text: int(f[1].text) for f in file_data}
 
     def load_transfers(self):
-        soup = getsoup(self.url)
+        soup = self.workspace.souper.get(self.url)
         tables = soup.find_all('table')
         self.transfers = [TransferSummary(r) for r in self.tables[3].find_all('tr')[1:]]
 
@@ -106,6 +128,7 @@ class TransferSummary:
         self.file_count = int(td[4].text)
         self.size_Gb = float(td[5].text)
         self.checksum = td[6].text
+
     def __str__(self):
         return f'{self.name} (created {self.creation_time}, nfiles {self.file_count}, size {self.size_Gb})'
 
@@ -138,6 +161,8 @@ class Transition:
 
 
 class Transfer:
+    # Unclear whether this is currently used. There will be a problem with using getsoup
+    # unless inside the firewall.
     """
     Holds full details of a transfer from
             http://et-monitor.fds.rl.ac.uk/et_user/
@@ -147,7 +172,8 @@ class Transfer:
 
         self.name = name
         url = f'ET_Aggregation_File_Details.php?aggregation={name}'
-        soup = getsoup(url)
+        souper = Souper(None, None)
+        soup = souper.get(url)
         self.files = []
         self.aggregation_name = soup.find('p').text.split()[-1]
 
@@ -186,7 +212,7 @@ class TestBatch(unittest.TestCase):
         """
         Test we can see hiresgw without breaking
         """
-        w = ET_Workspace('hiresgw')
+        w = ET_Workspace('hiresgw', 'xfer1', 'lawrence')
 
 
 if __name__ == "__main__":
