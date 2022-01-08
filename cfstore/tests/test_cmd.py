@@ -282,7 +282,6 @@ class Test_cfdb(TestCase):
             result = runner.invoke(cli, ['findrx', 'file2',])
             lines = _check(self, result, 2)
 
-
     def test_linkto(self):
         """ test asymmetric linking and findr"""
         runner = CliRunner()
@@ -307,6 +306,20 @@ class Test_cfdb(TestCase):
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
             lines = _check(self, result, 1)
             self.assertEqual('dummy1', lines[0])
+
+    def test_print(self):
+        """ Test we can print information about a collection to output.
+        Information should include description, any tags, and
+        any relationships.
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+            result = runner.invoke(cli, ['pr', 'dummy1'])
+            raise NotImplementedError('Still developing this test, results not checked')
+
+
+
 
 
 class Test_ssh(TestCase):

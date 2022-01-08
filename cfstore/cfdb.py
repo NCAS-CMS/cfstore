@@ -344,6 +344,18 @@ def delete_col(ctx, collection):
     _print(db.delete_collection(collection))
     view_state.save()
 
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+def pr(ctx, collection):
+    """
+    Print information about a collection to stdout (or json eventually)
+    Usage: cfsdb pr <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    _print(db.collection_info(collection))
+    view_state.save()
+
 
 if __name__ == "__main__":
     safe_cli()
