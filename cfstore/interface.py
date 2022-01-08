@@ -296,8 +296,7 @@ class CollectionDB(CoreDB):
             c = self.session.query(Collection).filter_by(name=name).first()
         except NoResultFound:
             raise ValueError(f'No such collection {name}')
-
-        return str(c), [str(k) for k in c.tags]
+        return c.view
 
     def organise(self, collection, files, description):
         """

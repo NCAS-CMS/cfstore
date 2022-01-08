@@ -54,6 +54,7 @@ class TestNoConfig(TestCase):
             r = runner.invoke(cli, ['ls',])
             assert (r.exit_code == 0)
 
+
 class TestConfig(TestCase):
     """
     Test raw configuration file
@@ -82,7 +83,7 @@ def _mysetup():
     os.environ['CFS_CONFIG_FILE'] = 'tmp.ini'
     _dummy(config.db)
     filename = 'description_eg.txt'
-    with open(filename,'w') as f:
+    with open(filename, 'w') as f:
         f.write('dummy description text')
     return filename
 

@@ -159,6 +159,25 @@ class Collection(ProxiedDictMixin, Base):
     def with_property(self, key, value):
         return self.properties.any(key=key, value=value)
 
+    def serialise(self, target='dict'):
+        """
+        Serialise to a particular target format. Currently the only target understood is "dict"
+        which is suitable for use in json.
+        """
+        assert target == 'dict', "Collection can only be serialised to a python dictionary"
+        blob = {x: getattr(self, x) for x in ['name', 'description', 'volume', 'filecount']}
+        blob['tags'] = [str(k) for k in self.tags]
+        blob['related'] = "[relationships not yet serialised]"
+        return blob
+
+    @property
+    def view(self):
+        """ Extended string view suitable for printing """
+        blob = self.serialise(target='dict')
+        result = str(self) + ''.join(
+            [f'\n__{x.capitalize()}__ \n{blob[x]}' for x in ['description', 'tags', 'related']])
+        return result
+
 
 class Relationship(Base):
     __tablename__ = "relationship"
