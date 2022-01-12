@@ -208,13 +208,14 @@ class SSHTape(SSHcore):
         a request running on the remote SSH server. Assume curl is available
         otherwise pass wget or whatever else might be available.
         """
-        stdin, stdout, stderr = self._client.exec_command(f'{option} {url}')
+        stdin, stdout, stderr = self._client.exec_command(f"{option} '{url}'")
         error = stderr.readlines()
-        if "Could not resolve host" in error[-1]:
-            err = error[-1].find("curl")
-            raise ValueError(error[-1][err:])
+        if error:
+            if "Could not resolve host" in error[-1]:
+                err = error[-1].find("curl")
+                raise ValueError(error[-1][err:])
         # look out, if I do this with google.com I get a unicode error of some sort ...  and I couldn't
-        # work out how to fixit ...
+        # work out how to fixit ... just joining on u"" didn't do it ..
         lines = stdout.readlines()
         return "".join(lines)
 
@@ -223,7 +224,7 @@ if __name__ == "__main__":
 
     s = SSHlite('xfer1', 'lawrence')
 
-    dlist = s.globish('hiresgw','xj*')
+    dlist = s.globish('hiresgw', 'xj*')
     print(dlist)
 
     dlist = s.globish('hiresgw', 'xj???')
