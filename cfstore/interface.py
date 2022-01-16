@@ -296,7 +296,7 @@ class CollectionDB(CoreDB):
             c = self.session.query(Collection).filter_by(name=name).first()
         except NoResultFound:
             raise ValueError(f'No such collection {name}')
-        return c.view
+        return c.md
 
     def organise(self, collection, files, description):
         """
@@ -417,7 +417,6 @@ class CollectionDB(CoreDB):
         except ValueError:
             raise CollectionError(collection, f' - file {file_path}/{file_name} not present!')
         del f.in_collections[index]
-
 
 
     @property
