@@ -12,8 +12,8 @@ def _dummy(db, location='testing', collection_stem="dummy", files_per_collection
     db.create_location(location)
     for i in range(5):
         c = f'{collection_stem}{i}'
-        db.create_collection(c,'no description', {})
-        files = [{'path':'/somewhere/in/unix_land', 'name':f'file{j}{i}', 'size':0} for j in range(files_per_collection)]
+        db.create_collection(c, 'no description', {})
+        files = [{'path': '/somewhere/in/unix_land', 'name': f'file{j}{i}', 'size': 10} for j in range(files_per_collection)]
         db.upload_files_to_collection(location, c, files)
 
 
@@ -206,6 +206,19 @@ class BasicStructure(unittest.TestCase):
         self.db.add_file_to_collection('dummy1', fset[0])
         fset = self.db.retrieve_files_in_collection('dummy1', replicants=True, match='file2')
         assert len(fset) == 2  # of the four it would be without the match!
+
+    def test_locations(self):
+        """
+        Test we can see the locations known to the DB
+        """
+        _dummy(self.db)
+        locs = self.db.retrieve_locations()
+        print(locs)
+        for loc in locs:
+            l = self.db.retrieve_location(loc)
+            print(l.info)
+            # dummy set up with 5 x ten 10B files!
+            assert l.volume == 500.0
 
 
 if __name__ == "__main__":

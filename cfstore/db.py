@@ -199,7 +199,7 @@ class StorageLocation(Base):
     __tablename__ = "locations"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    volume = Column(Integer)
+    volume = Column(Integer, default=0)
 
     holds_files = relationship('File',
                                secondary=storage_files_associations,
@@ -209,6 +209,7 @@ class StorageLocation(Base):
     def __repr__(self):
         return self.name
 
+    @property
     def info(self):
         if not self.volume:
             self.volume = 0

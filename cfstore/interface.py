@@ -1,5 +1,5 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag
+from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -205,6 +205,26 @@ class CollectionDB(CoreDB):
         else:
             raise FileNotFoundError  #(f'File "{path}/{name}" not found')
 
+    def retrieve_location(self, location_name):
+        """
+        Retrieve information about a specific location
+        """
+        try:
+            x = self.session.query(StorageLocation).filter_by(name=location_name).one()
+        except NoResultFound:
+            raise ValueError(f'No such collection {location_name}')
+        assert x.name == location_name
+        return x
+
+
+    def retrieve_locations(self):
+        """
+        Retrieve locations.
+        Currently retrieves all known locations.
+        """
+        locs = self.session.query(StorageLocation).all()
+        return [l.name for l in locs]
+
     def retrieve_related(self, collection, relationship):
         """
         Find all related collections to <collection> which have
@@ -391,6 +411,7 @@ class CollectionDB(CoreDB):
             c.holds_files.append(f)
             loc.holds_files.append(f)
             c.volume += f.size
+            loc.volume += f.size
         self.session.commit()
 
     def upload_files_to_collection(self, location, collection, files):
