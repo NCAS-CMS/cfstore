@@ -5,11 +5,9 @@ from stat import S_ISREG, S_ISDIR
 import time
 
 
-class SSHlite:
-    """
-    Provides a lightweight interface to some paramiko and pysftp like
-    functionality, *assuming there is a running ssh agent on the client
-    machine*.
+class SSHcore:
+    """ Provides a lightweight setup for establishing some SSH
+    tunnelling to a remote host etc.
     """
 
     def __init__(self, host, username, port=22, logging=True):
@@ -34,6 +32,15 @@ class SSHlite:
         client.connect(host, port, username)
         self.transport = client.get_transport()
         self._sftp = paramiko.SFTPClient.from_transport(self.transport)
+        self._client = client
+
+
+class SSHlite(SSHcore):
+    """
+    Provides a lightweight interface to some paramiko and pysftp like
+    functionality, *assuming there is a running ssh agent on the client
+    machine*.
+    """
 
     def isalive(self):
         return self.transport.is_active()
@@ -192,11 +199,32 @@ def find_matching_paths(pathlist, pattern):
     return [os.sep.join(p) for p in product(*matching)
             if _in_trie(path_trie, p)]
 
+
+class SSHTape(SSHcore):
+
+    def get_html(self, url, option='curl'):
+        """
+        This is a temporary crufty method of getting html from a webserver via
+        a request running on the remote SSH server. Assume curl is available
+        otherwise pass wget or whatever else might be available.
+        """
+        stdin, stdout, stderr = self._client.exec_command(f"{option} '{url}'")
+        error = stderr.readlines()
+        if error:
+            if "Could not resolve host" in error[-1]:
+                err = error[-1].find("curl")
+                raise ValueError(error[-1][err:])
+        # look out, if I do this with google.com I get a unicode error of some sort ...  and I couldn't
+        # work out how to fixit ... just joining on u"" didn't do it ..
+        lines = stdout.readlines()
+        return "".join(lines)
+
+
 if __name__ == "__main__":
 
     s = SSHlite('xfer1', 'lawrence')
 
-    dlist = s.globish('hiresgw','xj*')
+    dlist = s.globish('hiresgw', 'xj*')
     print(dlist)
 
     dlist = s.globish('hiresgw', 'xj???')
@@ -204,4 +232,9 @@ if __name__ == "__main__":
 
     flist = s.get_files_and_sizes('hiresgw/xjanp')
     print(flist)
+
+    s = SSHTape('xfer1', 'lawrence')
+
+    html = s.get_html('http://et-monitor.fds.rl.ac.uk/et_user/')
+    print(f"**\n{html}\n**")
 
