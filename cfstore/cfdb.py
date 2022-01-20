@@ -4,7 +4,6 @@ from cfstore.config import CFSconfig
 import os
 import sys
 import click
-<<<<<<< HEAD
 import hashlib
 from urllib.parse import urlparse
 
@@ -17,9 +16,6 @@ def _save(view_state):
         raise ValueError('Save option requires default database value')
     with open(STATE_FILE,'w') as f:
         json.dump(view_state, f)
-=======
->>>>>>> 99dbf20976b4af194133e4e8a9bf180e9c03ae6e
-
 
 def _load():
     """ Load existing view state"""
@@ -304,26 +300,29 @@ def chkeq(ctx,col1,col2):
 
 
     a_file = open(col1, "rb")
-
-    sha256_hash = hashlib.sha256()
-    
-
-    for byte_block in iter(lambda: a_file.read(4096),b""):
-        sha256_hash.update(byte_block)
-    a_hash = sha256_hash.hexdigest()
-    
     b_file = open(col2, "rb")
-    sha256_hash = hashlib.sha256()
 
-    for byte_block in iter(lambda: b_file.read(4096),b""):    
-        sha256_hash.update(byte_block)
-    b_hash = sha256_hash.hexdigest()
-   
-    if a_hash==b_hash:
-        print("The files hashes match")
+    
+    if (os.path.getsize(col1)!=os.path.getsize(col2)):
+        print("Filesize not equal")    
     else:
-        print("The files hashes do not match")
-        print("The hashes of the files are ",a_hash," and ", b_hash)
+        sha256_hash = hashlib.sha256()    
+
+        for byte_block in iter(lambda: a_file.read(4096),b""):
+            sha256_hash.update(byte_block)
+        a_hash = sha256_hash.hexdigest()
+        
+        sha256_hash = hashlib.sha256()   
+     
+        for byte_block in iter(lambda: b_file.read(4096),b""):    
+            sha256_hash.update(byte_block)
+        b_hash = sha256_hash.hexdigest()
+       
+        if a_hash==b_hash:
+            print("The files hashes match")
+        else:
+            print("The files hashes do not match")
+            print("The hashes of the files are ",a_hash," and ", b_hash)
 
 @cli.command()
 @click.pass_context
