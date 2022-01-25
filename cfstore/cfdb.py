@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 from cfstore.config import CFSconfig
-import os
-import sys
+import os, sys
 import click
-
+from rich.console import Console
+from rich.markdown import Markdown
 
 def _load():
     """ Load existing view state"""
@@ -343,6 +343,38 @@ def delete_col(ctx, collection):
     view_state, db = _set_context(ctx, None)
     _print(db.delete_collection(collection))
     view_state.save()
+
+
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+def pr(ctx, collection):
+    """
+    Print information about a collection to stdout (or json eventually)
+    Usage: cfsdb pr <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    markdown = db.collection_info(collection)
+    md = Markdown(markdown)
+    console = Console()
+    console.print(md)
+    view_state.save()
+
+
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+def edit(ctx, collection):
+    """
+    Edit (and replace) a collection description
+    Usage: cfsdb edit <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    active_collection = db.retrieve_collection(collection)
+    description = active_collection.description
+    new_description = click.edit(description)
+    active_collection.description = new_description
+    db.save()
 
 
 if __name__ == "__main__":

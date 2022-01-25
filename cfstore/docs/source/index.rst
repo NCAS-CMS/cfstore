@@ -11,6 +11,7 @@ Welcome to cfstore's documentation!
    :caption: Contents:
 
    getting_started
+   examples
    cmdline
    interface
    database
@@ -19,8 +20,9 @@ Welcome to cfstore's documentation!
 Concept
 -------
 This package provides a command line interface to data held in a "cfstore",
-that consists of one or more different storage locations (e.g. POSIX disk,
-object store, tape).  The tools allow you to ingest "views" of the data
+that consists of views of data files held in one or more different storage locations
+(e.g. POSIX disk, object store, tape).
+The tools allow you to ingest information about collections (defined by you) of the data
 into a "cfstore database", to create and document new views (virtual
 collections) of your data, and where necessary move collections of data
 between storage locations.
@@ -37,6 +39,10 @@ to be supported.
 
 See :doc:`getting_started` and :doc:`location` to understand how to
 get going and work with different storage locations.
+
+See :doc:`examples` for some worked examples describing how to
+ingest some data into your database, add information about that
+data, and how to find and view your collections.
 
 
 Command Line Interface
