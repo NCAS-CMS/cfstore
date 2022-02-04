@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='cfstore',
-    version='0.2.0',
-    packages=['cfstore'],
+    version='0.3.0',
+    packages=find_packages(),
     url='',
     license='MIT',
-    author='Bryan Lawrence',
+    author='Bryan Lawrence + George OBrien',
     author_email='bryan.lawrence@ncas.ac.uk',
     description='Provides an interface to managing cf compliant data held in multiple storage locations',
     platforms=["Linux", "MacOS"],
@@ -19,13 +19,18 @@ setup(
     ],
     install_requires=[
         'SQLAlchemy',
-        'eralchemy',
+#        'pygraphviz',
+#        'eralchemy',
         'click',
         'BeautifulSoup4',
+        'paramiko',
+
     ],
-    entry_points = {
+    entry_points={
         'console_scripts': [
-            'cfstore=cfstore.cfdb:safe_cli',
+            'cfsdb=cfstore.cfdb:safe_cli',
+            'cfin=cfstore.cfin:safe_cli',
+            'cfmv=cfstore.cfmv:safe_cli'
         ],
     },
 )

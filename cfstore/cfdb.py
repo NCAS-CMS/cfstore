@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from cfstore.interface import CollectionDB
-from cfstore.plugins.et_main import et_main
-import os, json, sys
+from cfstore.config import CFSconfig
+import os
+import sys
 import click
+import hashlib
 from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
@@ -16,64 +17,40 @@ def _save(view_state):
     with open(STATE_FILE,'w') as f:
         json.dump(view_state, f)
 
-
 def _load():
     """ Load existing view state"""
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE,'r') as f:
-            view_state = json.load(f)
-        actual_file = _naked(view_state['db'])
-        if os.path.exists(actual_file):
-            return view_state
-        else:
-            raise ValueError(f"Configuration file {STATE_FILE} does not have valid database ({view_state['db']}")
-    else:
-        raise FileNotFoundError('No existing configuration file found')
+    return CFSconfig()
 
 
 def _set_context(ctx, collection):
     """
-    Set the view_state context
+    Set the config_state context
     """
-    try:
-        view_state = _load()
-        for k in ['db', 'collection']:
-            if ctx.obj[k]:
-                view_state[k] = ctx.obj[k]
-    except ValueError:
-        view_state = {'db': ctx.obj['db'], 'collection': None}
-        if ctx.obj['collection']:
-            view_state['collection'] = ctx.obj['collection']
-    except FileNotFoundError:
-        view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
-    if view_state['db'] is None:
-        raise ValueError('Please set database with --db=xxx command')
-    # now override default with arguments to ls
+    def doset(c):
+        if c == 'all':
+            config_state['last_collection'] = ''
+        else:
+            config_state['last_collection'] = c
+
+    config_state = _load()
+    # coming in from context before particular option (e.g. ls)
+    if ctx.obj['collection']:
+        doset(ctx.obj['collection'])
+        config_state['last_collection'] = ctx.obj['collection']
+    # now override default with arguments to option (e.g. ls)
     if collection:
-        view_state['collection'] = collection
+        doset(collection)
 
-    db = CollectionDB()
-    db.init(view_state['db'])
-    if view_state['collection'] == 'all':
-        view_state['collection'] = None
-
-    return view_state, db
-
-
-def _naked(db_name, display=False):
-    """ Strip protocol gubbins from database connection string"""
-    f = urlparse(db_name).path[1:]
-    if display:
-        print(f)
-    return f
+    return config_state, config_state.db
 
 
 def _print(lines, prop=None):
-    for line in lines:
-        if prop:
-            print(getattr(line,prop))
-        else:
-            print(line)
+    if lines:
+        for line in lines:
+            if prop:
+                print(getattr(line, prop))
+            else:
+                print(line)
 
 def safe_cli():
     """
@@ -87,26 +64,24 @@ def safe_cli():
 
 
 @click.group()
-@click.option('--db', default=None, help='New default database (e.g sqlite///hiresgw.db) ')
 @click.option('--collection', default=None, help='Current collection (make default)')
 @click.pass_context
-def cli(ctx, db, collection):
+def cli(ctx, collection):
     """
     Provides the overall group context for command line arguments
     """
     ctx.ensure_object(dict)
-    ctx.obj['db'] = db
     ctx.obj['collection'] = collection
 
 
 @cli.command()
 @click.pass_context
-def save(ctx):
+def setc(ctx):
     """
-    Save current db choice and last used collection (which becomes default).
+    Set collection, or reset to default if --collection=all
     """
-    view_state = {k: ctx.obj[k] for k in ['db', 'collection']}
-    _save(view_state)
+    view_state, db = _set_context(ctx, None)
+    view_state.save()
 
 
 @cli.command()
@@ -120,17 +95,17 @@ def ls(ctx, collection):
     """
     view_state, db = _set_context(ctx, collection)
 
-    if view_state['collection']:
-        files = db.retrieve_files_in_collection(view_state['collection'])
+    if view_state.collection:
+        files = db.retrieve_files_in_collection(view_state.collection)
         for f in files:
             print(f)
     else:
         collections = db.retrieve_collections()
-        _naked(view_state['db'], display=True)
+        print(view_state.name)
         for c in collections:
             print(c)
 
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
@@ -143,7 +118,7 @@ def findf(ctx, match, collection):
     anywhere in their path and filename.
     """
     view_state, db = _set_context(ctx, collection)
-    collection = view_state['collection']
+    collection = view_state.collection
     if collection:
         files = db.retrieve_files_in_collection(collection, match=match)
         for f in files:
@@ -153,7 +128,77 @@ def findf(ctx, match, collection):
         for f in files:
             print(f)
 
-    _save(view_state)
+    view_state.save()
+
+@cli.command()
+@click.pass_context
+@click.option('--collection', default=None, help='Collection in which replicants are expected')
+@click.argument('match', nargs=-1)
+def findrx(ctx, collection, match):
+    """
+
+    Find all replicant files in a collection, optionally including MATCH
+    anywhere in their path and filename.
+
+    (The default collection must be set, or the --collection argument used.)
+
+    """
+    view_state, db = _set_context(ctx, collection)
+    collection = view_state.collection
+    if match == ():
+        match = None
+    else:
+        match = match[0]
+    if collection:
+        files = db.retrieve_files_in_collection(collection, replicants=True, match=match)
+        for f in files:
+            print(f)
+    else:
+        click.echo('Replicant file discovery requires a collection to be set')
+        click.echo(ctx.get_help())
+
+    view_state.save()
+
+@cli.command()
+@click.pass_context
+@click.option('--match-full-path', default=True, help='Match full path, if False, match end of path')
+@click.option('--strip-base', default='', help="String to remove from start of collection path")
+@click.option('--collection', default=None, help='Collection in which replicants are expected')
+def locate_replicants(ctx, collection, strip_base, match_full_path):
+    # this is using the capability from the interface locate replicants, so this docstring is duplicated from there
+    """
+    For all the files in a given collection, look for other
+        files in other collections which may be replicants,
+        but which have not been matched because they have no size, and/or
+        their path stem differs.
+
+        Optionally use strip_base to remove the leading path in the collection files which looking for match.
+        This can be used with or without match_full_path.
+        if match_full_path True (default), replicants must match the path given from the input collection
+        whether stripped or no. If False, then matches require the path in the replicant to end with
+        the same structure as provided from the collection (whether stripped or not).
+
+        e.g. given
+
+        input file /blah/path/filex and candidate replicant /foo/path/filex,
+        if strip_base = blah and match_full_path = False, this will match,  all other combinations will not match.
+
+        input file /blah/path/filex and candidate path/file will match with strip-base=/blah/ and any option
+        for match_full_path.
+
+        input file path/filex will match replicant /foo/path/filex with match_full_path=False
+
+        In all cases file names must match.
+
+        We normally assume that there we are looking in a large set of *other* files for matches into a smaller
+        set of collection files. If the collection likely contains more files than exist in the set of others,
+        then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
+    """
+    view_state, db = _set_context(ctx, collection)
+    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path)
+    for c, p in zip(candidates, possibles):
+        print(c, [(x, x.replicas, x.in_collections) for x in p])
+    view_state.save()
 
 
 @cli.command()
@@ -180,7 +225,7 @@ def organise(ctx, collection, description_file):
     files = [f.strip() for f in sys.stdin.readlines()]
     db.organise(collection, files, description=description)
 
-    _save(view_state)
+    view_state.save()
 
 @cli.command()
 @click.pass_context
@@ -192,8 +237,8 @@ def tag(ctx, collection, tagname):
     (and save collection as current default collection)
     """
     view_state, db = _set_context(ctx, collection)
-    db.tag_collection(view_state['collection'], tagname)
-    _save(view_state)
+    db.tag_collection(view_state.collection, tagname)
+    view_state.save()
 
 @cli.command()
 @click.pass_context
@@ -231,16 +276,53 @@ def facet(ctx, key, value, collection, remove):
     --collection=collection
     """
     view_state, db = _set_context(ctx, collection)
-    if not view_state['collection']:
+    if not view_state.collection:
         raise ValueError('Cannot use facet without defining a collection')
     if remove:
         raise NotImplementedError
 
-    c = db.retrieve_collection(view_state['collection'])
+    c = db.retrieve_collection(view_state.collection)
     c[key] = value
     db.session.commit()
-    _save(view_state)
+    view_state.save()
 
+
+@cli.command()
+@click.pass_context
+@click.argument('col1')
+@click.argument('col2')
+def chkeq(ctx,col1,col2):
+    """
+    Compare the equality of two collections
+    """
+    #c1 = db.retrieve_collection(view_state['col1'])
+    #c2 = db.retrieve_collection(view_state['col2'])
+
+
+    a_file = open(col1, "rb")
+    b_file = open(col2, "rb")
+
+    
+    if (os.path.getsize(col1)!=os.path.getsize(col2)):
+        print("Filesize not equal")    
+    else:
+        sha256_hash = hashlib.sha256()    
+
+        for byte_block in iter(lambda: a_file.read(4096),b""):
+            sha256_hash.update(byte_block)
+        a_hash = sha256_hash.hexdigest()
+        
+        sha256_hash = hashlib.sha256()   
+     
+        for byte_block in iter(lambda: b_file.read(4096),b""):    
+            sha256_hash.update(byte_block)
+        b_hash = sha256_hash.hexdigest()
+       
+        if a_hash==b_hash:
+            print("The files hashes match")
+        else:
+            print("The files hashes do not match")
+            print("The hashes of the files are ",a_hash," and ", b_hash)
 
 @cli.command()
 @click.pass_context
@@ -287,26 +369,28 @@ def findr(ctx, link, collection):
     relationship collection/parent_of/*
     """
     view_state, db = _set_context(ctx, collection)
-    collection = view_state['collection']
+    collection = view_state.collection
     _print(db.retrieve_related(collection, link), 'name')
-    _save(view_state)
+    view_state.save()
 
 
 @cli.command()
 @click.pass_context
-@click.argument('operation')
-@click.argument('gws')
-def et(ctx, operation, gws):
+@click.argument('collection')
+def delete_col(ctx, collection):
+    # look out difference between method name _ and usage -
+    # that's a click "feature"
     """
-    Operations on an elastic tape backend for the <gws> group workspace.
-    <Operation> can be one of:
-        1. init - initialise an elastic tape view of a group workspace
-        2. update - Update an existing view of an elastic tape group workspace
+
+    Delete an empty <collection>
+    (raising an error if the collection still has files in it)
+
+    Usage: cfsdb delete-col <collection>
+
     """
-    collection = None
-    view_state, db = _set_context(ctx, collection)
-    et_main(db, operation, gws)
-    _save(view_state)
+    view_state, db = _set_context(ctx, None)
+    _print(db.delete_collection(collection))
+    view_state.save()
 
 
 if __name__ == "__main__":
