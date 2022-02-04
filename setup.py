@@ -1,4 +1,19 @@
+import fnmatch
+import os
+
 from setuptools import setup, find_packages
+
+
+def find_package_data_files(directory):
+    for root, dirs, files in os.walk(directory):
+        for basename in files:
+            if fnmatch.fnmatch(basename, "*"):
+                filename = os.path.join(root, basename)
+                yield filename.replace("cfstore/", "", 1)
+
+
+plugins = [f for f in find_package_data_files("cfstore/plugins")]
+package_data = plugins
 
 setup(
     name='cfstore',
@@ -33,4 +48,5 @@ setup(
             'cfmv=cfstore.cfmv:safe_cli'
         ],
     },
+    package_data={"cfstore": package_data},
 )
