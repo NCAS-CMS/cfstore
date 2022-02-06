@@ -1,3 +1,4 @@
+from ast import For, In
 from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, Session, backref
@@ -50,6 +51,12 @@ relationship_associations = Table(
     Column('objects_id', Integer, ForeignKey('collections.id'), primary_key=True)
 )
 
+location_protocol_associations = Table(
+    'location_protocol_associations',
+    Base.metadata,
+    Column('locations_id', Integer, ForeignKey('locations.id'), primary_key=True),
+    Column('protocol_id', Integer, ForeignKey('protocol.id'), primary_key=True)
+)
 
 def sizeof_fmt(num, suffix='B'):
     for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
@@ -192,6 +199,22 @@ class Tag(Base):
         return self.name
 
 
+class StorageProtocol(Base):
+    """
+    Holds the list of available protocols
+    """
+    # Resisted the temptation to use an enum, as otherwise new enums (storage interfaces) 
+    # would require client-side database upgrades and that sounds like a recipe for trouble.
+    __tablename__ = "protocol"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+
+    used_by = relationship('StorageLocation',
+                           secondary=location_protocol_associations,
+                           back_populates='protocols')
+                           
+    association_proxy('used_by','locations')
+
 class StorageLocation(Base):
     """
     Holds the list of available storage locations.
@@ -200,10 +223,15 @@ class StorageLocation(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     volume = Column(Integer, default=0)
+    
+    protocols = relationship('StorageProtocol',
+                             secondary=location_protocol_associations,
+                             back_populates='used_by')
 
     holds_files = relationship('File',
                                secondary=storage_files_associations,
                                back_populates='replicas')
+
     association_proxy('holds_files', 'files')
 
     def __repr__(self):
@@ -214,7 +242,6 @@ class StorageLocation(Base):
         if not self.volume:
             self.volume = 0
         return f'Location <{self.name}> has  {sizeof_fmt(self.volume)} in {len(self.holds_files)} files'
-
 
 
 class File(Base):
