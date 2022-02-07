@@ -289,4 +289,8 @@ class CoreDB:
 
 if __name__=="__main__":
     from eralchemy import render_er
+    # NB, to run this, we need a patched version of eralchemy
+    # I have 1.2.30 which needed a patch to work with sqlalchemy 1.4, see 
+    # https://github.com/Alexis-benoist/eralchemy/issues/80
+    # I have patched my library copy accordingly!
     render_er(Base,'cfstore-db-dbview.png')

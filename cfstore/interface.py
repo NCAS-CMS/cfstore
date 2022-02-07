@@ -1,5 +1,5 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation
+from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -10,6 +10,30 @@ class CollectionError(Exception):
 
 
 class CollectionDB(CoreDB):
+
+    def add_protocol(self, protocol_name, locations=[]):
+        """
+        Add a new protocol to the database, and if desired modify a set of existing or new
+        locations by adding the protocol to their list of supported protocols.
+        """
+        
+        try:
+            pdb = self.session.query(StorageProtocol).filter_by(name=protocol_name).one()
+        except NoResultFound:
+            pdb = StorageProtocol(name=protocol_name)
+            if locations:
+                existing_locations = [e.name for e in self.retrieve_locations()]
+                for p in locations:
+                    if p not in existing_locations:
+                        loc = StorageLocation(name=p)
+                        self.session.add(loc)
+                    else:
+                        loc = self.retrieve_location(p)
+                    pdb.used_by.append(loc)
+            self.session.add(pdb)
+            self.session.commit()
+        else: 
+            raise ValueError(f"Attempt to add existing protocol - {protocol_name}")
 
     def add_relationship(self, collection_one, collection_two, relationship):
         """
@@ -58,15 +82,24 @@ class CollectionDB(CoreDB):
                 raise
         return c
 
-    def create_location(self, location):
+    def create_location(self, location, protocols=[]):
         """
         Create a storage <location>. The database is ignorant about what
         "location" means. Other layers of software care about that.
+        However, it may have one or more protocols associated with it.
         """
         try:
             loc = self.session.query(StorageLocation).filter_by(name=location).one()
         except NoResultFound:
             loc = StorageLocation(name=location)
+            
+            if protocols:
+                existing_protocols = self.retrieve_protocols()
+                for p in protocols:
+                    if p not in existing_protocols:
+                        pdb = StorageProtocol(name=p)
+                        self.session.add(pdb)
+                    loc.protocols.append(pdb)
             self.session.add(loc)
             self.session.commit()
         else:
@@ -223,7 +256,14 @@ class CollectionDB(CoreDB):
         Currently retrieves all known locations.
         """
         locs = self.session.query(StorageLocation).all()
-        return [l.name for l in locs]
+        return locs
+
+    def retrieve_protocols(self):
+        """
+        Retrieve protocols.
+        """
+        p = self.session.query(StorageProtocol).all()
+        return p
 
     def retrieve_related(self, collection, relationship):
         """
