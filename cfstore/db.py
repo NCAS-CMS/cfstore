@@ -108,6 +108,22 @@ class CollectionProperty(Base):
     value = Column(UnicodeText)
 
 
+class FileTextMetadata(Base):
+    """
+    Arbitrary key value text pair associated with files 
+    (B-Metadata-Text).
+    """
+     # see https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html for heritage
+    __tablename__ = "file_text_metadata"
+    collection_id = Column(ForeignKey('File.id'), primary_key=True)
+
+    # 128 characters would seem to allow plenty of room for "interesting" keys
+    # could serialise json into value if necessary
+    key = Column(Unicode(128), primary_key=True)
+    value = Column(UnicodeText)
+
+
+
 class Collection(ProxiedDictMixin, Base):
     """
     The key concept of cftape is that files are organised into one or more collections.

@@ -1,4 +1,5 @@
 from unittest import TestCase, mock
+from unittest import main as test_main
 
 from click.testing import CliRunner
 import os
@@ -362,8 +363,9 @@ class Test_cfin(TestCase):
             _check(self, result, 3)
 
 
+if __name__=="__main__":
 
-
+    test_main()
 
 
 
