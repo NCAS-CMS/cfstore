@@ -1,9 +1,13 @@
 from ast import For, In
-from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData
+from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData, Float
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, Session, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy import event
+from sqlalchemy import literal_column
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm.interfaces import PropComparator
 
 import os
 
@@ -66,13 +70,19 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
+##
+## A piece of sqlalchemy magic for subclassing the ability 
+## for simple vertical tables
+##
+
 class ProxiedDictMixin:
     """Adds obj[key] access to a mapped class.
 
     This class basically proxies dictionary access to an attribute
     called ``_proxied``.  The class which inherits this class
     should have an attribute called ``_proxied`` which points to a dictionary.
-
+    This is a vertical table pattern where where we have one such vertical table 
+    and there is only one type of attribute stored in that table.
     """
 
     def __len__(self):
@@ -94,6 +104,102 @@ class ProxiedDictMixin:
         del self._proxied[key]
 
 
+##
+## Following Magic is from sqllachmy docs
+## Basic idea is we want to have typed attributes in a 
+## sparse matrix as many attributes will be in common but
+## that number is small per file ... and the number of
+## possible values is large and they are typed.
+##
+
+class PolymorphicVerticalProperty(object):
+    """A key/value pair with polymorphic value storage.
+
+    The class which is mapped should indicate typing information
+    within the "info" dictionary of mapped Column objects,
+    See example at: https://docs.sqlalchemy.org/en/14/_modules/examples/vertical/dictlike-polymorphic.html
+    See also concept "Entity-Attribute-Value" pattern discussion at h
+    ttps://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model
+
+    """
+
+    def __init__(self, key, value=None):
+        self.key = key
+        self.value = value
+
+    @hybrid_property
+    def value(self):
+        fieldname, discriminator = self.type_map[self.type]
+        if fieldname is None:
+            return None
+        else:
+            return getattr(self, fieldname)
+
+    @value.setter
+    def value(self, value):
+        py_type = type(value)
+        fieldname, discriminator = self.type_map[py_type]
+
+        self.type = discriminator
+        if fieldname is not None:
+            setattr(self, fieldname, value)
+
+    @value.deleter
+    def value(self):
+        self._set_value(None)
+
+    @value.comparator
+    class value(PropComparator):
+        """A comparator for .value, builds a polymorphic comparison
+        via CASE."""
+
+        def __init__(self, cls):
+            self.cls = cls
+
+        def _case(self):
+            pairs = set(self.cls.type_map.values())
+            whens = [
+                (
+                    literal_column("'%s'" % discriminator),
+                    cast(getattr(self.cls, attribute), String),
+                )
+                for attribute, discriminator in pairs
+                if attribute is not None
+            ]
+            return case(whens, value=self.cls.type, else_=null())
+
+        def __eq__(self, other):
+            return self._case() == cast(other, String)
+
+        def __ne__(self, other):
+            return self._case() != cast(other, String)
+
+    def __repr__(self):
+        return "<%s %r=%r>" % (self.__class__.__name__, self.key, self.value)
+
+@event.listens_for(
+    PolymorphicVerticalProperty, "mapper_configured", propagate=True
+)
+def on_new_class(mapper, cls_):
+    """Look for Column objects with type info in them, and work up
+    a lookup table."""
+
+    info_dict = {}
+    info_dict[type(None)] = (None, "none")
+    info_dict["none"] = (None, "none")
+
+    for k in mapper.c.keys():
+        col = mapper.c[k]
+        if "type" in col.info:
+            python_type, discriminator = col.info["type"]
+            info_dict[python_type] = (k, discriminator)
+            info_dict[discriminator] = (k, discriminator)
+    cls_.type_map = info_dict
+
+###
+### Sqlalchemy magic concludes
+###
+
 class CollectionProperty(Base):
     """
     Arbitrary key value pair associated with collections.
@@ -103,26 +209,32 @@ class CollectionProperty(Base):
     collection_id = Column(ForeignKey('collections.id'), primary_key=True)
 
     # 128 characters would seem to allow plenty of room for "interesting" keys
-    # could serialise json into value if necessaryprint(
+    # could serialise json into value if necessary
     key = Column(Unicode(128), primary_key=True)
     value = Column(UnicodeText)
 
-
-class FileTextMetadata(Base):
+class FileMetadata(PolymorphicVerticalProperty, Base):
     """
-    Arbitrary key value text pair associated with files 
-    (B-Metadata-Text).
+    Arbitrary key value pair associated with files 
+    (B-Metadata in Lawrence et al 2008 terminology) ... 
     """
-     # see https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html for heritage
-    __tablename__ = "file_text_metadata"
+     # see https://docs.sqlalchemy.org/en/14/_modules/examples/vertical/dictlike-polymorphic.htmlfor heritage
+    __tablename__ = "file_metadata"
     collection_id = Column(ForeignKey('File.id'), primary_key=True)
 
     # 128 characters would seem to allow plenty of room for "interesting" keys
     # could serialise json into value if necessary
     key = Column(Unicode(128), primary_key=True)
-    value = Column(UnicodeText)
+    type = Column(Unicode(16))
+    json = Column(Boolean)
 
-
+    # add information about storage for different types
+    # in the info dictionary of Columns. We expect we will do
+    # our own external serialisation for JSON into the char_value
+    int_value = Column(Integer, info={"type": (int, "integer")})
+    real_value = Column(Float, info={"type": (int, "integer")})
+    char_value = Column(UnicodeText, info={"type": (str, "string")})
+    
 
 class Collection(ProxiedDictMixin, Base):
     """
@@ -260,7 +372,7 @@ class StorageLocation(Base):
         return f'Location <{self.name}> has  {sizeof_fmt(self.volume)} in {len(self.holds_files)} files'
 
 
-class File(Base):
+class File(ProxiedDictMixin, Base):
     """
     Representation of a file
     """
@@ -283,8 +395,21 @@ class File(Base):
         secondary=collection_files_associations,
         back_populates="holds_files")
 
+    # vertical table properties
+    nc_attrs = relationship("FileMetadata",
+                              collection_class=attribute_mapped_collection("key"))
+    
+    _proxied = association_proxy(
+        "nc_attrs",
+        "value",
+        creator=lambda key, value: FileMetadata(key=key, value=value))    
+
     def __repr__(self):
         return os.path.join(self.path, self.name)
+
+    @classmethod
+    def with_nc_attr(self, key, value):
+        return self.nc_attrs.any(key=key, value=value)
 
 
 class CoreDB:
