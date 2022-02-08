@@ -1,78 +1,11 @@
-from unittest import TestCase, mock
-
+import unittest, os
 from click.testing import CliRunner
-import os
+
 from cfstore.cfdb import cli
 from cfstore.cfin import cli as incli
 from cfstore.config import CFSconfig
 from cfstore.tests.test_basic import _dummy
 from cfstore.plugins.ssh import SSHlite
-
-
-@mock.patch.dict(os.environ, {
-    'TEST_RP_HOST': 'xfer1',
-    'TEST_RP_PATH': 'hiresgw/cftest',
-    'TEST_RP_USER': 'lawrence',
-    'TEST_RP_EXPECTED_DIR': 'subdir'
-})
-def setup_ssh():
-    rhost = os.getenv('TEST_RP_HOST', default='NONE')
-    rpath = os.getenv('TEST_RP_PATH', default='NONE')
-    ruser = os.getenv('TEST_RP_USER', default='NONE')
-    expected = os.getenv('TEST_RP_EXPECTED_DIR', default='NONE')
-    if rhost == 'NONE' or rpath == 'NONE' or ruser == 'NONE' or expected == 'NONE':
-        raise MissingTestEnvVar(
-            f'RemotePosix test requires TEST_RP_HOST, TEST_RP_PATH, TEST_RP_USER, TEST_RP_EXPECTED_DIR env variables')
-    else:
-        s = SSHlite(rhost, ruser)
-        assert s.isalive(), 'SSH test configuration does not work'
-    return rhost, rpath, ruser, expected
-
-
-class MissingTestEnvVar(Exception):
-    pass
-
-
-class TestNoConfig(TestCase):
-    """ Test handling situation where there is no config file gracefully"""
-
-    def setUp(self):
-        # not sure we really need to worry about pre-existing, but just in case:
-        self.original_config = os.getenv('CFS_CONFIG_FILE')
-        os.unsetenv('CFS_CONFIG_FILE')
-        # now keep this from the real file system
-        # TODO: See https://github.com/bnlawrence/cfstore/issues/16
-
-    def tearDown(self):
-        if self.original_config:
-            os.environ['CFS_CONFIG_FILE'] = self.original_config
-
-    def test_no_config_file(self):
-        " Test absence of a configuration file "
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            r = runner.invoke(cli, ['ls',])
-            assert (r.exit_code == 0)
-
-class TestConfig(TestCase):
-    """
-    Test raw configuration file
-    """
-
-    def setUp(self):
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            self.c = CFSconfig('tmp.ini')
-
-    def test_add_location(self):
-        """ Test location adding works as expected at the config file level"""
-        with self.assertRaises(ValueError) as context:
-            self.c.add_location('X', 'Y')
-        with self.assertRaises(ValueError) as context:
-            self.c.add_location('rp', 'fred', user='loki', host='host')
-            self.c.add_location('rp', 'fred', user='loki', host='host')
-        self.c.save()
-
 
 def _mysetup():
     """
@@ -103,7 +36,53 @@ def _check(instance, result, linecount=None):
     return []
 
 
-class Test_cfdb(TestCase):
+class MissingTestEnvVar(Exception):
+    pass
+
+
+class TestNoConfig(unittest.TestCase):
+    """ Test handling situation where there is no config file gracefully"""
+
+    def setUp(self):
+        # not sure we really need to worry about pre-existing, but just in case:
+        self.original_config = os.getenv('CFS_CONFIG_FILE')
+        os.unsetenv('CFS_CONFIG_FILE')
+        # now keep this from the real file system
+        # TODO: See https://github.com/ncas-cms/cfstore/issues/16
+
+    def tearDown(self):
+        if self.original_config:
+            os.environ['CFS_CONFIG_FILE'] = self.original_config
+
+    def test_no_config_file(self):
+        " Test absence of a configuration file. May yet fail, see issue 16 "
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            r = runner.invoke(cli, ['ls',])
+            assert (r.exit_code == 0)
+
+
+class TestConfig(unittest.TestCase):
+    """
+    Test raw configuration file
+    """
+
+    def setUp(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            self.c = CFSconfig('tmp.ini')
+
+    def test_add_location(self):
+        """ Test location adding works as expected at the config file level"""
+        with self.assertRaises(ValueError) as context:
+            self.c.add_location('X', 'Y')
+        with self.assertRaises(ValueError) as context:
+            self.c.add_location('rp', 'fred', user='loki', host='host')
+            self.c.add_location('rp', 'fred', user='loki', host='host')
+        self.c.save()
+
+
+class Test_cfdb(unittest.TestCase):
     """
     Test the cfdb command line interface
     """
@@ -161,7 +140,7 @@ class Test_cfdb(TestCase):
     def test_findf_in_collection(self):
         """
         test command line "findf" method
-        this test expects to find one file, with file name starting with file1
+        this test expects to find one file, with file name startgit ing with file1
         command is
            findf file1 --collection=dummy3
         check also works once that collection context is established without specification
@@ -309,60 +288,9 @@ class Test_cfdb(TestCase):
             self.assertEqual('dummy1', lines[0])
 
 
-class Test_ssh(TestCase):
 
-    def test_ssh(self):
-        """
-        test the remote path includes an expected subdirectory
-        """
-        rhost, rpath, ruser, expected = setup_ssh()
-        s = SSHlite(rhost, ruser)
-        dlist = s.globish(rpath, '*')
-        assert expected in dlist
-
-
-class Test_cfin(TestCase):
-    """
-    Test the cfin command line interface
-    """
-    
-    def test_create_location1(self):
-        """ Test creating location which we know doesn't exist """
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            _mysetup()
-            result = runner.invoke(incli, ['rp', 'setup', 'a_location', 'host_does_not_exist', 'user'])
-
-    def test_create_location2(self):
-        """ Test creating location which we know does exist """
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            _mysetup()
-            result = runner.invoke(incli, ['rp', 'setup', 'location1', 'host_does_not_exist','user'])
-            # this should raise a ValueError given we already have this location
-            # it looks like it does, but somehow the test environment is removing it ...
-            result = runner.invoke(incli, ['rp', 'setup', 'location1', 'host_does_not_exist', 'user'])
-            assert result.exit_code == 1
-            assert str(result.exception).find('already exists in') != -1
-
-    def test_add_remote_posix(self):
-        """
-        This test requires you to have an ssh host and location set in environment variables.
-        They are mocked here in setup_ssh, you might need to do the same.
-        You also need to sort out what is in the test directory.
-        """
-        rhost, rpath, ruser, expected = setup_ssh()
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            dfile = _mysetup()
-            result = runner.invoke(incli, ['rp', 'setup', 'testloc', rhost, ruser])
-            result = runner.invoke(incli, ['rp', 'add', 'testloc', rpath, 'test_collection', f'--description={dfile}'])
-            result = runner.invoke(cli, ['ls', '--collection=test_collection'] )
-            # there are supposed to be three files in the test collection
-            _check(self, result, 3)
-
-
-
+if __name__=="__main__":
+    unittest.main()
 
 
 
