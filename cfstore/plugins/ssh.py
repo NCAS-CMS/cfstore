@@ -208,9 +208,11 @@ class SSHTape(SSHcore):
         a request running on the remote SSH server. Assume curl is available
         otherwise pass wget or whatever else might be available.
         """
+        # note the importance of the single quotes, otherwise curl stops looking at the & sign in the url.
         stdin, stdout, stderr = self._client.exec_command(f"{option} '{url}'")
         error = stderr.readlines()
         if error:
+            # probably should do some more sophisticated error handling.
             if "Could not resolve host" in error[-1]:
                 err = error[-1].find("curl")
                 raise ValueError(error[-1][err:])

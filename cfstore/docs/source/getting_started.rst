@@ -56,6 +56,9 @@ Two types of location are currently supported, elastic tape, and posix file syst
 (local or remote). (Posix file systems are the familiar Unix file systems that look
 like ``/home/user/fred/folder/...``)
 
+*NB: There are changes to the ET interface to cfstore which arise from changes at JASMIN
+made in November 2021, this documentation needs to be updated!*
+
 1. For Elastic tape,
     - You can ingest everything that is known about an elastic tape GWS::
 
