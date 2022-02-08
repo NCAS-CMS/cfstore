@@ -293,7 +293,7 @@ def facet(ctx, key, value, collection, remove):
 @click.argument('col2')
 def chkeq(ctx,col1,col2):
     """
-    Compare the equality of two collections
+    Compare the equality of two files
     """
     #c1 = db.retrieve_collection(view_state['col1'])
     #c2 = db.retrieve_collection(view_state['col2'])
