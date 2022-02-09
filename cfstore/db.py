@@ -159,6 +159,30 @@ class Collection(ProxiedDictMixin, Base):
     def with_property(self, key, value):
         return self.properties.any(key=key, value=value)
 
+    def serialise(self, target='dict'):
+        """
+        Serialise to a particular target format. Currently the only target understood is "dict"
+        which is suitable for use in json.
+        """
+        assert target == 'dict', "Collection can only be serialised to a python dictionary"
+        blob = {x: getattr(self, x) for x in ['name', 'description', 'volume', 'filecount']}
+        blob['tags'] = [str(k) for k in self.tags]
+        blob['related'] = "[relationships not yet serialised]"
+        return blob
+
+    @property
+    def md(self):
+        """
+        Extended string view in markdown. The assumption is that the existing
+        collection description is either text or markdown. We simply decorate it
+        to ensure titles for the bits of information.
+        """
+        blob = self.serialise(target='dict')
+        template = f"## Collection {blob['name']}\n{self}\n"
+        result = template + ''.join(
+            [f'\n__{x.capitalize()}__\n\n{blob[x]}\n\n' for x in ['description', 'tags', 'related']])
+        return result
+
 
 class Relationship(Base):
     __tablename__ = "relationship"
@@ -258,6 +282,13 @@ class CoreDB:
         self.connection = self.engine.connect()
         self.session = Session(bind=self.connection)
         self.conn_string = conn_string
+
+    def save(self):
+        """
+        Commit any changes to the db
+        """
+        self.session.commit()
+
 
 if __name__=="__main__":
     from eralchemy import render_er

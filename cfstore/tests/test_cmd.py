@@ -15,7 +15,7 @@ def _mysetup():
     os.environ['CFS_CONFIG_FILE'] = 'tmp.ini'
     _dummy(config.db)
     filename = 'description_eg.txt'
-    with open(filename,'w') as f:
+    with open(filename, 'w') as f:
         f.write('dummy description text')
     return filename
 
@@ -285,6 +285,20 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
             lines = _check(self, result, 1)
             self.assertEqual('dummy1', lines[0])
+
+    def test_print(self):
+        """ Test we can print information about a collection to output.
+        Information should include description, any tags, and
+        any relationships.
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+            result = runner.invoke(cli, ['pr', 'dummy1'])
+            raise NotImplementedError('Still developing this test, results not checked')
+
+
+
 
 
 if __name__ == "__main__":
