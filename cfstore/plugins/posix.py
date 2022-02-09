@@ -45,13 +45,17 @@ class Posix:
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum):
         """ Walk local POSIX tree"""
+        print("kinda works")
         if subcollections:
             raise NotImplementedError('No support for sub-collections as yet')
 
         for dirName, directories, files in os.walk(path_to_collection_head):
             dbfiles = []
             for f in files:
-                dbfiles.append(self._file2dict(f, os.stat(f).st_size, checksum=checksum))
+                print(dbfiles)
+                print(path_to_collection_head+f)
+                fp = path_to_collection_head+f
+                dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
 
         self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
