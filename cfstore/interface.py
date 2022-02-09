@@ -1,5 +1,5 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag
+from cfstore.db import StorageLocation, Collection, CoreDB, File, Tag
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -309,7 +309,9 @@ class CollectionDB(CoreDB):
         except ValueError:
             if not description:
                 description = 'Manually organised collection'
-            c = self.create_collection(collection, description, {})
+            #c = self.create_collection(collection, description, {})
+            c = Collection(name=collection, volume=0, description=description)
+            self.session.add(c)
         for f in files:
             path, name = os.path.split(f)
             ff = self.retrieve_file(path, name)

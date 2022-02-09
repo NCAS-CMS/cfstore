@@ -178,7 +178,7 @@ class Test_cfdb(unittest.TestCase):
             dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file23\n'
             result = runner.invoke(cli, ['organise', 'newc'], input=dummy_input)
             _check(self, result)
-            result = runner.invoke(cli, ['ls','--collection=newc'])
+            result = runner.invoke(cli, ['ls', '--collection=newc'])
             _check(self, result, 2)
             self.assertEqual(dummy_input, result.output)
 
@@ -261,7 +261,6 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['findrx', 'file2',])
             lines = _check(self, result, 2)
 
-
     def test_linkto(self):
         """ test asymmetric linking and findr"""
         runner = CliRunner()
@@ -288,8 +287,7 @@ class Test_cfdb(unittest.TestCase):
             self.assertEqual('dummy1', lines[0])
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     unittest.main()
 
 
