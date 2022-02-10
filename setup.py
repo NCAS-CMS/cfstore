@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='cfstore',
-    version='0.2.1',
-    packages=['cfstore'],
+    version='0.3.0',
+    packages=find_packages(),
     url='',
     license='MIT',
-    author='Bryan Lawrence',
+    author='Bryan Lawrence + George OBrien',
     author_email='bryan.lawrence@ncas.ac.uk',
     description='Provides an interface to managing cf compliant data held in multiple storage locations',
     platforms=["Linux", "MacOS"],

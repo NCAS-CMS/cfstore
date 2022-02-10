@@ -19,10 +19,10 @@
 
 project = 'cfstore'
 copyright = '2020, Bryan Lawrence'
-author = 'Bryan Lawrence'
+author = 'Bryan Lawrence and George OBrien'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------

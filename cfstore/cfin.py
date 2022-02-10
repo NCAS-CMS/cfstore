@@ -1,6 +1,6 @@
 
 from cfstore.plugins.et_main import et_main
-from cfstore.plugins.posix import RemotePosix
+from cfstore.plugins.posix import RemotePosix, Posix
 from cfstore.config import CFSconfig
 from pathlib import Path
 from datetime import datetime
@@ -100,8 +100,12 @@ def add(ctx, description, arg1, argm):
             host, user = state.get_location(location)['host'], state.get_location(location)['user']
             x.configure(host, user)
             x.add_collection(path, collection, description)
-        elif target == 'local':
-            raise NotImplementedError
+
+        elif target == 'local' or target == 'p':
+            location = arg1
+            path, collection = argm
+            x = Posix(state.db, location)
+            x.add_collection(path, collection, description)
         else:
             raise ValueError(f'Unexpected location type {target}')
 

@@ -71,7 +71,7 @@ made in November 2021, this documentation needs to be updated!*
 2. For remote posix file systems where you have ssh access,
     - you must first declare the location::
 
-         cfin rp setup locationname ssh_host
+         cfin rp setup locationname ssh_host username
 
       (you will need to have a running ssh-agent with the host key loaded)
 
