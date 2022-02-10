@@ -1,4 +1,5 @@
 import unittest, os
+from unittest import mock
 from click.testing import CliRunner
 
 from cfstore.cfdb import cli
@@ -20,13 +21,15 @@ def _mysetup():
     return filename
 
 
-def _check(instance, result, linecount=None):
+def _check(instance, result, linecount=None, noisy=False):
     """
     Make sure we have a proper result, and optionally break into lines and check there is an expected number
     of output lines.
     """
     if result.exit_code != 0:
         raise result.exception
+    if noisy:
+        print(result.output)
     if linecount:
         lines = result.output.split('\n')[:-1]
         if len(lines) != linecount:
@@ -35,6 +38,10 @@ def _check(instance, result, linecount=None):
         return lines
     return []
 
+def notty(x):
+    """ Used for mocking os.isatty so that tests always run non-interactively
+    no matter how run"""
+    return False
 
 class MissingTestEnvVar(Exception):
     pass
@@ -173,27 +180,30 @@ class Test_cfdb(unittest.TestCase):
         Test the method of organising files into a new collections, using data from stdin
         """
         runner = CliRunner()
-        with runner.isolated_filesystem():
-            _mysetup()
-            dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file23\n'
-            result = runner.invoke(cli, ['organise', 'newc'], input=dummy_input)
-            _check(self, result)
-            result = runner.invoke(cli, ['ls', '--collection=newc'])
-            _check(self, result, 2)
-            self.assertEqual(dummy_input, result.output)
+
+        with mock.patch('os.isatty', notty) as mock_tty:
+            with runner.isolated_filesystem():
+                _mysetup()
+                dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file23\n'
+                result = runner.invoke(cli, ['organise', 'newc'], input=dummy_input)
+                _check(self, result, noisy=True)
+                result = runner.invoke(cli, ['ls', '--collection=newc'])
+                _check(self, result, 2)
+                self.assertEqual(dummy_input, result.output)
 
     def test_organise_existing(self):
         """
         Test the method of organising files into an existing collections, using data from stdin
         """
         runner = CliRunner()
-        with runner.isolated_filesystem():
-            _mysetup()
-            dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file13\n'
-            result = runner.invoke(cli, ['organise', 'dummy4'], input=dummy_input)
-            _check(self, result)
-            result = runner.invoke(cli, ['ls', '--collection=dummy4'])
-            _check(self, result, 12)
+        with mock.patch('os.isatty', notty) as mock_tty:
+            with runner.isolated_filesystem():
+                _mysetup()
+                dummy_input = '/somewhere/in/unix_land/file12\n/somewhere/in/unix_land/file13\n'
+                result = runner.invoke(cli, ['organise', 'dummy4'], input=dummy_input)
+                _check(self, result)
+                result = runner.invoke(cli, ['ls', '--collection=dummy4'])
+                _check(self, result, 12)
 
     def test_tag(self):
         """
@@ -296,9 +306,6 @@ class Test_cfdb(unittest.TestCase):
             _mysetup()
             result = runner.invoke(cli, ['pr', 'dummy1'])
             raise NotImplementedError('Still developing this test, results not checked')
-
-
-
 
 
 if __name__ == "__main__":
