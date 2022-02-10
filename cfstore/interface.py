@@ -311,10 +311,20 @@ class CollectionDB(CoreDB):
             #c = self.create_collection(collection, description, {})
             c = Collection(name=collection, volume=0, description=description)
             self.session.add(c)
+        missing = []
         for f in files:
             path, name = os.path.split(f)
-            ff = self.retrieve_file(path, name)
-            c.holds_files.append(ff)
+            try:
+                ff = self.retrieve_file(path, name)
+                c.holds_files.append(ff)
+            except FileNotFoundError:
+                missing.append(f)
+        if missing: 
+            message = "ERROR: Operation not completed: The following files were not found in database:\n-> "
+            message += '\n-> '.join(missing)
+            raise FileNotFoundError(message)
+               
+        print([x for x in c.holds_files])
         self.session.commit()
 
     def tag_collection(self, collection_name, tagname):
