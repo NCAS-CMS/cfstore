@@ -196,14 +196,24 @@ def locate_replicants(ctx, collection, strip_base, match_full_path):
 @click.option('--description_file', default=None, help='(Optional) File in which a description for this collection can be found')
 def organise(ctx, collection, description_file):
     """
-    Take a list of files read from std input and move them into a collection with name COLLECTION.
-    If COLLECTION doesn't exist, create it, otherwise add files into it.
+    Take a list of files move them into a collection with name COLLECTION
+    If COLLECTION doesn't exist, create it. 
+    If invoked from a terminal, provide an editor for entering files.
+    Can also be invoked in a pipeline or using an input file (e.g. cfsdb organise yourc << YourFileListing)
+    Files must exist in database before they can be organised.
     """
     view_state, db = _set_context(ctx, collection)
 
     if os.isatty(0):
-        click.echo(ctx.get_help())
-        return
+        text = f"# (Don't remove this two line header)\n# Enter a list of files to be organised into {collection}:\n"
+        text = click.edit(text)
+        lines = text.split('\n')[2:]
+    else:
+        lines = sys.stdin.readlines()
+    olines = [f.strip() for f in lines if f != ''] # clean for obvious UI issues
+    lines = list(dict.fromkeys(olines))
+    if len(lines)!=len(olines):
+        print('WARNING: removed duplicates in file list!', file=sys.stderr)
 
     if description_file:
         with open(description_file, 'r') as f:
@@ -211,10 +221,14 @@ def organise(ctx, collection, description_file):
     else:
         description = None
 
-    files = [f.strip() for f in sys.stdin.readlines()]
-    db.organise(collection, files, description=description)
+    try:
+        db.organise(collection, lines, description=description)
+        view_state.save()
+    except FileNotFoundError as err:
+        print(err, file=sys.stderr)
+        return 2
 
-    view_state.save()
+    
 
 @cli.command()
 @click.pass_context
