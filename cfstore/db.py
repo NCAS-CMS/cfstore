@@ -68,6 +68,12 @@ var_file_associations = Table(
     Column('variable_id', Integer, ForeignKey('variable.id'), primary_key=True)
 )
 
+var_cell_associations = Table(
+    'var_cell_assocations',
+    Column('variable_id', Integer, ForeignKey('variable.id'), primary_key=True),
+    Column('cell_method_id', Integer, ForeignKey('cell_method.id'), primary_key=True)
+)
+
 def sizeof_fmt(num, suffix='B'):
     for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
         if abs(num) < 1024.0:
@@ -206,18 +212,10 @@ def on_new_class(mapper, cls_):
 ### Sqlalchemy magic concludes
 ###
 
-class CollectionProperty(Base):
-    """
-    Arbitrary key value pair associated with collections.
-    """
-    # see https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html for heritage
-    __tablename__ = "collection_properties"
-    collection_id = Column(ForeignKey('collections.id'), primary_key=True)
 
-    # 128 characters would seem to allow plenty of room for "interesting" keys
-    # could serialise json into value if necessary
-    key = Column(Unicode(128), primary_key=True)
-    value = Column(UnicodeText)
+#
+# Variable Tables:
+#
 
 class VariableMetadata(PolymorphicVerticalProperty, Base):
     """
@@ -226,7 +224,7 @@ class VariableMetadata(PolymorphicVerticalProperty, Base):
     Following CF conventions, all variable metadata is both variable
     specific and inherited from file globals.
     """
-     # see https://docs.sqlalchemy.org/en/14/_modules/examples/vertical/dictlike-polymorphic.htmlfor heritage
+     # see https://docs.sqlalchemy.org/en/14/_modules/examples/vertical/dictlike-polymorphic.html for heritage
     __tablename__ = "var_metadata"
     collection_id = Column(ForeignKey('File.id'), primary_key=True)
 
@@ -248,13 +246,79 @@ class CellMethod(Base):
     """ 
     Collection of possible cell methods
     """
-    __tablename__ = "cell_methods"
+    __tablename__ = "cell_method"
     method_id = Column(ForeignKey('Method.id'), primary_key=True)
     axis = Column(String)
     method = Column(String)
 
+    used_in = relationship(
+        "Variable",
+        secondary=var_cell_associations,
+        back_populates="cell_methods"
+    )
+
     def __repr__(self):
-        return self.canonical_string
+        return f'{self.axis} : {self.method}'
+
+class Variable(ProxiedDictMixin, Base):
+    """
+    Representation of a Variable
+    """
+    __tablename__="variable"
+
+    id = Column(Integer, primary_key=True)
+    cf_name = Column(String)
+    long_name = Column(String)
+
+    in_files = relationship(
+        "File",
+        secondary=var_file_associations,
+        back_populates="variables"
+    )
+
+    cell_methods = relationship(
+        "CellMethod",
+        secondary=var_cell_associations,
+        back_populates="used_in"
+    )
+    
+    _proxied = association_proxy(
+        "var_metadata",
+        "value",
+        creator = lambda key, value: VariableMetadata(key=key, value=value),
+    )
+    def __init__(self, cf_name=None, long_name=None):
+        """ Ensure either longname or cf_name is provided"""
+        if cf_name is None and long_name is None:
+            raise ValueError("Cannot initialise a variable without either cf or long name")
+        super(Variable, self).__init__(cf_name=cf_name,long_name=long_name)
+
+    def __repr__(self):
+        if self.cf_name:
+            return self.cf_name
+        else:
+            return self.long_name
+
+    @classmethod
+    def with_metadata(self, key, value):
+        return self.var_metadta.any(key=key,value=value)
+
+#
+# Collection Tables
+#
+
+class CollectionProperty(Base):
+    """
+    Arbitrary key value pair associated with collections.
+    """
+    # see https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html for heritage
+    __tablename__ = "collection_properties"
+    collection_id = Column(ForeignKey('collections.id'), primary_key=True)
+
+    # 128 characters would seem to allow plenty of room for "interesting" keys
+    # could serialise json into value if necessary
+    key = Column(Unicode(128), primary_key=True)
+    value = Column(UnicodeText)
 
 
 class Collection(ProxiedDictMixin, Base):
@@ -279,7 +343,7 @@ class Collection(ProxiedDictMixin, Base):
         back_populates="in_collections")
     #association_proxy('holds_files', 'files')
 
-    # collections which correspond to uploaded batches, and which cannot be
+    # collections which correspond to #ed batches, and which cannot be
     # deleted unless there are no references to the files within it elsewhere
     batch = Column(Boolean)
 
@@ -310,10 +374,6 @@ class Collection(ProxiedDictMixin, Base):
     @property
     def filecount(self):
         return len(self.holds_files)
-
-    @classmethod
-    def with_property(self, key, value):
-        return self.properties.any(key=key, value=value)
 
 
 class Relationship(Base):
@@ -439,33 +499,7 @@ class File(Base):
     def with_nc_attr(self, key, value):
         return self.nc_attrs.any(key=key, value=value)
 
-class Variable(ProxiedDictMixin, Base):
-    """
-    Representation of a Variable
-    """
-    __tablename__="variable"
 
-    id = Column(Integer, primary_key=True)
-    cf_name = Column(String)
-    long_name = Column(String)
-
-    in_files = relationship(
-        "File",
-        secondary=var_file_associations,
-        back_populates="variables"
-    )
-
-    def __init__(self, cf_name=None, long_name=None):
-        """ Ensure either longname or cf_name is provided"""
-        if cf_name is None and long_name is None:
-            raise ValueError("Cannot initialise a variable without either cf or long name")
-        super(Variable, self).__init__(cf_name=cf_name,long_name=long_name)
-
-    def __repr__(self):
-        if self.cf_name:
-            return self.cf_name
-        else:
-            return self.long_name
 
 
 
