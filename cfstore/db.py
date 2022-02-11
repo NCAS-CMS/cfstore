@@ -1,4 +1,5 @@
 from ast import For, In
+from xml.etree.ElementTree import canonicalize
 from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData, Float
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, Session, backref
@@ -17,8 +18,6 @@ from sqlalchemy.ext.declarative import declarative_base
 # https://docs.sqlalchemy.org/en/13/orm/basic_relationships.html
 # see also https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html
 # https://docs.sqlalchemy.org/en/13/orm/extensions/associationproxy.html
-
-#FIXME: Does not yet include B metadata support, although that could probably be done via collection properties.
 
 # Would like to add "ubercollection" to be associated with a GWS and a user.
 # Need to be able to total the unique volumes associated with eash user and GWS.
@@ -60,6 +59,13 @@ location_protocol_associations = Table(
     Base.metadata,
     Column('locations_id', Integer, ForeignKey('locations.id'), primary_key=True),
     Column('protocol_id', Integer, ForeignKey('protocol.id'), primary_key=True)
+)
+
+var_file_associations = Table(
+    'var_file_associations',
+    Base.metadata,
+    Column('file_id', Integer, ForeignKey('files.id'), primary_key=True),
+    Column('variable_id', Integer, ForeignKey('variable.id'), primary_key=True)
 )
 
 def sizeof_fmt(num, suffix='B'):
@@ -213,13 +219,15 @@ class CollectionProperty(Base):
     key = Column(Unicode(128), primary_key=True)
     value = Column(UnicodeText)
 
-class FileMetadata(PolymorphicVerticalProperty, Base):
+class VariableMetadata(PolymorphicVerticalProperty, Base):
     """
-    Arbitrary key value pair associated with files 
+    Arbitrary key value pair associated with variables
     (B-Metadata in Lawrence et al 2008 terminology) ... 
+    Following CF conventions, all variable metadata is both variable
+    specific and inherited from file globals.
     """
      # see https://docs.sqlalchemy.org/en/14/_modules/examples/vertical/dictlike-polymorphic.htmlfor heritage
-    __tablename__ = "file_metadata"
+    __tablename__ = "var_metadata"
     collection_id = Column(ForeignKey('File.id'), primary_key=True)
 
     # 128 characters would seem to allow plenty of room for "interesting" keys
@@ -234,7 +242,20 @@ class FileMetadata(PolymorphicVerticalProperty, Base):
     int_value = Column(Integer, info={"type": (int, "integer")})
     real_value = Column(Float, info={"type": (int, "integer")})
     char_value = Column(UnicodeText, info={"type": (str, "string")})
-    
+
+
+class CellMethod(Base):
+    """ 
+    Collection of possible cell methods
+    """
+    __tablename__ = "cell_methods"
+    method_id = Column(ForeignKey('Method.id'), primary_key=True)
+    axis = Column(String)
+    method = Column(String)
+
+    def __repr__(self):
+        return self.canonical_string
+
 
 class Collection(ProxiedDictMixin, Base):
     """
@@ -372,7 +393,7 @@ class StorageLocation(Base):
         return f'Location <{self.name}> has  {sizeof_fmt(self.volume)} in {len(self.holds_files)} files'
 
 
-class File(ProxiedDictMixin, Base):
+class File(Base):
     """
     Representation of a file
     """
@@ -381,6 +402,7 @@ class File(ProxiedDictMixin, Base):
     name = Column(String)
     path = Column(String)
     checksum = Column(String)
+    checksum_method = Column(String)
     size = Column(Integer)
     initial_collection = Column(Integer, ForeignKey('collections.id'))
     format = Column(String)
@@ -394,6 +416,12 @@ class File(ProxiedDictMixin, Base):
         "Collection",
         secondary=collection_files_associations,
         back_populates="holds_files")
+
+    variables = relationship(
+        "Variable",
+        secondary=var_file_associations,
+        back_populates="in_files"
+    )
 
     # vertical table properties
     nc_attrs = relationship("FileMetadata",
@@ -410,6 +438,35 @@ class File(ProxiedDictMixin, Base):
     @classmethod
     def with_nc_attr(self, key, value):
         return self.nc_attrs.any(key=key, value=value)
+
+class Variable(ProxiedDictMixin, Base):
+    """
+    Representation of a Variable
+    """
+    __tablename__="variable"
+
+    id = Column(Integer, primary_key=True)
+    cf_name = Column(String)
+    long_name = Column(String)
+
+    in_files = relationship(
+        "File",
+        secondary=var_file_associations,
+        back_populates="variables"
+    )
+
+    def __init__(self, cf_name=None, long_name=None):
+        """ Ensure either longname or cf_name is provided"""
+        if cf_name is None and long_name is None:
+            raise ValueError("Cannot initialise a variable without either cf or long name")
+        super(Variable, self).__init__(cf_name=cf_name,long_name=long_name)
+
+    def __repr__(self):
+        if self.cf_name:
+            return self.cf_name
+        else:
+            return self.long_name
+
 
 
 class CoreDB:
