@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, Session, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy import event
+from sqlalchemy import event, cast, case, null
 from sqlalchemy import literal_column
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.interfaces import PropComparator
@@ -193,6 +193,7 @@ class PolymorphicVerticalProperty(object):
 @event.listens_for(
     PolymorphicVerticalProperty, "mapper_configured", propagate=True
 )
+
 def on_new_class(mapper, cls_):
     """Look for Column objects with type info in them, and work up
     a lookup table."""
