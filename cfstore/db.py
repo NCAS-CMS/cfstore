@@ -10,7 +10,8 @@ from sqlalchemy import literal_column
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.interfaces import PropComparator
 
-import os
+import os, re
+from cfstore.parse_cell_methods import parse_cell_methods
 
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -256,7 +257,7 @@ class CellMethod(Base):
     used_in = relationship(
         "Variable",
         secondary=var_cell_associations,
-        back_populates="cell_methods"
+        back_populates="_cell_methods"
     )
 
     def __repr__(self):
@@ -264,7 +265,15 @@ class CellMethod(Base):
 
 class Variable(ProxiedDictMixin, Base):
     """
-    Representation of a Variable in the database
+    Representation of a Variable in the database.
+
+    Note that the various attributes are handled differently, via different interfaces,
+    which is probably going to be horrible to comprehend higher up the stack.
+    It is most likely we will want to have another class which handles all the 
+    attributes in the same way, so that the differnce between, say X.cell_methods = 'adsf'
+    and X['file_count'] = 1 which is necessary to the database layer is hidden
+    from the user higher up (we should handle both the same way in user facing classes).
+    
     """
     __tablename__="variable"
 
@@ -278,7 +287,7 @@ class Variable(ProxiedDictMixin, Base):
         back_populates="variables"
     )
 
-    cell_methods = relationship(
+    _cell_methods = relationship(
         "CellMethod",
         secondary=var_cell_associations,
         back_populates="used_in"
@@ -305,6 +314,16 @@ class Variable(ProxiedDictMixin, Base):
             return self.cf_name
         else:
             return self.long_name
+
+    def __setattr__(self, key, value):
+        if key == 'cell_methods':
+            mdict = parse_cell_methods(self,value)
+            for m in mdict:
+                for a in m['axes']:
+                    cm = CellMethod(axis=a, method=m['method'])
+                    self._cell_methods.append(cm)
+        else:
+            super().__setattr__(key, value)
 
     @classmethod
     def with_other_attributes(self, key, value):
