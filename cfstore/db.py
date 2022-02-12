@@ -61,15 +61,16 @@ location_protocol_associations = Table(
     Column('protocol_id', Integer, ForeignKey('protocol.id'), primary_key=True)
 )
 
-var_file_associations = Table(
-    'var_file_associations',
+var_files_associations = Table(
+    'var_files_associations',
     Base.metadata,
-    Column('file_id', Integer, ForeignKey('files.id'), primary_key=True),
+    Column('files_id', Integer, ForeignKey('files.id'), primary_key=True),
     Column('variable_id', Integer, ForeignKey('variable.id'), primary_key=True)
 )
 
 var_cell_associations = Table(
     'var_cell_assocations',
+    Base.metadata,
     Column('variable_id', Integer, ForeignKey('variable.id'), primary_key=True),
     Column('cell_method_id', Integer, ForeignKey('cell_method.id'), primary_key=True)
 )
@@ -226,7 +227,7 @@ class VariableMetadata(PolymorphicVerticalProperty, Base):
     """
      # see https://docs.sqlalchemy.org/en/14/_modules/examples/vertical/dictlike-polymorphic.html for heritage
     __tablename__ = "var_metadata"
-    collection_id = Column(ForeignKey('File.id'), primary_key=True)
+    collection_id = Column(ForeignKey('variable.id'), primary_key=True)
 
     # 128 characters would seem to allow plenty of room for "interesting" keys
     # could serialise json into value if necessary
@@ -247,7 +248,7 @@ class CellMethod(Base):
     Collection of possible cell methods
     """
     __tablename__ = "cell_method"
-    method_id = Column(ForeignKey('Method.id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
     axis = Column(String)
     method = Column(String)
 
@@ -262,7 +263,7 @@ class CellMethod(Base):
 
 class Variable(ProxiedDictMixin, Base):
     """
-    Representation of a Variable
+    Representation of a Variable in the database
     """
     __tablename__="variable"
 
@@ -272,7 +273,7 @@ class Variable(ProxiedDictMixin, Base):
 
     in_files = relationship(
         "File",
-        secondary=var_file_associations,
+        secondary=var_files_associations,
         back_populates="variables"
     )
 
@@ -281,12 +282,17 @@ class Variable(ProxiedDictMixin, Base):
         secondary=var_cell_associations,
         back_populates="used_in"
     )
+
+    other_attributes = relationship(
+        "VariableMetadata", collection_class=attribute_mapped_collection("key")
+    )
     
     _proxied = association_proxy(
-        "var_metadata",
+        "other_attributes",
         "value",
         creator = lambda key, value: VariableMetadata(key=key, value=value),
     )
+
     def __init__(self, cf_name=None, long_name=None):
         """ Ensure either longname or cf_name is provided"""
         if cf_name is None and long_name is None:
@@ -300,8 +306,8 @@ class Variable(ProxiedDictMixin, Base):
             return self.long_name
 
     @classmethod
-    def with_metadata(self, key, value):
-        return self.var_metadta.any(key=key,value=value)
+    def with_other_attributes(self, key, value):
+        return self.other_attributes.any(key=key,value=value)
 
 #
 # Collection Tables
@@ -479,26 +485,12 @@ class File(Base):
 
     variables = relationship(
         "Variable",
-        secondary=var_file_associations,
+        secondary=var_files_associations,
         back_populates="in_files"
     )
 
-    # vertical table properties
-    nc_attrs = relationship("FileMetadata",
-                              collection_class=attribute_mapped_collection("key"))
-    
-    _proxied = association_proxy(
-        "nc_attrs",
-        "value",
-        creator=lambda key, value: FileMetadata(key=key, value=value))    
-
     def __repr__(self):
         return os.path.join(self.path, self.name)
-
-    @classmethod
-    def with_nc_attr(self, key, value):
-        return self.nc_attrs.any(key=key, value=value)
-
 
 
 
