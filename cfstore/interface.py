@@ -1,5 +1,5 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol
+from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -10,6 +10,39 @@ class CollectionError(Exception):
 
 
 class CollectionDB(CoreDB):
+
+
+    def cell_method_add(self, axis, method):
+        """ 
+        Add a new cell method to database, raise an error if it already exists.
+        Returns the new cell method.
+        """
+        try:
+            cm = self.cell_method_retrieve(axis=axis, method=method)
+        except NoResultFound:
+            cm = CellMethod(axis=axis, method=method)
+            self.session.add(cm)
+            self.session.commit()
+            return cm
+        else:
+            raise ValueError(f'Attempt to add an existing cell method {cm}')
+
+    def cell_method_get_or_make(self, axis, method):
+        """
+        Retrieve a specfic cell method, if it doesn't exist, create it, and return it.
+        """
+        try:
+            self.cell_method_retrieve(axis=axis, method=method)
+        except NoResultFound:
+            return self.cell_method_add(axis=axis, method=method)
+
+    def cell_method_retrieve(self, axis, method):
+        """ 
+        Retrieve a specific cell method
+        """
+        cm = self.session.query(CellMethod).filter(and_(CellMethod.axis==axis, CellMethod.method==method)).one()
+        return cm
+
 
     def add_protocol(self, protocol_name, locations=[]):
         """

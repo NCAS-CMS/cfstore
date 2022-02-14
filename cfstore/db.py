@@ -273,12 +273,12 @@ class Variable(ProxiedDictMixin, Base):
     attributes in the same way, so that the differnce between, say X.cell_methods = 'adsf'
     and X['file_count'] = 1 which is necessary to the database layer is hidden
     from the user higher up (we should handle both the same way in user facing classes).
-    
+
     """
     __tablename__="variable"
 
     id = Column(Integer, primary_key=True)
-    cf_name = Column(String)
+    standard_name = Column(String)
     long_name = Column(String)
 
     in_files = relationship(
@@ -303,15 +303,15 @@ class Variable(ProxiedDictMixin, Base):
         creator = lambda key, value: VariableMetadata(key=key, value=value),
     )
 
-    def __init__(self, cf_name=None, long_name=None):
+    def __init__(self, standard_name=None, long_name=None):
         """ Ensure either longname or cf_name is provided"""
-        if cf_name is None and long_name is None:
-            raise ValueError("Cannot initialise a variable without either cf or long name")
-        super(Variable, self).__init__(cf_name=cf_name,long_name=long_name)
+        if standard_name is None and long_name is None:
+            raise ValueError("Cannot initialise a variable without either standard or long name")
+        super(Variable, self).__init__(standard_name=standard_name,long_name=long_name)
 
     def __repr__(self):
-        if self.cf_name:
-            return self.cf_name
+        if self.standard_name:
+            return self.standard_name
         else:
             return self.long_name
 
