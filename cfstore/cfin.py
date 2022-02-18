@@ -2,6 +2,7 @@
 from cfstore.plugins.et_main import et_main
 from cfstore.plugins.posix import RemotePosix, Posix
 from cfstore.config import CFSconfig
+from cfstore import interface
 from pathlib import Path
 from datetime import datetime
 import click

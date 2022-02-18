@@ -10,7 +10,6 @@ class CollectionError(Exception):
 
 
 class CollectionDB(CoreDB):
-
     def add_relationship(self, collection_one, collection_two, relationship):
         """
         Add a symmetrical <relationship> between <collection_one> and <collection_two>.
