@@ -286,6 +286,7 @@ class CollectionDB(CoreDB):
         if file in c.holds_files:
             raise ValueError(f"Attempt to add file {file} to collection {c} - but it's already there")
         c.holds_files.append(file)
+        c.volume += file.size        
         self.session.commit()
 
     def collection_info(self, name):
@@ -424,6 +425,7 @@ class CollectionDB(CoreDB):
         """
         f = self.retrieve_file(file_path, file_name)
         c = self.retrieve_collection(collection)
+        c.volume -= f.size
         try:
             index = f.in_collections.index(c)
         except ValueError:

@@ -1,12 +1,27 @@
+import fnmatch
+import os
+
 from setuptools import setup, find_packages
+
+
+def find_package_data_files(directory):
+    for root, dirs, files in os.walk(directory):
+        for basename in files:
+            if fnmatch.fnmatch(basename, "*"):
+                filename = os.path.join(root, basename)
+                yield filename.replace("cfstore/", "", 1)
+
+
+plugins = [f for f in find_package_data_files("cfstore/plugins")]
+package_data = plugins
 
 setup(
     name='cfstore',
-    version='0.2.1',
-    packages=['cfstore'],
+    version='0.3.0',
+    packages=find_packages(),
     url='',
     license='MIT',
-    author='Bryan Lawrence',
+    author='Bryan Lawrence + George OBrien',
     author_email='bryan.lawrence@ncas.ac.uk',
     description='Provides an interface to managing cf compliant data held in multiple storage locations',
     platforms=["Linux", "MacOS"],
@@ -33,4 +48,5 @@ setup(
             'cfmv=cfstore.cfmv:safe_cli'
         ],
     },
+    package_data={"cfstore": package_data},
 )

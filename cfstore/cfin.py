@@ -1,6 +1,6 @@
 
 from cfstore.plugins.et_main import et_main
-from cfstore.plugins.posix import RemotePosix
+from cfstore.plugins.posix import RemotePosix, Posix
 from cfstore.config import CFSconfig
 from pathlib import Path
 from datetime import datetime
@@ -86,8 +86,8 @@ def add(ctx, description, arg1, argm):
             with open(path, 'r') as f:
                 description = f.read()
         else:
-            if len(argm) != 2:
-                raise InputError('InputError: Missing arguments', add.__doc__)
+            #if len(argm) != 2:
+            #    raise InputError('InputError: Missing arguments', add.__doc__)
             today = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
             intro = f'\n#### Collection {argm[1]}\n\n(loaded from {argm[0]}, location {arg1},  at {today})\n\n' + \
                     '[Enter description (text or markdown) (maybe using the above and deleting this line)]\n'
@@ -100,8 +100,12 @@ def add(ctx, description, arg1, argm):
             host, user = state.get_location(location)['host'], state.get_location(location)['user']
             x.configure(host, user)
             x.add_collection(path, collection, description)
-        elif target == 'local':
-            raise NotImplementedError
+
+        elif target == 'local' or target == 'p':
+            location = arg1
+            path, collection = argm
+            x = Posix(state.db, location)
+            x.add_collection(path, collection, description)
         else:
             raise ValueError(f'Unexpected location type {target}')
 
@@ -128,8 +132,12 @@ def setup(ctx, location, host, user):
         state.db.create_location(location)
         state.add_location(target, location, user=user, host=host)
 
-    elif target == 'local':
-        raise NotImplementedError
+    elif target == 'local' or target == 'p':
+        # check we don't already have one in config or database (we can worry about mismatches later)
+        if location in state.interfaces:
+            raise ValueError(f'Location {location} already exists in config file')
+        state.db.create_location(location)
+        state.add_location(target, location, user=user, host=host)
     else:
         raise ValueError(f'Unexpected location type {target}')
 
