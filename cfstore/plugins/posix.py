@@ -52,8 +52,6 @@ class Posix:
         for dirName, directories, files in os.walk(path_to_collection_head):
             dbfiles = []
             for f in files:
-                print(dbfiles)
-                print(path_to_collection_head+f)
                 fp = path_to_collection_head+f
                 dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
 
