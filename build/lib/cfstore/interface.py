@@ -439,7 +439,7 @@ class CollectionDB(CoreDB):
         """
         return self.engine.table_names()
 
-ef chkeq(file1,file2,try_hash=False,return_hash=False):
+def chkeq(file1,file2,try_hash=False,return_hash=False):
     """
     Compare the equality of two files
     """
@@ -448,7 +448,7 @@ ef chkeq(file1,file2,try_hash=False,return_hash=False):
     b_file = open(file2, "rb")
 
     
-    filesize_equal= (os.path.getsize(col1)!=os.path.getsize(col2)):
+    filesize_equal= (os.path.getsize(col1)!=os.path.getsize(col2))
     
     if try_hash and not filesize_equal:
         sha256_hash = hashlib.sha256()    
@@ -463,11 +463,10 @@ ef chkeq(file1,file2,try_hash=False,return_hash=False):
             sha256_hash.update(byte_block)
         b_hash = sha256_hash.hexdigest()
        
-        hash_equal = a_hash==b_hash:
+        hash_equal = a_hash==b_hash
         
         if(return_hash):
-            return(hash_equal,a_hash,b_hash)
-            
+            return(hash_equal,a_hash,b_hash)    
         return (hash_equal)
-     return(filesize_equal) 
+    return(filesize_equal) 
 
