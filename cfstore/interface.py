@@ -439,7 +439,7 @@ class CollectionDB(CoreDB):
         """
         return self.engine.table_names()
 
-ef chkeq(file1,file2,try_hash=False,return_hash=False):
+def chkeq(file1,file2,try_hash=False,return_hash=False):
     """
     Compare the equality of two files
     """
