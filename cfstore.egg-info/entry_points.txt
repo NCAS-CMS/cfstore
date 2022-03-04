@@ -1,0 +1,5 @@
+[console_scripts]
+cfin = cfstore.cfin:safe_cli
+cfmv = cfstore.cfmv:safe_cli
+cfsdb = cfstore.cfdb:safe_cli
+
