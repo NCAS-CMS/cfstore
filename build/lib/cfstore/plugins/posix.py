@@ -45,7 +45,6 @@ class Posix:
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum):
         """ Walk local POSIX tree"""
-        print("kinda works")
         if subcollections:
             raise NotImplementedError('No support for sub-collections as yet')
 
@@ -102,7 +101,7 @@ class RemotePosix(Posix):
         """
         # Useful: https://stackoverflow.com/questions/45653213/parallel-downloads-with-multiprocessing-and-pysftp
         if not hasattr(self, 'ssh'):
-            raise ConnectionError('RemotePosix has not been initialised')
+            raise ConnectionError('Posix has not been initialised')
         if checksum:
             raise ValueError('Cannot (ok, really we mean, will not) checksum remote files')
         if subcollections:

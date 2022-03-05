@@ -45,6 +45,8 @@ class CollectionDB(CoreDB):
 
         for k in kw:
             c[k] = kw[k]
+            print(k.size)
+            c.volume += k.size          
         self.session.add(c)
 
         try:
@@ -257,12 +259,16 @@ class CollectionDB(CoreDB):
             #TODO add checksum here
             return files
 
-    def delete_collection(self, collection_name):
+    def delete_collection(self, collection_name,force):
         """
         Remove a collection from the database, ensuring all files have already been removed first.
         """
         files = self.retrieve_files_in_collection(collection_name)
-        if files:
+        if force:
+            c = self.retrieve_collection(collection_name)
+            self.session.delete(c)
+            self.session.commit()
+        elif files:
             raise CollectionError(collection_name, f'not empty (contains {len(files)} files)')
         else:
             c = self.retrieve_collection(collection_name)
@@ -283,9 +289,23 @@ class CollectionDB(CoreDB):
         """
         c = self.session.query(Collection).filter_by(name=collection).one()
         if file in c.holds_files:
-            raise ValueError(f"Attempt to add file {file} to collection {c} - but it's already there")
+            raise ValueError(f"Attempt to add file {file} to {c} - but it's already there")
         c.holds_files.append(file)
         c.volume += file.size        
+        self.session.commit()
+    
+    def delete_file_from_collection(self, collection, file):
+        """
+        Delete a file from a collection
+        """
+
+        path, name = os.path.split(file)
+        ff = self.retrieve_file(path,name)
+
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        if not (str(file) in map(str,c.holds_files)):
+            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
+        c.holds_files.remove(ff)      
         self.session.commit()
 
     def collection_info(self, name):
