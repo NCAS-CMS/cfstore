@@ -1,9 +1,11 @@
 import unittest
 import lorem
 from sqlalchemy import and_
+import os, pathlib
 
 from cfstore.db import Variable, CoreDB, CellMethod
-
+from cfstore.cfparse_file import cfparse_file
+from cfstore.interface import CollectionDB
 
 CELL_TEST_DATA = {
      'eg1': "area: time: mean lat: lon: mean",
@@ -12,7 +14,7 @@ CELL_TEST_DATA = {
 
 CELL_QUERIES = [('area', 'mean'),]
 
-class TestDB(unittest.TestCase):
+class TestDBsimple(unittest.TestCase):
     """ 
     Test basic DB implementation.
     """
@@ -63,6 +65,26 @@ class TestDB(unittest.TestCase):
             q = self.db.session.query(CellMethod).filter(and_(CellMethod.axis == a, CellMethod.method == m)).all()
             v0  = [str(v) for v in q[0].used_in]
             assert "joe" in v0
+
+class TestDBreal(unittest.TestCase):
+    
+    def setUp(self):
+        self.db = CollectionDB()
+        self.db.init('sqlite://')
+
+    def test_parse_real_files(self):
+        """ 
+        If there is a test_data directory available, attempt to parse any netcdf files
+        found there.
+        """
+        DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))/'data'
+        if DIR.exists:
+            for f in DIR.glob('*.nc'):
+                cfparse_file(self.db, f)
+
+
+
+
             
 
 if __name__=="__main__":

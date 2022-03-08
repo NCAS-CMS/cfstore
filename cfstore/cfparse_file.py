@@ -1,7 +1,24 @@
 import cfdm
-from cfstore.interface import CollectionDB
 from cfstore.db import Variable, CellMethod
-from pathlib import Path
+import numpy as np
+
+
+def manage_types(value):
+    """ The database only supports variable values which are boolean, int, string, and float. """
+    if isinstance(value, str):
+        return value
+    elif isinstance(value,bool):
+        return value
+    elif isinstance(value, np.int32):
+        return int(value)
+    elif isinstance(value, int):
+        return value
+    elif isinstance(value, np.floating):
+        return float(value)
+    else:
+        raise ValueError('Unrecognised type for database ',type(value))
+
+
 
 def cfparse_file(db, filename):
     """  
@@ -28,7 +45,8 @@ def cfparse_file(db, filename):
         var = Variable(standard_name=name, long_name=long_name)
         for k,p  in properties.items():
             if k not in ['standard_name','long_name']:
-                var[k] = p 
+                print(k, type(manage_types(p)))
+                var[k] = manage_types(p) 
         db.session.add(var)
         for m, cm in v.cell_methods().items():
             for a in cm.get_axes(): 
@@ -37,8 +55,3 @@ def cfparse_file(db, filename):
                 dbmethod.used_in.append(var)
         db.session.commit()
 
-if __name__=="__main__":
-    filename = Path(__file__).parent /  'data/file.nc'
-    db = CollectionDB()  
-    db.init('sqlite://')
-    cfparse_file(db, filename)
