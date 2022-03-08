@@ -96,10 +96,15 @@ class TestDBreal(unittest.TestCase):
             self.db.add_variables_from_file(f)
     
     def test_variable_queries(self):
-        """ Not really implemented yet"""
+        """ 
+        This works on the three files Bryan has in his test dataset. Users may need to
+        modify this test for their data. To do so, uncomment the print statements, find
+        some attributes you want to do queries on, and do those.
+        """
         for f in self.DIR.glob('*.nc'):
             self.db.add_variables_from_file(f)
         vars = self.db.session.query(Variable).all()
+        # following assumes Bryan's NetCDF test data ... 
         #for v in vars:
         #    print(v, v.long_name, v.cfdm_size, v.cfdm_domain, [(k,v[k]) for k in v.other_attributes])
         self.assertEqual(len(vars),3)
