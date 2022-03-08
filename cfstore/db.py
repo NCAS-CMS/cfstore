@@ -1,6 +1,6 @@
 from ast import For, In
 from xml.etree.ElementTree import canonicalize
-from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData, Float
+from sqlalchemy import Column, Integer, String, Unicode, Boolean, ForeignKey, Table, UnicodeText, MetaData, Float, BigInteger
 from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship, Session, backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
@@ -281,6 +281,8 @@ class Variable(ProxiedDictMixin, Base):
     id = Column(Integer, primary_key=True)
     standard_name = Column(String)
     long_name = Column(String)
+    cfdm_size = Column(BigInteger)
+    cfdm_domain = Column(String)
 
     in_files = relationship(
         "File",
@@ -304,11 +306,11 @@ class Variable(ProxiedDictMixin, Base):
         creator = lambda key, value: VariableMetadata(key=key, value=value),
     )
 
-    def __init__(self, standard_name=None, long_name=None):
+    def __init__(self, standard_name=None, long_name=None, cfdm_size=0, cfdm_domain=''):
         """ Ensure either longname or cf_name is provided"""
         if standard_name is None and long_name is None:
             raise ValueError("Cannot initialise a variable without either standard or long name")
-        super(Variable, self).__init__(standard_name=standard_name,long_name=long_name)
+        super(Variable, self).__init__(standard_name=standard_name,long_name=long_name, cfdm_size=cfdm_size, cfdm_domain=cfdm_domain)
 
     def __repr__(self):
         if self.standard_name:

@@ -44,8 +44,17 @@ class TestDBsimple(unittest.TestCase):
             Variable.with_other_attributes("units", 'm/s')).all()
 
         for w in q:
-            print(w)
             assert w.long_name == 'meridional wind'
+
+    def test_size(self):
+        size = 100*36000*36000 # proxy for 1km 100 level global grid
+        t = Variable(long_name='Air Temperature', cfdm_size=size)
+        t['units'] = 'K'
+        self.db.session.add(t)
+        self.db.session.commit()
+        q = self.db.session.query(Variable).filter(Variable.cfdm_size==size).all()
+        tdm = q[0]
+        self.assertEqual(tdm.cfdm_size, size)
 
 
     def test_add_cell_method(self):

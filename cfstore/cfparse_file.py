@@ -42,11 +42,16 @@ def cfparse_file(db, filename):
         if ('standard_name' not in properties and 'long_name' not in properties):
             properties['long_name'] = v.identity
         name, long_name = v.get_property('standard_name', None), v.get_property('long_name', None)
-        var = Variable(standard_name=name, long_name=long_name)
-        for k,p  in properties.items():
+
+        domain = v.domain._one_line_description()
+        size = v.size
+
+        var = Variable(standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain)
+        for k,p in properties.items():
             if k not in ['standard_name','long_name']:
-                print(k, type(manage_types(p)))
                 var[k] = manage_types(p) 
+        
+
         db.session.add(var)
         for m, cm in v.cell_methods().items():
             for a in cm.get_axes(): 
