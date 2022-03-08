@@ -80,20 +80,34 @@ class TestDBreal(unittest.TestCase):
     def setUp(self):
         self.db = CollectionDB()
         self.db.init('sqlite://')
+        DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))/'data'
+        if not DIR.exists:
+            raise FileNotFoundError('No data directory for testing')
+        if len(list(DIR.glob('*.nc'))) == 0:
+            raise FileNotFoundError('No NetCDF files found for testing')
+        self.DIR = DIR
 
     def test_parse_real_files(self):
         """ 
         If there is a test_data directory available, attempt to parse any netcdf files
         found there.
         """
-        DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))/'data'
-        if DIR.exists:
-            for f in DIR.glob('*.nc'):
-                self.db.add_variables_from_file(f)
+        for f in self.DIR.glob('*.nc'):
+            self.db.add_variables_from_file(f)
+    
+    def test_variable_queries(self):
+        """ Not really implemented yet"""
+        for f in self.DIR.glob('*.nc'):
+            self.db.add_variables_from_file(f)
+        vars = self.db.session.query(Variable).all()
+        #for v in vars:
+        #    print(v, v.long_name, v.cfdm_size, v.cfdm_domain, [(k,v[k]) for k in v.other_attributes])
+        self.assertEqual(len(vars),3)
+        # watch out, capitalisation matters in the keys
+        results = self.db.retrieve_variable(standard_name='air_temperature', Conventions='CF-1.9')
+        #results = self.db.retrieve_variable(standard_name='air_temperature', cfdm_size=130200)
+        self.assertEqual(len(results),1)
               
-
-
-
             
 
 if __name__=="__main__":

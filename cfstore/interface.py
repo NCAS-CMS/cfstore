@@ -1,5 +1,5 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod
+from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod, Variable
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 from cfstore.cfparse_file import cfparse_file
@@ -355,6 +355,23 @@ class CollectionDB(CoreDB):
                 File.replicas).group_by(File).having(
                 func.count(StorageLocation.id) > 1).all()
             return files
+
+    def retrieve_variable(self, **kw):
+        """ Retrieve variable by arbitrary property"""
+        queries = []
+        for k,v in kw.items():
+            if k in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
+                queries.append(getattr(Variable,k) == v)
+            else:
+                queries.append(Variable.with_other_attributes(k,v))
+        if len(queries) == 0:
+            raise ValueError('No query received for retrieve variable')
+        elif len(queries) == 1:
+            results = self.session.query(Variable).filter(queries[0]).all()
+        else:
+            results = self.session.query(Variable).filter(and_(*queries)).all()
+        return results
+
 
     def delete_collection(self, collection_name):
         """
