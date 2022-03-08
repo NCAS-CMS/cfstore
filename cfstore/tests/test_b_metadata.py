@@ -4,7 +4,6 @@ from sqlalchemy import and_
 import os, pathlib
 
 from cfstore.db import Variable, CoreDB, CellMethod
-from cfstore.cfparse_file import cfparse_file
 from cfstore.interface import CollectionDB
 
 CELL_TEST_DATA = {
@@ -49,12 +48,13 @@ class TestDBsimple(unittest.TestCase):
     def test_size(self):
         size = 100*36000*36000 # proxy for 1km 100 level global grid
         t = Variable(long_name='Air Temperature', cfdm_size=size)
-        t['units'] = 'K'
+        t['big number'] = size
         self.db.session.add(t)
         self.db.session.commit()
         q = self.db.session.query(Variable).filter(Variable.cfdm_size==size).all()
         tdm = q[0]
         self.assertEqual(tdm.cfdm_size, size)
+        self.assertEqual(tdm['big number'], size)
 
 
     def test_add_cell_method(self):
@@ -89,8 +89,8 @@ class TestDBreal(unittest.TestCase):
         DIR = pathlib.Path(os.path.dirname(os.path.abspath(__file__)))/'data'
         if DIR.exists:
             for f in DIR.glob('*.nc'):
-                cfparse_file(self.db, f)
-
+                self.db.add_variables_from_file(f)
+              
 
 
 

@@ -241,7 +241,7 @@ class VariableMetadata(PolymorphicVerticalProperty, Base):
     # in the info dictionary of Columns. We expect we will do
     # our own external serialisation for JSON into the char_value
     boolean_value = Column(Boolean, info={"type": (bool, "boolean") })
-    int_value = Column(Integer, info={"type": (int, "integer")})
+    int_value = Column(BigInteger, info={"type": (int, "integer")})
     real_value = Column(Float, info={"type": (float, "float")})
     char_value = Column(UnicodeText, info={"type": (str, "string")})
 

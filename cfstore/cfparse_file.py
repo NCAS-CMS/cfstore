@@ -1,10 +1,12 @@
 import cfdm
-from cfstore.db import Variable, CellMethod
+from cfstore.db import Variable
 import numpy as np
 
 
 def manage_types(value):
-    """ The database only supports variable values which are boolean, int, string, and float. """
+    """ 
+    The database only supports variable values which are boolean, int, string, and float. 
+    """
     if isinstance(value, str):
         return value
     elif isinstance(value,bool):
@@ -59,4 +61,3 @@ def cfparse_file(db, filename):
                 dbmethod = db.cell_method_get_or_make(axis=a, method=method)
                 dbmethod.used_in.append(var)
         db.session.commit()
-

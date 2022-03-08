@@ -2,6 +2,7 @@ import os, sys
 from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
+from cfstore.cfparse_file import cfparse_file
 
 
 class CollectionError(Exception):
@@ -94,6 +95,10 @@ class CollectionDB(CoreDB):
         if relationship_21 is not None:
             c2.add_relationship(relationship_21, c1)
         self.session.commit()
+
+    def add_variables_from_file(self, filename):
+        """ Add all the variables found in a file to the database"""
+        cfparse_file(self, filename)
 
     def create_collection(self, collection_name, description, kw={}):
         """
