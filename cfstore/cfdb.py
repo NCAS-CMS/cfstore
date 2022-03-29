@@ -84,6 +84,10 @@ def setc(ctx,collection):
     Set collection, or reset to default if --collection=all
     """
     view_state, db = _set_context(ctx, collection)
+    try:
+        db.retrieve_collection(collection)
+    except ValueError as err:
+        print(err, file=sys.stderr)
     view_state.save()
 
 
@@ -123,7 +127,13 @@ def findf(ctx, match, collection):
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
     if collection:
+        try:
+            db.retrieve_collection(collection)
+        except ValueError as err:
+            print(err, file=sys.stderr)
         files = db.retrieve_files_in_collection(collection, match=match)
+        if len(files)==0:
+            print("No files found")
         for f in files:
             print(f)
     else:
@@ -153,6 +163,10 @@ def findrx(ctx, collection, match):
     else:
         match = match[0]
     if collection:
+        try:
+            db.retrieve_collection(collection)
+        except ValueError as err:
+            print(err, file=sys.stderr)
         files = db.retrieve_files_in_collection(collection, replicants=True, match=match)
         for f in files:
             print(f)
@@ -350,6 +364,10 @@ def findr(ctx, link, collection):
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
+    try:
+        db.retrieve_collection(collection)
+    except ValueError as err:
+        print(err, file=sys.stderr)
     _print(db.retrieve_related(collection, link), 'name')
     view_state.save()
 

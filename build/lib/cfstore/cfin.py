@@ -113,7 +113,7 @@ def add(ctx, description, arg1, argm):
             print(location)
             path = arg1
             collection = argm[0]
-            x = Posix(state.db, location)
+            x = Posix(state.db, collection)
             x.add_collection(path, collection, description)
         else:
             raise ValueError(f'Unexpected location type {target}')
