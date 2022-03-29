@@ -426,7 +426,11 @@ def edit(ctx, collection):
 @click.pass_context
 @click.argument('collection')
 @click.argument('file')
-def deletefile(ctx, collection,file):
+def delete_file(ctx, collection,file):
+    """
+    Removes a file from a collection
+    Usage: cfsdb delete-file <collection> <file>
+    """
     view_state, db = _set_context(ctx, collection)
     db.delete_file_from_collection(collection,file)
 
