@@ -370,9 +370,17 @@ def delete_col(ctx, collection,force):
 
     """
     view_state, db = _set_context(ctx, None)
-    _print(db.delete_collection(collection,force))
+    if empty:
+        _print(db.delete_collection_with_files(collection))
+    else:
+        _print(db.delete_collection(collection))
     view_state.save()
 
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+def delete_file(ctx,collection,file):
+    pass
 
 @cli.command()
 @click.pass_context
