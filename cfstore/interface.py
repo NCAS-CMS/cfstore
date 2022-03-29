@@ -393,7 +393,7 @@ class CollectionDB(CoreDB):
         if 'checksum' not in f:
             f['checksum'] = 'None'
         name, path, size, checksum = f['name'], f['path'], f['size'], f['checksum']
-
+        c.volume+=f["size"]
         try:
             if lazy == 0:
                 check = self.retrieve_file(path, name)
@@ -421,7 +421,7 @@ class CollectionDB(CoreDB):
             f.replicas.append(loc)
             c.holds_files.append(f)
             loc.holds_files.append(f)
-            c.volume += f.size
+            print(f["size"])
         self.session.commit()
 
     def upload_files_to_collection(self, location, collection, files):
@@ -459,11 +459,9 @@ class CollectionDB(CoreDB):
         """
         return self.engine.table_names()
 
-    def delete_file(collection,file):
-        pass
-
     def delete_collection_with_files(collection):
         pass
+
 def chkeq(file1,file2,try_hash=False,return_hash=False):
     """
     Compare the equality of two files
