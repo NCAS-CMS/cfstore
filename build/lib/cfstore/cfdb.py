@@ -78,11 +78,16 @@ def cli(ctx, collection):
 
 @cli.command()
 @click.pass_context
-def setc(ctx):
+@click.option('--collection', default=None, help='Required collection (use and make default)')
+def setc(ctx,collection):
     """
     Set collection, or reset to default if --collection=all
     """
-    view_state, db = _set_context(ctx, None)
+    view_state, db = _set_context(ctx, collection)
+    try:
+        db.retrieve_collection(collection)
+    except ValueError as err:
+        print(err, file=sys.stderr)
     view_state.save()
 
 
@@ -122,7 +127,13 @@ def findf(ctx, match, collection):
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
     if collection:
+        try:
+            db.retrieve_collection(collection)
+        except ValueError as err:
+            print(err, file=sys.stderr)
         files = db.retrieve_files_in_collection(collection, match=match)
+        if len(files)==0:
+            print("No files found")
         for f in files:
             print(f)
     else:
@@ -152,6 +163,10 @@ def findrx(ctx, collection, match):
     else:
         match = match[0]
     if collection:
+        try:
+            db.retrieve_collection(collection)
+        except ValueError as err:
+            print(err, file=sys.stderr)
         files = db.retrieve_files_in_collection(collection, replicants=True, match=match)
         for f in files:
             print(f)
@@ -349,6 +364,10 @@ def findr(ctx, link, collection):
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
+    try:
+        db.retrieve_collection(collection)
+    except ValueError as err:
+        print(err, file=sys.stderr)
     _print(db.retrieve_related(collection, link), 'name')
     view_state.save()
 
@@ -356,7 +375,8 @@ def findr(ctx, link, collection):
 @cli.command()
 @click.pass_context
 @click.argument('collection')
-def delete_col(ctx, collection):
+@click.option('--force', default=False, help='(Optional) Deletes even if collection is full')
+def delete_col(ctx, collection,force):
     # look out difference between method name _ and usage -
     # that's a click "feature"
     """
@@ -368,9 +388,8 @@ def delete_col(ctx, collection):
 
     """
     view_state, db = _set_context(ctx, None)
-    _print(db.delete_collection(collection))
+    _print(db.delete_collection(collection,force))
     view_state.save()
-
 
 @cli.command()
 @click.pass_context
@@ -403,6 +422,17 @@ def edit(ctx, collection):
     active_collection.description = new_description
     db.save()
 
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+@click.argument('file')
+def delete_file(ctx, collection,file):
+    """
+    Removes a file from a collection
+    Usage: cfsdb delete-file <collection> <file>
+    """
+    view_state, db = _set_context(ctx, collection)
+    db.delete_file_from_collection(collection,file)
 
 if __name__ == "__main__":
     safe_cli()

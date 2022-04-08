@@ -45,7 +45,6 @@ class Posix:
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum):
         """ Walk local POSIX tree"""
-        print("kinda works")
         if subcollections:
             raise NotImplementedError('No support for sub-collections as yet')
 
@@ -54,8 +53,7 @@ class Posix:
             for f in files:
                 fp = path_to_collection_head+f
                 dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
-
-        self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
+            self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
 
     def _file2dict(self, path_to_file, size,  checksum=None):
@@ -102,7 +100,7 @@ class RemotePosix(Posix):
         """
         # Useful: https://stackoverflow.com/questions/45653213/parallel-downloads-with-multiprocessing-and-pysftp
         if not hasattr(self, 'ssh'):
-            raise ConnectionError('RemotePosix has not been initialised')
+            raise ConnectionError('Posix has not been initialised')
         if checksum:
             raise ValueError('Cannot (ok, really we mean, will not) checksum remote files')
         if subcollections:

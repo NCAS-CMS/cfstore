@@ -45,6 +45,8 @@ class CollectionDB(CoreDB):
 
         for k in kw:
             c[k] = kw[k]
+            print(k.size)
+            c.volume += k.size          
         self.session.add(c)
 
         try:
@@ -257,12 +259,16 @@ class CollectionDB(CoreDB):
             #TODO add checksum here
             return files
 
-    def delete_collection(self, collection_name):
+    def delete_collection(self, collection_name,force):
         """
         Remove a collection from the database, ensuring all files have already been removed first.
         """
         files = self.retrieve_files_in_collection(collection_name)
-        if files:
+        if force:
+            c = self.retrieve_collection(collection_name)
+            self.session.delete(c)
+            self.session.commit()
+        elif files:
             raise CollectionError(collection_name, f'not empty (contains {len(files)} files)')
         else:
             c = self.retrieve_collection(collection_name)
@@ -283,9 +289,23 @@ class CollectionDB(CoreDB):
         """
         c = self.session.query(Collection).filter_by(name=collection).one()
         if file in c.holds_files:
-            raise ValueError(f"Attempt to add file {file} to collection {c} - but it's already there")
+            raise ValueError(f"Attempt to add file {file} to {c} - but it's already there")
         c.holds_files.append(file)
         c.volume += file.size        
+        self.session.commit()
+    
+    def delete_file_from_collection(self, collection, file):
+        """
+        Delete a file from a collection
+        """
+
+        path, name = os.path.split(file)
+        ff = self.retrieve_file(path,name)
+
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        if not (str(file) in map(str,c.holds_files)):
+            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
+        c.holds_files.remove(ff)      
         self.session.commit()
 
     def collection_info(self, name):
@@ -373,7 +393,7 @@ class CollectionDB(CoreDB):
         if 'checksum' not in f:
             f['checksum'] = 'None'
         name, path, size, checksum = f['name'], f['path'], f['size'], f['checksum']
-
+        c.volume+=f["size"]
         try:
             if lazy == 0:
                 check = self.retrieve_file(path, name)
@@ -401,7 +421,7 @@ class CollectionDB(CoreDB):
             f.replicas.append(loc)
             c.holds_files.append(f)
             loc.holds_files.append(f)
-            c.volume += f.size
+            print(f["size"])
         self.session.commit()
 
     def upload_files_to_collection(self, location, collection, files):
@@ -439,6 +459,9 @@ class CollectionDB(CoreDB):
         """
         return self.engine.table_names()
 
+    def delete_collection_with_files(collection):
+        pass
+
 def chkeq(file1,file2,try_hash=False,return_hash=False):
     """
     Compare the equality of two files
@@ -448,9 +471,8 @@ def chkeq(file1,file2,try_hash=False,return_hash=False):
     b_file = open(file2, "rb")
 
     
-    filesize_equal= (os.path.getsize(col1)!=os.path.getsize(col2))
-    
-    if try_hash and not filesize_equal:
+    filesize_equal= (os.path.getsize(col1) ==os.path.getsize(col2))
+    if try_hash and not filezise_equal:
         sha256_hash = hashlib.sha256()    
 
         for byte_block in iter(lambda: a_file.read(4096),b""):
@@ -466,7 +488,8 @@ def chkeq(file1,file2,try_hash=False,return_hash=False):
         hash_equal = a_hash==b_hash
         
         if(return_hash):
-            return(hash_equal,a_hash,b_hash)    
+            return(hash_equal,a_hash,b_hash)
+            
         return (hash_equal)
-    return(filesize_equal) 
+    return(filesize_equal)
 

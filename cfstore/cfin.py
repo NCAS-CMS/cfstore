@@ -90,8 +90,13 @@ def add(ctx, description, arg1, argm):
             #if len(argm) != 2:
             #    raise InputError('InputError: Missing arguments', add.__doc__)
             today = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
-            intro = f'\n#### Collection {argm[1]}\n\n(loaded from {argm[0]}, location {arg1},  at {today})\n\n' + \
+            if target == 'local':
+                intro = f'\n#### Adding collection {argm[0]}\n\n(loaded locally,  at {today})\n\n' + \
                     '[Enter description (text or markdown) (maybe using the above and deleting this line)]\n'
+            else:
+                intro = f'\n#### Adding collection {argm[1]}\n\n(loaded from {argm[0]}, location {target},  at {today})\n\n' + \
+                    '[Enter description (text or markdown) (maybe using the above and deleting this line)]\n'
+
             description = click.edit(intro)
 
         if target == 'rp':
@@ -103,13 +108,15 @@ def add(ctx, description, arg1, argm):
             x.add_collection(path, collection, description)
 
         elif target == 'local' or target == 'p':
-            location = arg1
-            path, collection = argm
-            x = Posix(state.db, location)
+            
+            location = 'local'
+            print(location)
+            path = arg1
+            collection = argm[0]
+            x = Posix(state.db, collection)
             x.add_collection(path, collection, description)
         else:
             raise ValueError(f'Unexpected location type {target}')
-
     state.save()
 
 
