@@ -259,12 +259,37 @@ class CollectionDB(CoreDB):
             #TODO add checksum here
             return files
 
+    def delete_file_from_collection(self, collection, file):
+        """
+        Delete a file from a collection
+        """
+
+        path, filename = os.path.split(str(file))
+        f = self.retrieve_file(path,filename)
+
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        if not (str(file) in map(str,c.holds_files)):
+            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
+        c.holds_files.remove(f)      
+        c.volume -= f.size
+        if not any([f in self.collections]):
+            try:
+                uc = self.session.query(Collection).filter_by(name="unlisted").one()
+            except NoResultFound:
+                uc = Collection(name="unlisted", volume=0, description="Holds unlisted files")
+                self.session.add(uc)
+            uc.holds_files.append(f)
+            uc.volume += f.size
+        self.session.commit()
+
     def delete_collection(self, collection_name,force):
         """
         Remove a collection from the database, ensuring all files have already been removed first.
         """
         files = self.retrieve_files_in_collection(collection_name)
-        if force:
+        if files and force:
+            for f in files:
+                self.delete_file_from_collection(collection_name, f)
             c = self.retrieve_collection(collection_name)
             self.session.delete(c)
             self.session.commit()
@@ -292,20 +317,6 @@ class CollectionDB(CoreDB):
             raise ValueError(f"Attempt to add file {file} to {c} - but it's already there")
         c.holds_files.append(file)
         c.volume += file.size        
-        self.session.commit()
-    
-    def delete_file_from_collection(self, collection, file):
-        """
-        Delete a file from a collection
-        """
-
-        path, name = os.path.split(file)
-        ff = self.retrieve_file(path,name)
-
-        c = self.session.query(Collection).filter_by(name=collection).one()
-        if not (str(file) in map(str,c.holds_files)):
-            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
-        c.holds_files.remove(ff)      
         self.session.commit()
 
     def collection_info(self, name):
