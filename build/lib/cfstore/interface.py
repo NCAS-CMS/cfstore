@@ -1,9 +1,7 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod, Variable
-
+from cfstore.db import StorageLocation, Collection, CoreDB, File, Tag
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
-from cfstore.cfparse_file import cfparse_file
 
 
 class CollectionError(Exception):
@@ -12,64 +10,6 @@ class CollectionError(Exception):
 
 
 class CollectionDB(CoreDB):
-
-
-    def cell_method_add(self, axis, method):
-        """ 
-        Add a new cell method to database, raise an error if it already exists.
-        Returns the new cell method.
-        """
-        try:
-            cm = self.cell_method_retrieve(axis=axis, method=method)
-        except NoResultFound:
-            cm = CellMethod(axis=axis, method=method)
-            self.session.add(cm)
-            self.session.commit()
-            return cm
-        else:
-            raise ValueError(f'Attempt to add an existing cell method {cm}')
-
-    def cell_method_get_or_make(self, axis, method):
-        """
-        Retrieve a specfic cell method, if it doesn't exist, create it, and return it.
-        """
-        try:
-            self.cell_method_retrieve(axis=axis, method=method)
-        except NoResultFound:
-            return self.cell_method_add(axis=axis, method=method)
-
-    def cell_method_retrieve(self, axis, method):
-        """ 
-        Retrieve a specific cell method
-        """
-        cm = self.session.query(CellMethod).filter(and_(CellMethod.axis==axis, CellMethod.method==method)).one()
-        return cm
-
-
-    def add_protocol(self, protocol_name, locations=[]):
-        """
-        Add a new protocol to the database, and if desired modify a set of existing or new
-        locations by adding the protocol to their list of supported protocols.
-        """
-        
-        try:
-            pdb = self.session.query(StorageProtocol).filter_by(name=protocol_name).one()
-        except NoResultFound:
-            pdb = StorageProtocol(name=protocol_name)
-            if locations:
-                existing_locations = [e.name for e in self.retrieve_locations()]
-                for p in locations:
-                    if p not in existing_locations:
-                        loc = StorageLocation(name=p)
-                        self.session.add(loc)
-                    else:
-                        loc = self.retrieve_location(p)
-                    pdb.used_by.append(loc)
-            self.session.add(pdb)
-            self.session.commit()
-        else: 
-            raise ValueError(f"Attempt to add existing protocol - {protocol_name}")
-
     def add_relationship(self, collection_one, collection_two, relationship):
         """
         Add a symmetrical <relationship> between <collection_one> and <collection_two>.
@@ -97,10 +37,6 @@ class CollectionDB(CoreDB):
             c2.add_relationship(relationship_21, c1)
         self.session.commit()
 
-    def add_variables_from_file(self, filename):
-        """ Add all the variables found in a file to the database"""
-        cfparse_file(self, filename)
-
     def create_collection(self, collection_name, description, kw={}):
         """
         Add a collection and any properties, and return instance
@@ -123,24 +59,15 @@ class CollectionDB(CoreDB):
                 raise
         return c
 
-    def create_location(self, location, protocols=[]):
+    def create_location(self, location):
         """
         Create a storage <location>. The database is ignorant about what
         "location" means. Other layers of software care about that.
-        However, it may have one or more protocols associated with it.
         """
         try:
             loc = self.session.query(StorageLocation).filter_by(name=location).one()
         except NoResultFound:
             loc = StorageLocation(name=location)
-            
-            if protocols:
-                existing_protocols = self.retrieve_protocols()
-                for p in protocols:
-                    if p not in existing_protocols:
-                        pdb = StorageProtocol(name=p)
-                        self.session.add(pdb)
-                    loc.protocols.append(pdb)
             self.session.add(loc)
             self.session.commit()
         else:
@@ -278,33 +205,6 @@ class CollectionDB(CoreDB):
         else:
             raise FileNotFoundError  #(f'File "{path}/{name}" not found')
 
-    def retrieve_location(self, location_name):
-        """
-        Retrieve information about a specific location
-        """
-        try:
-            x = self.session.query(StorageLocation).filter_by(name=location_name).one()
-        except NoResultFound:
-            raise ValueError(f'No such collection {location_name}')
-        assert x.name == location_name
-        return x
-
-
-    def retrieve_locations(self):
-        """
-        Retrieve locations.
-        Currently retrieves all known locations.
-        """
-        locs = self.session.query(StorageLocation).all()
-        return locs
-
-    def retrieve_protocols(self):
-        """
-        Retrieve protocols.
-        """
-        p = self.session.query(StorageProtocol).all()
-        return p
-
     def retrieve_related(self, collection, relationship):
         """
         Find all related collections to <collection> which have
@@ -358,22 +258,6 @@ class CollectionDB(CoreDB):
                 func.count(StorageLocation.id) > 1).all()
             #TODO add checksum here
             return files
-
-    def retrieve_variable(self, **kw):
-        """ Retrieve variable by arbitrary property"""
-        queries = []
-        for k,v in kw.items():
-            if k in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
-                queries.append(getattr(Variable,k) == v)
-            else:
-                queries.append(Variable.with_other_attributes(k,v))
-        if len(queries) == 0:
-            raise ValueError('No query received for retrieve variable')
-        elif len(queries) == 1:
-            results = self.session.query(Variable).filter(queries[0]).all()
-        else:
-            results = self.session.query(Variable).filter(and_(*queries)).all()
-        return results
 
     def delete_collection(self, collection_name,force):
         """
@@ -537,8 +421,7 @@ class CollectionDB(CoreDB):
             f.replicas.append(loc)
             c.holds_files.append(f)
             loc.holds_files.append(f)
-            c.volume += f.size
-            loc.volume += f.size
+            print(f["size"])
         self.session.commit()
 
     def upload_files_to_collection(self, location, collection, files):

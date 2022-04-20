@@ -56,6 +56,9 @@ Two types of location are currently supported, elastic tape, and posix file syst
 (local or remote). (Posix file systems are the familiar Unix file systems that look
 like ``/home/user/fred/folder/...``)
 
+*NB: There are changes to the ET interface to cfstore which arise from changes at JASMIN
+made in November 2021, this documentation needs to be updated!*
+
 1. For Elastic tape,
     - You can ingest everything that is known about an elastic tape GWS::
 
@@ -68,17 +71,20 @@ like ``/home/user/fred/folder/...``)
 2. For remote posix file systems where you have ssh access,
     - you must first declare the location::
 
-         cfin rp setup locationname ssh_host
+         cfin rp setup locationname ssh_host username
 
       (you will need to have a running ssh-agent with the host key loaded)
 
 3. To add local or remote posix files below a specfic directory:
     -  add a particular directory tree with ::
 
-          cfin rp|local add collection_name_for_path path_to_add
+          cfin rp add location_name collection_name_for_path path_to_add
+          cfin p|local add collection_name_for_path path_to_add
 
        (where you use ``rp`` or ``local`` in that first argument depending on whether it is
-       local or remote POSIX), or
+       local or remote POSIX)
+       remote locations require a remote location name. Local locations do not, as the location is local
+       , or
     -  update an existing collection with information held at another path::
 
            cfin rp|local add collection_name_for_path new_path
