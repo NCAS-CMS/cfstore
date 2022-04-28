@@ -1,5 +1,6 @@
 import unittest, os
-from unittest import mock
+from unittest import TestCase, mock
+from unittest import main as test_main
 from click.testing import CliRunner
 
 from cfstore.cfdb import cli
@@ -307,10 +308,8 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['pr', 'dummy1'])
             raise NotImplementedError('Still developing this test, results not checked')
 
-
-if __name__ == "__main__":
+if __name__=="__main__":
     unittest.main()
-
 
 
 
