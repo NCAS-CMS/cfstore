@@ -1,5 +1,5 @@
 import os, sys
-from .db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod, Variable
+from cfstore.db import StorageLocation, Collection, CoreDB, File, Tag, StorageLocation, StorageProtocol, CellMethod, Variable
 
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
@@ -609,4 +609,3 @@ def chkeq(file1,file2,try_hash=False,return_hash=False):
             
         return (hash_equal)
     return(filesize_equal)
-
