@@ -1,4 +1,0 @@
-SQLAlchemy
-click
-BeautifulSoup4
-paramiko
