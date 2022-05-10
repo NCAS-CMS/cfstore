@@ -171,8 +171,17 @@ class Test_cfdb(unittest.TestCase):
         """
         Test replacing a collection description
         """
-        raise NotImplementedError("Building this")
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
 
+            #Add empty collections
+            config = CFSconfig('tmp.ini')
+            config.db.create_collection('collection1', 'First collection')
+            #Add a file to the empty collections
+            result = runner.invoke(cli, ['edit','collection1','\"New Description\"'])
+            lines = _check(self, result, 1)
+ 
     def test_facet(self):
         """
         Test we can add and remove facets from a collection
@@ -233,7 +242,7 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['findf', 'file2', '--collection=all'])
             lines = _check(self, result, 5)
 
-    def test_findr(self):
+    def test_findrx(self):
         """
         Test command line discovery of replicants in a collection
         """
@@ -257,12 +266,6 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['findrx', 'file2',])
             lines = _check(self, result, 2)
 
-    def test_findrx(self):
-        """
-        Test finding a replicant file where one exists and where one does not
-        """
-        raise NotImplementedError("Building this")
-
     def test_linkbetween(self):
         """ test symmetric linking and findr"""
         runner = CliRunner()
@@ -272,9 +275,6 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy1'])
             lines = _check(self, result, 1)
             self.assertEqual('dummy2', lines[0])
-            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
-            lines = _check(self, result, 1)
-            self.assertEqual('dummy1', lines[0])
 
     def test_linkto(self):
         """ test asymmetric linking and findr"""
@@ -288,17 +288,64 @@ class Test_cfdb(unittest.TestCase):
             result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
             lines = _check(self, result, 0)
 
+    def test_findr(self):
+        """
+        Test finding a related file where one exists and where one does not
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+            result = runner.invoke(cli, ['linkbetween', 'dummy1', 'brother', 'dummy2'])
+            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy1'])
+            lines = _check(self, result, 1)
+            self.assertEqual('dummy2', lines[0])
+            result = runner.invoke(cli, ['findr', 'brother', '--collection=dummy2'])
+            lines = _check(self, result, 1)
+            self.assertEqual('dummy1', lines[0])
+    
     def test_locate_replicants(self):
         """
         Test finding a replicant file where one exists and where one does not
         """
-        raise NotImplementedError("Building this")
+    def test_findrx(self):
+        """
+        Test command line discovery of replicants in a collection
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+            config = CFSconfig('tmp.ini')
+            # attempting to replicate the basic test via the command line
+            # this should create 5x3=15 duplicate files in another location with different collections:
+            _dummy(config.db, location='pseudo tape', collection_stem="tdummy", files_per_collection=3)
+            # now we need to see if these can be found, let's just look for the two replicas in dummy1
+            result = runner.invoke(cli, ['locate-replicants','--collection=dummy1'])
+            lines = _check(self, result, 3)
+            assert lines[0].find('file01') != -1
+            # now just make sure we can get back the right answer if we go for a match as well
+            # for this we have to muck with our test dataset to get a decent test case.
+            # we add a file which we know to be in collection dummy2 and a replicant
+            fset = config.db.retrieve_files_in_collection('dummy2', match='22', replicants=True)
+            config.db.add_file_to_collection('dummy1', fset[0])
+            # now do the actual second test
+            result = runner.invoke(cli, ['locate-replicants', 'file2',])
+            lines = _check(self, result, 2)
+
 
     def test_ls(self):
         """
         Test listing all collections
         """
-        raise NotImplementedError("Building this")
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+
+            #Add empty collections
+            config = CFSconfig('tmp.ini')
+            config.db.create_collection('collection1', 'First collection')
+            #Add a file to the empty collections
+            result = runner.invoke(cli, ['ls'])
+            lines = _check(self, result, 1)
 
     def test_organise_new(self):
         """
@@ -334,7 +381,19 @@ class Test_cfdb(unittest.TestCase):
         """
         Test setting the default collection to a collection, then setting it to default
         """
-        raise NotImplementedError("Building this")
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            _mysetup()
+
+            #Add empty collections
+            config = CFSconfig('tmp.ini')
+            config.db.create_collection('collection1', 'First collection')
+            #Add a file to the empty collections
+            result = runner.invoke(cli, ['setc','--collection=collection1'])
+            lines = _check(self, result, 1)
+            result = runner.invoke(cli, ['setc','--collection=all'])
+            lines = _check(self, result, 1)
+ 
 
     def test_tag(self):
         """
