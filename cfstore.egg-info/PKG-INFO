@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 1.1
 Name: cfstore
 Version: 0.3.0
 Summary: Provides an interface to managing cf compliant data held in multiple storage locations
@@ -6,6 +6,7 @@ Home-page: UNKNOWN
 Author: Bryan Lawrence + George OBrien
 Author-email: bryan.lawrence@ncas.ac.uk
 License: MIT
+Description: UNKNOWN
 Platform: Linux
 Platform: MacOS
 Classifier: Development Status :: 2 - Pre-Alpha
@@ -13,7 +14,3 @@ Classifier: Intended Audience :: Science/Research
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: POSIX :: Linux
 Classifier: Operating System :: MacOS
-License-File: LICENSE
-
-UNKNOWN
-

@@ -309,11 +309,14 @@ def facet(ctx, key, value, collection, remove):
     view_state, db = _set_context(ctx, collection)
     if not view_state.collection:
         raise ValueError('Cannot use facet without defining a collection')
-    if remove:
-        raise NotImplementedError
 
     c = db.retrieve_collection(view_state.collection)
-    c[key] = value
+ 
+    if remove:
+        del c[key]
+    else:
+        c[key] = value
+    
     db.session.commit()
     view_state.save()
 
