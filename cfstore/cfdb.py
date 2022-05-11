@@ -84,10 +84,11 @@ def setc(ctx,collection):
     Set collection, or reset to default if --collection=all
     """
     view_state, db = _set_context(ctx, collection)
-    try:
-        db.retrieve_collection(collection)
-    except ValueError as err:
-        print(err, file=sys.stderr)
+    if collection!="all":
+        try:
+            db.retrieve_collection(collection)
+        except ValueError as err:
+            print(err, file=sys.stderr)
     view_state.save()
 
 

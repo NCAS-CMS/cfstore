@@ -518,8 +518,6 @@ class File(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     path = Column(String)
-    checksum = Column(String)
-    checksum_method = Column(String)
     size = Column(Integer)
     initial_collection = Column(Integer, ForeignKey('collections.id'))
     format = Column(String)
