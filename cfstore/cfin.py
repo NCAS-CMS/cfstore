@@ -57,12 +57,18 @@ def add(ctx, description, arg1, argm):
 
     Usage:
 
-    To add an elastic tape group workspace::
+    To add an elastic tape group workspace running inside STFC::
 
-        cfin et add gwsname
+        cfin et add gwsname 
+        
+    If you are outside of STFC you will need to run
+    
+        cfin et add gwsname ssh_host ssh_user
 
-    (no collection or description names are required because this will load a collection
-    for each elastic tape batch, and you will need to add descriptions for each batch later.)
+    where ssh_host and ssh_user should probably appear in your ssh config file
+
+    No collection or description names are required because this will load a collection
+    for each elastic tape batch, and you will need to add descriptions for each batch later.
 
     To add a directory_path at remote posix location with a particular collection_name::
 
@@ -78,7 +84,12 @@ def add(ctx, description, arg1, argm):
     target = ctx.obj['fstype']
 
     if target == 'et':
-        et_main(state.db, 'init', arg1)
+        if len(argm) == 2:
+            et_main(state.db, 'init', arg1, argm[0], argm[1])
+        elif len(argm) == 0:
+            et_main(state.db, 'init', arg1)
+        else:
+            raise InputError('InputError: Missing arguments', add.__doc__)
     else:
 
         if description:
