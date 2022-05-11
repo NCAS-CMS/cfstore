@@ -4,8 +4,8 @@ from unittest import mock
 
 from cfstore.cfdb import cli
 from cfstore.cfin import cli as incli
-from cfstore.tests.test_cmd import _check, _mysetup, MissingTestEnvVar
-from cfstore.tests.test_basic import _dummy
+from test_cmd import _check, _mysetup, MissingTestEnvVar
+from test_basic import _dummy
 from cfstore.plugins.ssh import SSHlite
 
 
