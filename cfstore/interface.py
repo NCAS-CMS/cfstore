@@ -203,7 +203,6 @@ class CollectionDB(CoreDB):
                                 File.path == f.path,
                                 File.size == f.size))
                                     for f in candidates]
-                        print("got there!")
                     else:
                         possibles = [self.session.query(File).filter(
                             and_(File.name == f.name,
@@ -232,7 +231,6 @@ class CollectionDB(CoreDB):
                                 File.path == f.path,
                                 ))
                                     for f in candidates]
-                        print("got there!")
                     else:
                         possibles = [self.session.query(File).filter(
                             and_(File.name == f.name,
@@ -261,7 +259,6 @@ class CollectionDB(CoreDB):
                                 File.path == f.path,
                                 File.size == f.size))
                                     for f in candidates]
-                        print("got there!")
                     else:
                         possibles = [self.session.query(File).filter(
                             and_(
