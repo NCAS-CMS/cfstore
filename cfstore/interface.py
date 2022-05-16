@@ -360,7 +360,7 @@ class CollectionDB(CoreDB):
             return files
 
 
-          def delete_file_from_collection(self, collection, file):
+    def delete_file_from_collection(self, collection, file):
         """
         Delete a file from a collection
         """
