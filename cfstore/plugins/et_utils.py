@@ -52,6 +52,8 @@ class ET_Workspace:
         self.quota_used = 0
         self.volume = 0
         self.souper = Souper(ssh_host, ssh_user)
+        if self.souper.ssh is None:
+            print('Elastic tape interface being used in "Inside RAL" mode')
         self.load_from_et()
 
     def load_from_et(self):

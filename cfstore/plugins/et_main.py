@@ -2,11 +2,11 @@ from cfstore.plugins.et_utils import ET_Workspace
 import os
 
 
-def _load_et(workspace='hiresgw'):
+def _load_et(workspace='hiresgw', ssh_host=None, ssh_user=None):
     """
     Load a workspace from elastic tape
     """
-    et = ET_Workspace(workspace)
+    et = ET_Workspace(workspace, ssh_host, ssh_user)
     return et
 
 
@@ -28,12 +28,12 @@ def parse_workspace_into_db(etw, db):
         db.upload_files_to_collection('elastic_tape', cname, files)
 
 
-def et_main(db, operation, gws):
+def et_main(db, operation, gws, ssh_host=None, ssh_user=None):
     """
     Carry out <operation> on the <gws> group workspace
     using the <db> instance provided.
     """
     db.create_location('elastic_tape')
     if operation == 'init':
-        etw = _load_et(workspace=gws)
+        etw = _load_et(workspace=gws, ssh_host=ssh_host, ssh_user=ssh_user)
         parse_workspace_into_db(etw, db)
