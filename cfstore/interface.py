@@ -182,8 +182,8 @@ class CollectionDB(CoreDB):
                     # likely occurs because ingest required same checksum and/or size and these were not
                     # known at ingest time.
                     possibles = [self.session.query(File).filter(
-                                    and_(File.name == c.name, File.path == strip(c.path, strip_base))).all()
-                                 for c in candidates]
+                                    and_(File.name == f.name, File.path == strip(f.path, strip_base))).all()
+                                 for f in candidates]
                     return possibles
                 else:
                     possibles = [self.session.query(File).filter(
@@ -194,16 +194,16 @@ class CollectionDB(CoreDB):
                     # likely occurs because ingest required same checksum and/or size and these were not
                     # known at ingest time.
                     possibles = [self.session.query(File).filter(
-                        and_(File.name == c.name,
-                             File.path == c.path)).filter(
+                        and_(File.name == f.name,
+                             File.path == f.path)).filter(
                              File.in_collections.notin_([c,])).all()
-                                 for c in candidates]
+                                 for f in candidates]
                     print("got there!")
                 else:
                     possibles = [self.session.query(File).filter(
                         and_(File.name == f.name,
                              File.path.endswith(f.path),
-                             File.in_collections.not_in([f,]))).all() for f in candidates]
+                             File.in_collections.not_in([c,]))).all() for f in candidates]
         return candidates, possibles
 
     def retrieve_collection(self, collection_name):
