@@ -1,11 +1,12 @@
+from cfstore.config import CFSconfig
 from cfstore.plugins.et_utils import ET_Workspace
 import os
-
 
 def _load_et(workspace='hiresgw', ssh_host=None, ssh_user=None):
     """
     Load a workspace from elastic tape
     """
+    print(workspace,ssh_host,ssh_user)
     et = ET_Workspace(workspace, ssh_host, ssh_user)
     return et
 
@@ -33,7 +34,8 @@ def et_main(db, operation, gws, ssh_host=None, ssh_user=None):
     Carry out <operation> on the <gws> group workspace
     using the <db> instance provided.
     """
-    db.create_location('elastic_tape')
+    if "!elastic_tape" not in CFSconfig.interfaces:
+        db.create_location('!elastic_tape')
     if operation == 'init':
         etw = _load_et(workspace=gws, ssh_host=ssh_host, ssh_user=ssh_user)
         parse_workspace_into_db(etw, db)
