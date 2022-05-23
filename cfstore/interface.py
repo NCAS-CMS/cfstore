@@ -187,12 +187,13 @@ class CollectionDB(CoreDB):
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
                         possibles = [self.session.query(File).filter(
-                                        and_(File.name == f.name, File.path == strip(f.path, strip_base))).all()
+                            and_(File.name == f.name,
+                                File.path == strip(f.path, strip_base),
+                                File.size == f.size)).all()
                                     for f in candidates]
-                        return possibles
                     else:
                         possibles = [self.session.query(File).filter(
-                            File.name == strip(f.name, strip_base))
+                                        and_(File.name == f.name, File.size == f.size)).all()
                                     for f in candidates]
                 else:
                     if match_full_path:
@@ -203,6 +204,7 @@ class CollectionDB(CoreDB):
                                 File.path == f.path,
                                 File.size == f.size)).all()
                                     for f in candidates]
+                                    
                     else:
                         possibles = [self.session.query(File).filter(
                             and_(File.name == f.name,
@@ -216,13 +218,9 @@ class CollectionDB(CoreDB):
                         possibles = [self.session.query(File).filter(
                                         and_(File.name == f.name, File.path == strip(f.path, strip_base))).all()
                                     for f in candidates]
-                        return possibles
                     else:
-                        for f in candidates:
-                            print(File.name, f.path, File.path.endswith(f.name))
-
                         possibles = [self.session.query(File).filter(
-                            (File.name == f.name))
+                            (File.name == strip(f.name, strip_base)))
                                     for f in candidates]
                 else:
                     if match_full_path:
@@ -235,7 +233,7 @@ class CollectionDB(CoreDB):
                                     for f in candidates]
                     else:
                         possibles = [self.session.query(File).filter(
-                                (File.name == f.name))
+                                and_(File.name == f.name)).all()
                                 for f in candidates]
             if check.lower() == "size":
                 if strip_base:
@@ -243,23 +241,22 @@ class CollectionDB(CoreDB):
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
                         possibles = [self.session.query(File).filter(
-                                        File.size == f.size)
-                                    for f in candidates]
-                        return possibles
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
                     else:
                         possibles = [self.session.query(File).filter(
-                            File.size == f.size)
-                                    for f in candidates]
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
                         possibles = [self.session.query(File).filter(
-                                File.size == f.size)
-                                    for f in candidates]
+                                and_(File.size == f.size, File.path == f.path)).all()
+                                for f in candidates]
                     else:
                         possibles = [self.session.query(File).filter(
-                                File.size == f.size)
+                                and_(File.size == f.size)).all()
                                 for f in candidates]
         return candidates, possibles
 

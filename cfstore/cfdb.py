@@ -215,10 +215,10 @@ def locate_replicants(ctx, collection, strip_base, match_full_path,checkby):
         then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
     """
     view_state, db = _set_context(ctx, collection)
-    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=False,check=checkby)
+    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path,check=checkby)
     no_replicant_found = True
     for c, p in zip(candidates, possibles):
-        if len(c.in_collections)>1:
+        if (len(p))>1:
             no_replicant_found = False
             print("File:",c.name, "has the following replicas:")
             for x in p:
