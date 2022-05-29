@@ -122,8 +122,8 @@ def add(ctx, description, arg1, argm):
             
             location = 'local'
             print(location)
-            path = arg1
-            collection = argm[0]
+            collection = arg1
+            path = argm[0]
             x = Posix(state.db, collection)
             x.add_collection(path, collection, description)
         else:
@@ -143,7 +143,7 @@ def setup(ctx, location, host, user):
 
     state = CFSconfig()
     target = ctx.obj['fstype']
-
+    print(f"Atempting to setup:\n host:{host} \n location:{location}")
     if target == 'rp':
         # check we don't already have one in config or database (we can worry about mismatches later)
         if location in state.interfaces:

@@ -60,6 +60,7 @@ class ET_Workspace:
 
     def load_from_et(self):
         url = f"ET_Holdings_Summary.php?workspace={self.name}&level=top"
+        print(url)
         soup = self.souper.get(url)
         summary_td = soup.find_all('table')[1].find_all('tr')[1].find_all('td')
         self.file_count = summary_td[0]
