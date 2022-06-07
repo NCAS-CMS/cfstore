@@ -156,12 +156,15 @@ class CollectionDB(CoreDB):
 
     def locate_replicants(self, collection_name,
                           strip_base='',
-                          match_full_path=True,
-                          try_reverse_for_speed=False):
+                          match_full_path=False,
+                          try_reverse_for_speed=False,
+                          check="Both"):
         """
-
-
-
+        Locate copies of a file across collections
+        strip_base - remove given string from the file string
+        match_full_path - find only if the full path matches if true, otherwise only filename
+        try_reverse_for_speed - optimization approach that does not yet work and is not implemented
+        check - check for "name", "size" or "both", checksum needs to be implemented
         """
         def strip(path, stem):
             """ If path starts with stem, return path without the stem, otherwise return the path"""
@@ -170,6 +173,7 @@ class CollectionDB(CoreDB):
             else:
                 return path
 
+
         if try_reverse_for_speed:
             raise NotImplementedError
         else:
@@ -177,33 +181,83 @@ class CollectionDB(CoreDB):
             # a SQL wizard would do better.
             c = self.retrieve_collection(collection_name)
             candidates = self.retrieve_files_in_collection(collection_name)
-            if strip_base:
-                if match_full_path:
-                    # likely occurs because ingest required same checksum and/or size and these were not
-                    # known at ingest time.
-                    possibles = [self.session.query(File).filter(
-                                    and_(File.name == c.name, File.path == strip(c.path, strip_base))).all()
-                                 for c in candidates]
-                    return possibles
+            if check.lower() == "both":
+                if strip_base:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.path == strip(f.path, strip_base),
+                                File.size == f.size)).all()
+                                    for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                        and_(File.name == f.name, File.size == f.size)).all()
+                                    for f in candidates]
                 else:
-                    possibles = [self.session.query(File).filter(
-                        and_(File.name == f.name, File.path.endswith(strip(f.path, strip_base)))).all()
-                                 for f in candidates]
-            else:
-                if match_full_path:
-                    # likely occurs because ingest required same checksum and/or size and these were not
-                    # known at ingest time.
-                    possibles = [self.session.query(File).filter(
-                        and_(File.name == c.name,
-                             File.path == c.path)).filter(
-                             File.in_collections.notin_([c,])).all()
-                                 for c in candidates]
-                    print("got there!")
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.path == f.path,
+                                File.size == f.size)).all()
+                                    for f in candidates]
+                                    
+                    else:
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.size == f.size)).all()
+                                for f in candidates]
+            if check.lower() == "name":
+                if strip_base:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                                        and_(File.name == f.name, File.path == strip(f.path, strip_base))).all()
+                                    for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                            (File.name == strip(f.name, strip_base)))
+                                    for f in candidates]
                 else:
-                    possibles = [self.session.query(File).filter(
-                        and_(File.name == f.name,
-                             File.path.endswith(f.path),
-                             File.in_collections.not_in([f,]))).all() for f in candidates]
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.path == f.path,
+                                )).all()
+                                    for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                and_(File.name == f.name)).all()
+                                for f in candidates]
+            if check.lower() == "size":
+                if strip_base:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
+                else:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size, File.path == f.path)).all()
+                                for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
         return candidates, possibles
 
     def retrieve_collection(self, collection_name):
@@ -359,6 +413,31 @@ class CollectionDB(CoreDB):
             #TODO add checksum here
             return files
 
+
+    def delete_file_from_collection(self, collection, file):
+        """
+        Delete a file from a collection
+        """
+
+        path, filename = os.path.split(str(file))
+        f = self.retrieve_file(path,filename)
+
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        if not (str(file) in map(str,c.holds_files)):
+            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
+        c.holds_files.remove(f)      
+        c.volume -= f.size
+        if not any([f in self.collections]):
+            try:
+                uc = self.session.query(Collection).filter_by(name="unlisted").one()
+            except NoResultFound:
+                uc = Collection(name="unlisted", volume=0, description="Holds unlisted files")
+                self.session.add(uc)
+            uc.holds_files.append(f)
+            uc.volume += f.size
+        self.session.commit()
+
+        
     def retrieve_variable(self, **kw):
         """ Retrieve variable by arbitrary property"""
         queries = []
@@ -375,12 +454,15 @@ class CollectionDB(CoreDB):
             results = self.session.query(Variable).filter(and_(*queries)).all()
         return results
 
+
     def delete_collection(self, collection_name,force):
         """
         Remove a collection from the database, ensuring all files have already been removed first.
         """
         files = self.retrieve_files_in_collection(collection_name)
-        if force:
+        if files and force:
+            for f in files:
+                self.delete_file_from_collection(collection_name, f)
             c = self.retrieve_collection(collection_name)
             self.session.delete(c)
             self.session.commit()
@@ -408,20 +490,6 @@ class CollectionDB(CoreDB):
             raise ValueError(f"Attempt to add file {file} to {c} - but it's already there")
         c.holds_files.append(file)
         c.volume += file.size        
-        self.session.commit()
-    
-    def delete_file_from_collection(self, collection, file):
-        """
-        Delete a file from a collection
-        """
-
-        path, name = os.path.split(file)
-        ff = self.retrieve_file(path,name)
-
-        c = self.session.query(Collection).filter_by(name=collection).one()
-        if not (str(file) in map(str,c.holds_files)):
-            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
-        c.holds_files.remove(ff)      
         self.session.commit()
 
     def collection_info(self, name):

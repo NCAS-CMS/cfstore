@@ -48,6 +48,7 @@ def cli(ctx, fstype):
 @click.argument('arg1', nargs=1)
 @click.argument('argm', nargs=-1)
 @click.option('--description', default=None, help='(Optional) File in which a description for this collection can be found')
+@click.option('--regexselect', default=None, help='(Optional) Selects only a portion of files. Uses Regex.')
 def add(ctx, description, arg1, argm):
     """
 
@@ -122,10 +123,10 @@ def add(ctx, description, arg1, argm):
             
             location = 'local'
             print(location)
-            path = arg1
-            collection = argm[0]
+            collection = arg1
+            path = argm[0]
             x = Posix(state.db, collection)
-            x.add_collection(path, collection, description)
+            x.add_collection(path, collection, description,regex)
         else:
             raise ValueError(f'Unexpected location type {target}')
     state.save()
@@ -143,7 +144,7 @@ def setup(ctx, location, host, user):
 
     state = CFSconfig()
     target = ctx.obj['fstype']
-
+    print(f"Atempting to setup:\n host:{host} \n location:{location}")
     if target == 'rp':
         # check we don't already have one in config or database (we can worry about mismatches later)
         if location in state.interfaces:

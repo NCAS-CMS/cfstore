@@ -39,7 +39,11 @@ setup(
         'click',
         'BeautifulSoup4',
         'paramiko',
-
+        'rich',
+        'sphinx-click',
+        'sqlalchemy',
+        'cfdm',
+        'python-dateutil'
     ],
     entry_points={
         'console_scripts': [

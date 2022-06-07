@@ -1,24 +1,3 @@
-Examples
-========
-
-We work through three examples of things you might want to do:
-
-1. Ingest a new collection of files from a specific location into your database.
-2. View information about that collection and then modify the information by
-   - adding tags
-   - adding key-value pairs
-   - modifying the description.
-3. Finding a collection from within your collections via a tag or some words in the description.
-4. Comparing collections to see what (if anything) they have in commmon.
-
-(Not all these examples work properly yet, and the documentation for them is currently a work
-in progress.)
-
-Ingestion
----------
-
-(This is more fully discussed in :doc:`getting_started`.)
-
 Viewing Information
 -------------------
 
@@ -64,5 +43,3 @@ Adding key-value pairs: TBD
 Finding collections by tags: TBD
 
 Finding collections by searching: TBD
-
-
