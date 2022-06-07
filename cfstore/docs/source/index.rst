@@ -11,7 +11,6 @@ Welcome to cfstore's documentation!
    :caption: Contents:
 
    getting_started
-   examples
    cmdline
    interface
    database
