@@ -96,24 +96,51 @@ def setc(ctx,collection):
 @cli.command()
 @click.pass_context
 @click.option('--collection', default=None, help='Required collection (use and make default)')
-def ls(ctx, collection):
+@click.option('--output', default="files",help="What information is printed (files, tags, facets, relationships, collections or locations)")
+def ls(ctx, collection, output):
     """ 
     List collections (collections=None),
     or list files in a specific collection
     (which might be the last used one).
     """
     view_state, db = _set_context(ctx, collection)
-
+    output= output.lower()
+    
+    
     if view_state.collection:
-        files = db.retrieve_files_in_collection(view_state.collection)
-        for f in files:
-            print(f)
+        if output=="files":
+            files = db.retrieve_files_in_collection(view_state.collection)
+        
+        if output=="tags":
+            return_list = db.retrieve_collection(view_state.collection).tags
+        
+        if output=="facets":
+            return NotImplementedError("This is less straightforward than it looks")
+            return_list = db.retrieve_collection(view_state.collection)
+        
+        if output=="relationships":
+            return NotImplementedError("This is less straightforward than it looks")
+            return_list = db.retrieve_collection(view_state.collection)
+
+        if output=="collections":
+            return_list = db.retrieve_collections()
+            print(view_state.name)
+
+        if output=="locations":
+            return_list = db.retrieve_locations()
+            print(view_state.name)
+        
+        for r in return_list:
+            print(r)
     else:
-        collections = db.retrieve_collections()
+        return_list = db.retrieve_collections()
         print(view_state.name)
+        if output=="locations":
+            return_list = db.retrieve_locations()
+            print(view_state.name)
         for c in collections:
             print(c)
-
+        
     view_state.save()
 
 
