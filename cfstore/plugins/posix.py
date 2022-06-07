@@ -1,6 +1,6 @@
 import os
 from cfstore.plugins.ssh import SSHlite
-
+import re
 
 class Posix:
     """
@@ -26,7 +26,7 @@ class Posix:
 
 
     def add_collection(self, path_to_collection_head, collection_head_name, collection_head_description,
-                       subcollections=False, checksum=None):
+                       subcollections=False, checksum=None,regex=""):
         """
 
         Add a new collection with all files below <path_to_collection_head>,
@@ -41,9 +41,9 @@ class Posix:
         """
         c = self.db.create_collection(collection_head_name, collection_head_description)
 
-        self._walk(path_to_collection_head, collection_head_name, subcollections, checksum)
+        self._walk(path_to_collection_head, collection_head_name, subcollections, checksum,regex)
 
-    def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum):
+    def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum,regex):
         """ Walk local POSIX tree"""
         if subcollections:
             raise NotImplementedError('No support for sub-collections as yet')
@@ -52,7 +52,8 @@ class Posix:
             dbfiles = []
             for f in files:
                 fp = path_to_collection_head+f
-                dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
+                if (regex.match(fp)):
+                    dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
             self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
 

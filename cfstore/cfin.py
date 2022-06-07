@@ -48,6 +48,7 @@ def cli(ctx, fstype):
 @click.argument('arg1', nargs=1)
 @click.argument('argm', nargs=-1)
 @click.option('--description', default=None, help='(Optional) File in which a description for this collection can be found')
+@click.option('--regexselect', default=None, help='(Optional) Selects only a portion of files. Uses Regex.')
 def add(ctx, description, arg1, argm):
     """
 
@@ -125,7 +126,7 @@ def add(ctx, description, arg1, argm):
             collection = arg1
             path = argm[0]
             x = Posix(state.db, collection)
-            x.add_collection(path, collection, description)
+            x.add_collection(path, collection, description,regex)
         else:
             raise ValueError(f'Unexpected location type {target}')
     state.save()
