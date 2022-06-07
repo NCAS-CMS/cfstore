@@ -115,12 +115,10 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_collection(view_state.collection).tags
         
         if output=="facets":
-            return NotImplementedError("This is less straightforward than it looks")
-            return_list = db.retrieve_collection(view_state.collection)
+            return_list = db.retrieve_collection(view_state.collection).properties
         
         if output=="relationships":
-            return NotImplementedError("This is less straightforward than it looks")
-            return_list = db.retrieve_collection(view_state.collection)
+            return_list = db.retrieve_related(view_state.collection)
 
         if output=="collections":
             return_list = db.retrieve_collections()
