@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
-from matplotlib import collections
+import json
 from cfstore.config import CFSconfig
 import os, sys
 import click
 from rich.console import Console
 from rich.markdown import Markdown
-
-import hashlib
-from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
 
@@ -136,7 +133,7 @@ def ls(ctx, collection, output):
         if output=="locations":
             return_list = db.retrieve_locations()
             print(view_state.name)
-        for c in collections:
+        for c in return_list:
             print(c)
         
     view_state.save()
