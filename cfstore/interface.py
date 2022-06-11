@@ -4,7 +4,7 @@ from cfstore.db import StorageLocation, Collection, CoreDB, File, Tag, StorageLo
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 from cfstore.cfparse_file import cfparse_file
-
+import hashlib
 
 class CollectionError(Exception):
     def __init__(self, name, message):
@@ -656,8 +656,8 @@ def chkeq(file1,file2,try_hash=False,return_hash=False):
     b_file = open(file2, "rb")
 
     
-    filesize_equal= (os.path.getsize(col1) ==os.path.getsize(col2))
-    if try_hash and not filezise_equal:
+    filesize_equal= (os.path.getsize(a_file) ==os.path.getsize(b_file))
+    if try_hash and not filesize_equal:
         sha256_hash = hashlib.sha256()    
 
         for byte_block in iter(lambda: a_file.read(4096),b""):
