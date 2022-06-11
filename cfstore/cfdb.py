@@ -180,11 +180,11 @@ def findrx(ctx, collection, match):
 
 @cli.command()
 @click.pass_context
-@click.option('--match-full-path', default=True, help='Match full path, if False, match end of path')
+@click.option('--match-full-path', default=False, help='Match full path, if False, match end of path')
 @click.option('--strip-base', default='', help="String to remove from start of collection path")
 @click.option('--collection', default=None, help='Collection in which replicants are expected')
-@click.option('--match_entire_collection', default=False, help='If true, checks if there are any complete identical folders with all identical files')
-def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_collection):
+@click.option('--checkby', default="Both",help='Check by Size or Name or Both')
+def locate_replicants(ctx, collection, strip_base, match_full_path,checkby):
     # this is using the capability from the interface locate replicants, so this docstring is duplicated from there
     """
     For all the files in a given collection, look for other
@@ -215,25 +215,16 @@ def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_
         then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
     """
     view_state, db = _set_context(ctx, collection)
-    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path)
-
-    if match_entire_collection:
-        full_match=[]
-        not_full_match=[]
-        for c, p in zip(candidates, possibles):
+    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path,check=checkby)
+    no_replicant_found = True
+    for c, p in zip(candidates, possibles):
+        if (len(p))>1:
+            no_replicant_found = False
+            print("File:",c.name, "has the following replicas:")
             for x in p:
-                for col in x.in_collections:
-                    if col not in not_full_match:
-                        if col not in full_match:
-                            full_match.append(col)
-                for col in full_match:
-                    if col not in x.in_collections:
-                        full_match.delete(col)
-                        not_full_match.append(col)
-        print("Duplicate collections are:",[x.name for x in full_match])
-    else:
-        for c, p in zip(candidates, possibles):
-            print(c, [(x, x.replicas, x.in_collections) for x in p])
+                print("Replica file", "\""+x.name+"\""," in the following collections:", [n.name for n in x.in_collections],"\n")
+    if no_replicant_found:
+        print("No replicants found")
     view_state.save()
 
 @cli.command()
