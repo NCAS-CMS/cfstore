@@ -8,6 +8,34 @@ Examples
     Searching for Collections
     Identifying Replicants
 
+The sections above provide more detailed information about how you can use ``cfin`` and ``cfsdb``,
+here we work through one specific example - gathering information about a simulation
+on jasmin disk disk, and seeing if we can find out how much of that data is on jasmin elastic tape.
+
+This exercise is being carried out on a laptop at home. So in this instance the user has decided
+that they will keep their cfstore information on one site, a laptop which they have with them
+most of the time.
+
+The simulation data of interest is a simulation called ``xjanp`` (don't ask why). The online
+copy live inside the jasmin group workspace ``hiresgw`` at path ``/gws/nopw/j04/hiresgw/xjanp``.
+
+
+We begin by assuming we have set up the remote posix location using the method outlined
+in :doc:`../getting_started` so we have a remote posix location called jasmin.
+
+So we want to add a collection to describe that online data::
+    cfin rp add jasmin xjanp_ingws  /gws/nopw/j04/hiresgw/xjanp
+
+INTERIM-COMMIT-THIS-NEEDS-COMPLETING
+#TODO 
+
+
+
+
+
+
+
+
 
 We work through some examples of things you might want to do:
 

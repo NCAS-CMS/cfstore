@@ -41,8 +41,8 @@ developers. A future release will provide a suitable interface for
 using in scientific scripts and python notebooks. Meanwhile
 we are concentrating on support via the command line.
 
-See :doc:`getting_started` and :doc:`location` to understand how to
-get going and work with different storage locations.
+See :doc:`getting_started` to understand how to
+get going and work with remote posix storage locations.
 
 See :doc:`Examples/index` for some worked examples describing how to
 ingest some data into your database, add information about that
