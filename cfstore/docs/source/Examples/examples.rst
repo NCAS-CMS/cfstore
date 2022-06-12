@@ -48,7 +48,7 @@ Modifying the description: You can view information about a collection using the
 
 You should see something like this:
 
-.. image:: _static/screenshot-cfsdb-pr-eg1.png
+.. image:: /_static/screenshot-cfsdb-pr-eg1.png
     :width: 600
     :alt: (should show a screenshot of the output of this command in an example situation)
 

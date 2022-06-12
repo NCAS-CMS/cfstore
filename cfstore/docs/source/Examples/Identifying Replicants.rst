@@ -81,7 +81,7 @@ Input command
 cfsdb locate-replicants --collection=xjlehjas2 --checkby=size
 Example outputs:
 
-..
+...
 File: ioserver_stash_log.0019 has the following replicas:
 Replica file "ioserver_stash_log.0001"  in the following collections: ['et_582'] 
 
