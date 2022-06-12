@@ -40,6 +40,3 @@ Adding tags: TBD
 
 Adding key-value pairs: TBD
 
-Finding collections by tags: TBD
-
-Finding collections by searching: TBD

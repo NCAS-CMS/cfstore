@@ -1,7 +1,15 @@
 Examples
 ========
 
-We work through three examples of things you might want to do:
+.. toctree::
+    Ingesting Information
+    Viewing Information
+    Modifying Information
+    Searching for Collections
+    Identifying Replicants
+
+
+We work through some examples of things you might want to do:
 
 1. Ingest a new collection of files from a specific location into your database.
 2. View information about that collection and then modify the information by
@@ -9,16 +17,14 @@ We work through three examples of things you might want to do:
    - adding key-value pairs
    - modifying the description.
 3. Finding a collection from within your collections via a tag or some words in the description.
-4. Comparing collections to see what (if anything) they have in commmon.
+4. Identifying replicants across collections.
 
-(Not all these examples work properly yet, and the documentation for them is currently a work
-in progress.)
+----------------------
+Ingesting a Collection
+----------------------
 
----------
-Ingestion
----------
+TODO
 
-(This is more fully discussed in :doc:`getting_started`.)
 
 -------------------
 Viewing Information
@@ -59,10 +65,3 @@ You can edit the description by using the `edit` command::
 which will open an editor, when you save the content it will replace
 the collection description in your database.
 
-Adding tags: TBD
-
-Adding key-value pairs: TBD
-
-Finding collections by tags: TBD
-
-Finding collections by searching: TBD
