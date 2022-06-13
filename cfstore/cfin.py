@@ -49,7 +49,8 @@ def cli(ctx, fstype):
 @click.argument('argm', nargs=-1)
 @click.option('--description', default=None, help='(Optional) File in which a description for this collection can be found')
 @click.option('--regexselect', default=None, help='(Optional) Selects only a portion of files. Uses Regex.')
-def add(ctx, description, arg1, argm):
+@click.option('--subcollections',default=False, help='(Optional) When true, searches subcollections.')
+def add(ctx, description, regexselect, subcollections, arg1, argm):
     """
 
     Add collection to the cfdb.
@@ -117,7 +118,7 @@ def add(ctx, description, arg1, argm):
             x = RemotePosix(state.db, location)
             host, user = state.get_location(location)['host'], state.get_location(location)['user']
             x.configure(host, user)
-            x.add_collection(path, collection, description)
+            x.add_collection(path, collection, description,subcollections=subcollections,regex=regexselect)
 
         elif target == 'local' or target == 'p':
             
@@ -126,7 +127,7 @@ def add(ctx, description, arg1, argm):
             collection = arg1
             path = argm[0]
             x = Posix(state.db, collection)
-            x.add_collection(path, collection, description,regex)
+            x.add_collection(path, collection, description,subcollections=subcollections,regex=regexselect)
         else:
             raise ValueError(f'Unexpected location type {target}')
     state.save()

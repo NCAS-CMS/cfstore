@@ -102,11 +102,11 @@ def ls(ctx, collection, output):
     """
     view_state, db = _set_context(ctx, collection)
     output= output.lower()
-    
+    print(output)
     
     if view_state.collection:
         if output=="files":
-            files = db.retrieve_files_in_collection(view_state.collection)
+            return_list = db.retrieve_files_in_collection(view_state.collection)
         
         if output=="tags":
             return_list = db.retrieve_collection(view_state.collection).tags
