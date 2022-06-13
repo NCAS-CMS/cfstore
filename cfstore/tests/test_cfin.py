@@ -67,6 +67,20 @@ class Test_cfin(unittest.TestCase):
             assert result.exit_code == 1
             assert str(result.exception).find('already exists in') != -1
 
+    def test_add_local_posix(self):
+        """
+        This test requires you to sort out what is in the test directory.
+        """
+        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        #This path has 7 files and a folder containing 5 more files
+        #3 files in each of the main and subfolder start with "et"
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            dfile = _mysetup()
+            result = runner.invoke(incli, ['local', 'add', 'testloc', lpath, f'--description={dfile}','subcollections=False'])
+            result = runner.invoke(cli, ['ls', '--collection=testloc'] )
+            _check(self, result, 8)
+
     def test_add_remote_posix(self):
         """
         This test requires you to have an ssh host and location set in environment variables.
@@ -77,12 +91,62 @@ class Test_cfin(unittest.TestCase):
         runner = CliRunner()
         with runner.isolated_filesystem():
             dfile = _mysetup()
-            result = runner.invoke(incli, ['rp', 'setup', 'testloc', rhost, ruser])
-            result = runner.invoke(incli, ['rp', 'add', 'testloc', rpath, 'test_collection', f'--description={dfile}'])
-            result = runner.invoke(cli, ['ls', '--collection=test_collection'] )
+            result = runner.invoke(incli, ['rp', 'setup', 'testrem', rhost, ruser])
+            result = runner.invoke(incli, ['rp', 'add', 'testrem', rpath, 'testrem_collection', f'--description={dfile}'])
+            result = runner.invoke(cli, ['ls', '--collection=testrem_collection'] )
             # there are supposed to be three files in the test collection
             _check(self, result, 3)
 
+    def test_add_local_posix_subcollections(self):
+        """
+        This test requires you to sort out what is in the test directory.
+        """
+        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        #This path has 7 files and a folder containing 5 more files
+        #3 files in each of the main and subfolder start with "et"
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            dfile = _mysetup()
+            result = runner.invoke(incli, ['local', 'add', 'testlocsc', lpath, f'--description={dfile}','--subcollections=True'])
+            result = runner.invoke(cli, ['ls', '--collection=testlocsc'] )
+            _check(self, result, 13)
+
+    def test_add_local_posix_regex(self):
+        """
+        This test requires you to sort out what is in the test directory.
+        """
+        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        #This path has 7 files and a folder containing 5 more files
+        #3 files in each of the main and subfolder start with "et"
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            dfile = _mysetup()
+            result = runner.invoke(incli, ['local', 'add', 'testlocrx', lpath, f'--description={dfile}', '--regexselect=^et'])
+            result = runner.invoke(cli, ['ls', '--collection=testlocrx'] )
+            _check(self, result, 4)
+
+    def test_add_local_posix_all_optional(self):
+        """
+        This test requires you to sort out what is in the test directory.
+        """
+        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        #This path has 7 files and a folder containing 5 more files
+        #3 files in each of the main and subfolder start with "et"
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            dfile = _mysetup()
+            result = runner.invoke(incli, ['local', 'add', 'testlocall', lpath, f'--description={dfile}','--subcollections=True', '--regexselect=^et'])
+            result = runner.invoke(cli, ['ls', '--collection=testlocall'] )
+            _check(self, result, 6)
+
+    def test_add_remote_posix_subcollections(self):
+        pass
+
+    def test_add_remote_posix_regex(self):
+        pass
+
+    def test_add_remote_posix_all_optional(self):
+        pass
 
 if __name__=="__main__":
     unittest.main()

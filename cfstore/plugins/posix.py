@@ -26,7 +26,7 @@ class Posix:
 
 
     def add_collection(self, path_to_collection_head, collection_head_name, collection_head_description,
-                       subcollections=False, checksum=None,regex=""):
+                       subcollections=False, checksum=None,regex=None):
         """
 
         Add a new collection with all files below <path_to_collection_head>,
@@ -40,21 +40,27 @@ class Posix:
 
         """
         c = self.db.create_collection(collection_head_name, collection_head_description)
-
         self._walk(path_to_collection_head, collection_head_name, subcollections, checksum,regex)
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum,regex):
         """ Walk local POSIX tree"""
         if subcollections:
-            raise NotImplementedError('No support for sub-collections as yet')
-
-        for dirName, directories, files in os.walk(path_to_collection_head):
-            dbfiles = []
-            for f in files:
-                fp = path_to_collection_head+f
-                if (regex.match(fp)):
-                    dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
-            self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
+            for dirName, directories, files in os.walk(path_to_collection_head):
+                dbfiles = []
+                for f in files:
+                    if not regex or re.match(regex, f):
+                        fp = dirName+"\\"+f
+                        dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
+                self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
+        else:
+            for dirName, directories, files in os.walk(path_to_collection_head):
+                dbfiles = []
+                for f in files:
+                    if not regex or re.match(regex, f):    
+                        if dirName == path_to_collection_head:
+                            fp = path_to_collection_head+"\\"+f
+                            dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
+                    self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
 
     def _file2dict(self, path_to_file, size,  checksum=None):
@@ -110,8 +116,5 @@ class RemotePosix(Posix):
         files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
         dbfiles = [self._file2dict(f[0], f[1]) for f in files]
         self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
-
-
-
 
 
