@@ -7,28 +7,54 @@ The ``cfstore`` package provides three sets of tools:
 * ``cfsdb`` is used to add, organise and manipulate that information.
 * ``cfmv`` allows you to use that information to move data between the storage *locations*.
 
-Storage locations are places where you keep data. These storage locations will have different properties,
-and you will likely need to provide views of data held in these locations and sometimes migrate
-data between them (e.g. to and from tape).  Some storage locations could be read-only, in which
+Storage locations are places where you keep data. The purpose of cfstore is to maintain *views*
+of the data (in those multiple locations) *in one place* and to allow you to decorate
+those views with information about the data to help you both remember things about the
+data and to able to organise it in ways that allow you to find specific subsets of data, and 
+potentially move them around.
+
+It is important to remember that ``cfin`` does not actually ingest *the* data, it ingests
+information *about* the data. ``cfsb`` allows you to arbitrarily organise information about
+the data, but it does not touch or move the data itself.  However, data can be moved
+between storage locations by ``cfmv`` so it does more than manipulate information *about*
+the data, it actually does things *to* the data.
+
+The storage locations where your data are now likely has different properties (at least
+the physical location, but possibly other characteristics such as quotas, performance etc. Some will
+be read-only, e.g. tape).
+Often you will want to know what data you have across all locations, and think about
+whether or not the data is unique, or replicated, and you might want to have virtual
+collections which are subsets of physical collections and such virtual collections may 
+even span physical locations. Some storage locations could be read-only, in which
 case you would mainly use ``cfsdb`` to provide views into that data, but most will be read/write, and your
-main use of ``cfsdb`` will to organise your thinking about the data, while you use ``cfutils`` to move data around
+main use of ``cfsdb`` will to organise your thinking about the data, while you use ``cfmv`` to move data around
 to meet quota restrictions and/or performance requirements.
+
+NB: Despite all this talk about ``cfmv``, we haven't implmented that yet!
+
+Workflow
+--------
 
 Whatever the nature of the storage location, you will need to start by ingesting initial views of the data
 they already hold, using ``cfin``. Once you have that initial information, you will likely then organise
 "virtual views" of that data, perhaps decorating those views with descriptions, tags, and properties,
-all using `cfsdb`. With that information you should be able to identify where you have data held in multiple
-locations, and make good decisions about what data you need where - and then use the `cfmv` tools to
-get the ``cfstore`` servers to move the data accordingly.
+all using ``cfsdb``. With that information you should be able to identify where you have data held in multiple
+locations, and make good decisions about what data you need where - and then use the ``cfmv`` tools to
+move the data accordingly.
 
 For example: you currently run clamate simulations on ARCHER2, and have output data there. You also have some
 of that data in a group workspace on JASMIN, and some in elastic tape. Once you have ingested views of
 that data you could:
 
 1. Find all duplicate files, ensure you have moved a copy of everything to tape, then remove the disk copies.
-2. Organise virtual collections, such as all your data using the N512 UM, and all the data of similar resolution in the CEDA archive.
+2. Organise virtual collections, such as all your data using the N512 UM,
 3. Create cf aggregation views of the atomic datasets in that data, and
 4. extract subsets onto disk as required.
+
+(You can't do steps 3 and 4 yet with this version of the code, but that's where we are aiming.)
+
+It is important to remember that your view of all the storage locations itself just lives on one machine,
+perhaps your laptop/desktop, and you need to interact with cfstore from that one physical location.
 
 Configuration
 -------------
@@ -39,78 +65,80 @@ using an environment variable (``CFS_CONFIG_FILE``).
 
 The default configuration uses an sqlite database which is put in the directory alongside the configuration
 file. It that might grow quite large, so if the configuration location (e.g. your home disk) is not
-the right place for it, you will want to edit the ``.cfstore/config.ini`` file to point to it's location.
+the right place for it, you will want to edit the ``.cfstore/config.ini`` file to point to its location.
 
 (For now we only support an sqlite database, but other options will become available, and then
 we expect you will be able to point to that location via the configuration file and/or tools
 which modify the configuration file.)
 
+``cfstore`` understands the concept of data being held on 
+1. The (POSIX) disks mounted where you are running cfstore itself (``location=local``);
+2. POSIX disks mounted on a remote server which you can access using ssh;
+3. The contents of buckets held in an object store accessible via S3; and
+4. Data held in the JASMIN elastic tape store.
 
-Ingesting Information
----------------------
+To use cfstore to document data beyond your local environment, you will need to tell cfstore
+something about your credentials. In particular you will need to set things up so that
+cfstore knows which ssh credentials to use to access any given remote system, *and*, if
+you are interested in elastic tape and are running cfstore outside RAL, you will need
+to provide cfstore with ssh credentials to get inside the JASMIN firewall (these might
+be the same credentials you have used to tell cfstore how to access JASMIN disk if you
+have done that).
 
-*The information in this section represents goals, not all of this functionality is yet available
-and it might differ in detail when implemented.*
+At the moment you can't configure cfstore to access S3 data, that will be available in later
+release.
 
-Two types of location are currently supported, elastic tape, and posix file systems
-(local or remote). (Posix file systems are the familiar Unix file systems that look
-like ``/home/user/fred/folder/...``)
+Configuring ssh and remote locations
+------------------------------------
 
-*NB: There are changes to the ET interface to cfstore which arise from changes at JASMIN
-made in November 2021, this documentation needs to be updated!*
+First, let's set things up for access to a remote posix system. We'll work this 
+through for access to JASMIN, from, say, your laptop running in your university's VPN.
+The following instructions assume you are on a linux or mac. We'll add Windows
+instructions in due course.
 
-1. For Elastic tape,
-    - You can ingest everything that is known about an elastic tape GWS::
+1. Make sure you have setup access to the remote machine in your `~/.ssh/config` file,
+something like the following for user madonna::
+   Host nxlogin2   
+      IdentityFile ~/.ssh/my_key_file
+      Hostname nx-login2.jasmin.ac.uk
+      User madonna
+      ForwardAgent yes
+   Host xfer1
+      Hostname xfer1.jasmin.ac.uk
+      User madonna
+      IdentityFile ~/.ssh/my_key_file
+      ProxyJump nxlogin2
 
-         cfin et add gwsname
+2. It is best you have added the key of interest (``~/.ssh/my_key_file``) to a running agent
+(instructions for JASMIN can be found `here <https://help.jasmin.ac.uk/article/187-login>`_).
 
-      or
-    - You can ingest an update for a gws::
+3. Now tell cfstore about this 
+location::
+    cfin rp setup location_name xfer1 madonna
 
-         cfin et update gwsname
-2. For remote posix file systems where you have ssh access,
-    - you must first declare the location::
-
-         cfin rp setup locationname ssh_host username
-
-      (you will need to have a running ssh-agent with the host key loaded)
-
-3. To add local or remote posix files below a specfic directory:
-    -  add a particular directory tree with ::
-
-          cfin rp add location_name collection_name_for_path path_to_add
-          cfin p|local add collection_name_for_path path_to_add
-
-       (where you use ``rp`` or ``local`` in that first argument depending on whether it is
-       local or remote POSIX)
-       remote locations require a remote location name. Local locations do not, as the location is local
-       , or
-    -  update an existing collection with information held at another path::
-
-           cfin rp|local add collection_name_for_path new_path
-
-    - In both cases the application will open an editor for you to enter an initial
-      description for this collection. If you already have this in a file, you can do
-      it this way::
-
-          cfin rp|local add collection_name_for_path path_to_add < description_file
-
-4. Sometimes you will want to remove the ``cfsdb`` representation of files held
-   below a specific directory because you've moved/deleted them using different
-   tools.
-
-   - To do this, you can ::
-
-        cfin rp|local clean path_to_clean
-
-   - All representations of files held in that location below that path in ``cfsdb`` will be
-     removed, no matter which collections they are in.  However, the collections
-     themselves will not be removed, you will need to use ``cfsdb`` tools to do that.
-     You might, or might not, then want to re-add the collection.
+where you can use whatever _location_name_ you want. In this case you might simply want
+to call it jasmin, so you'd be doing::
+    cfin rp setup jasmin xfer1 madonna
 
 
+If you have multiple remote sites with ssh access, you will need to repeat these steps to
+set up ssh access to each remote location (with a different location name for each). 
 
+Note  that ``cfstore`` makes and keeps no copies of ssh credentials, it is simply binding your 
+_location_name_ to the credentials you already have, so you can use them when accessing
+_location_name_ in subsequent commands.
 
+Configuring for elastic tape access outside RAL
+-----------------------------------------------
+
+If you are setting up remote access to JASMIN, then you will be using the
+same ssh credentials for access to JASMIN elastic tape. If you are using
+elastic tape, but not JASMIN posix, disk, you will need steps 1 and 2,
+but not step 3.
+
+(If you are going to run cfstore
+within JASMIN, you can use local posix, and you don't need to set anything
+special up for either local posix or elastic tape in that situation).
 
 
 

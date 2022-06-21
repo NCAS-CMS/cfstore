@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
+import json
 from cfstore.config import CFSconfig
 import os, sys
 import click
 from rich.console import Console
 from rich.markdown import Markdown
-
-import hashlib
-from urllib.parse import urlparse
 
 STATE_FILE = '.cftape'
 
@@ -95,24 +93,49 @@ def setc(ctx,collection):
 @cli.command()
 @click.pass_context
 @click.option('--collection', default=None, help='Required collection (use and make default)')
-def ls(ctx, collection):
+@click.option('--output', default="files",help="What information is printed (files, tags, facets, relationships, collections or locations)")
+def ls(ctx, collection, output):
     """ 
     List collections (collections=None),
     or list files in a specific collection
     (which might be the last used one).
     """
     view_state, db = _set_context(ctx, collection)
-
+    output= output.lower()
+    print(output)
+    
     if view_state.collection:
-        files = db.retrieve_files_in_collection(view_state.collection)
-        for f in files:
-            print(f)
-    else:
-        collections = db.retrieve_collections()
-        print(view_state.name)
-        for c in collections:
-            print(c)
+        if output=="files":
+            return_list = db.retrieve_files_in_collection(view_state.collection)
+        
+        if output=="tags":
+            return_list = db.retrieve_collection(view_state.collection).tags
+        
+        if output=="facets":
+            return_list = db.retrieve_collection(view_state.collection).properties
+        
+        if output=="relationships":
+            return_list = db.retrieve_related(view_state.collection)
 
+        if output=="collections":
+            return_list = db.retrieve_collections()
+            print(view_state.name)
+
+        if output=="locations":
+            return_list = db.retrieve_locations()
+            print(view_state.name)
+        
+        for r in return_list:
+            print(r)
+    else:
+        return_list = db.retrieve_collections()
+        print(view_state.name)
+        if output=="locations":
+            return_list = db.retrieve_locations()
+            print(view_state.name)
+        for c in return_list:
+            print(c)
+        
     view_state.save()
 
 
@@ -179,11 +202,11 @@ def findrx(ctx, collection, match):
 
 @cli.command()
 @click.pass_context
-@click.option('--match-full-path', default=True, help='Match full path, if False, match end of path')
+@click.option('--match-full-path', default=False, help='Match full path, if False, match end of path')
 @click.option('--strip-base', default='', help="String to remove from start of collection path")
 @click.option('--collection', default=None, help='Collection in which replicants are expected')
 @click.option('--match_entire_collection', default=False, help='If true, checks if there are any complete identical folders with all identical files')
-def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_collection):
+def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_collection,checkby):
     # this is using the capability from the interface locate replicants, so this docstring is duplicated from there
     """
     For all the files in a given collection, look for other
@@ -214,7 +237,8 @@ def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_
         then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
     """
     view_state, db = _set_context(ctx, collection)
-    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path)
+
+    candidates, possibles = db.locate_replicants(collection, strip_base=strip_base, match_full_path=match_full_path,check=checkby)
     full_match=[]
     not_full_match=[]
     if match_entire_collection:
@@ -229,10 +253,16 @@ def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_
                         not_full_match.append(col)
             print(c, [(x, x.replicas, x.in_collections) for x in p])
 
+    no_replicant_found = True
     for c, p in zip(candidates, possibles):
-        print(c, [(x, x.replicas, x.in_collections) for x in p])
+        if (len(p))>1:
+            no_replicant_found = False
+            print("File:",c.name, "has the following replicas:")
+            for x in p:
+                print("Replica file", "\""+x.name+"\""," in the following collections:", [n.name for n in x.in_collections],"\n")
+    if no_replicant_found:
+        print("No replicants found")
     view_state.save()
-
 
 @cli.command()
 @click.pass_context

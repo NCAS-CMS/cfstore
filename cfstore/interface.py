@@ -4,7 +4,7 @@ from cfstore.db import StorageLocation, Collection, CoreDB, File, Tag, StorageLo
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 from cfstore.cfparse_file import cfparse_file
-
+import hashlib
 
 class CollectionError(Exception):
     def __init__(self, name, message):
@@ -156,12 +156,15 @@ class CollectionDB(CoreDB):
 
     def locate_replicants(self, collection_name,
                           strip_base='',
-                          match_full_path=True,
-                          try_reverse_for_speed=False):
+                          match_full_path=False,
+                          try_reverse_for_speed=False,
+                          check="Both"):
         """
-
-
-
+        Locate copies of a file across collections
+        strip_base - remove given string from the file string
+        match_full_path - find only if the full path matches if true, otherwise only filename
+        try_reverse_for_speed - optimization approach that does not yet work and is not implemented
+        check - check for "name", "size" or "both", checksum needs to be implemented
         """
         def strip(path, stem):
             """ If path starts with stem, return path without the stem, otherwise return the path"""
@@ -170,6 +173,7 @@ class CollectionDB(CoreDB):
             else:
                 return path
 
+
         if try_reverse_for_speed:
             raise NotImplementedError
         else:
@@ -177,33 +181,83 @@ class CollectionDB(CoreDB):
             # a SQL wizard would do better.
             c = self.retrieve_collection(collection_name)
             candidates = self.retrieve_files_in_collection(collection_name)
-            if strip_base:
-                if match_full_path:
-                    # likely occurs because ingest required same checksum and/or size and these were not
-                    # known at ingest time.
-                    possibles = [self.session.query(File).filter(
-                                    and_(File.name == c.name, File.path == strip(c.path, strip_base))).all()
-                                 for c in candidates]
-                    return possibles
+            if check.lower() == "both":
+                if strip_base:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.path == strip(f.path, strip_base),
+                                File.size == f.size)).all()
+                                    for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                        and_(File.name == f.name, File.size == f.size)).all()
+                                    for f in candidates]
                 else:
-                    possibles = [self.session.query(File).filter(
-                        and_(File.name == f.name, File.path.endswith(strip(f.path, strip_base)))).all()
-                                 for f in candidates]
-            else:
-                if match_full_path:
-                    # likely occurs because ingest required same checksum and/or size and these were not
-                    # known at ingest time.
-                    possibles = [self.session.query(File).filter(
-                        and_(File.name == c.name,
-                             File.path == c.path)).filter(
-                             File.in_collections.notin_([c,])).all()
-                                 for c in candidates]
-                    print("got there!")
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.path == f.path,
+                                File.size == f.size)).all()
+                                    for f in candidates]
+                                    
+                    else:
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.size == f.size)).all()
+                                for f in candidates]
+            if check.lower() == "name":
+                if strip_base:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                                        and_(File.name == f.name, File.path == strip(f.path, strip_base))).all()
+                                    for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                            (File.name == strip(f.name, strip_base)))
+                                    for f in candidates]
                 else:
-                    possibles = [self.session.query(File).filter(
-                        and_(File.name == f.name,
-                             File.path.endswith(f.path),
-                             File.in_collections.not_in([f,]))).all() for f in candidates]
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                            and_(File.name == f.name,
+                                File.path == f.path,
+                                )).all()
+                                    for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                and_(File.name == f.name)).all()
+                                for f in candidates]
+            if check.lower() == "size":
+                if strip_base:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
+                else:
+                    if match_full_path:
+                        # likely occurs because ingest required same checksum and/or size and these were not
+                        # known at ingest time.
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size, File.path == f.path)).all()
+                                for f in candidates]
+                    else:
+                        possibles = [self.session.query(File).filter(
+                                and_(File.size == f.size)).all()
+                                for f in candidates]
         return candidates, possibles
 
     def retrieve_collection(self, collection_name):
@@ -360,7 +414,7 @@ class CollectionDB(CoreDB):
             return files
 
 
-          def delete_file_from_collection(self, collection, file):
+    def delete_file_from_collection(self, collection, file):
         """
         Delete a file from a collection
         """
@@ -602,8 +656,8 @@ def chkeq(file1,file2,try_hash=False,return_hash=False):
     b_file = open(file2, "rb")
 
     
-    filesize_equal= (os.path.getsize(col1) ==os.path.getsize(col2))
-    if try_hash and not filezise_equal:
+    filesize_equal= (os.path.getsize(a_file) ==os.path.getsize(b_file))
+    if try_hash and not filesize_equal:
         sha256_hash = hashlib.sha256()    
 
         for byte_block in iter(lambda: a_file.read(4096),b""):

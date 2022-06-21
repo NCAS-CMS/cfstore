@@ -54,10 +54,13 @@ class ET_Workspace:
         self.souper = Souper(ssh_host, ssh_user)
         if self.souper.ssh is None:
             print('Elastic tape interface being used in "Inside RAL" mode')
+        else:
+            print(f'Elastic tape access via {ssh_host} and {ssh_user}')
         self.load_from_et()
 
     def load_from_et(self):
         url = f"ET_Holdings_Summary.php?workspace={self.name}&level=top"
+        print(url)
         soup = self.souper.get(url)
         summary_td = soup.find_all('table')[1].find_all('tr')[1].find_all('td')
         self.file_count = summary_td[0]
