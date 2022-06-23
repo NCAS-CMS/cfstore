@@ -5,6 +5,7 @@ from cfstore.config import CFSconfig
 from cfstore import interface
 from pathlib import Path
 from datetime import datetime
+import paramiko
 import click
 
 
@@ -132,6 +133,52 @@ def add(ctx, description, regexselect, subcollections, arg1, argm):
             raise ValueError(f'Unexpected location type {target}')
     state.save()
 
+
+#This with the right arguments can run scripts on Jasmin
+#Most of the work is done in the arguments though
+#So needs fiddling
+@cli.command()
+@click.pass_context
+@click.argument('arg1', nargs=1)
+@click.argument('argm', nargs=-1)
+def getBMetadata(ctx, arg1, argm):
+    state = CFSconfig()
+
+    location = arg1
+    path, collection = argm
+
+    #Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = state.get_location(location)['host'], state.get_location(location)['user']
+    x.configure(host, user)
+
+
+    #Add collection, I guess?
+    x.add_collection(path, collection)
+
+    #Set up something that runs on Jasmin
+    # Connect to remote host
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(host, username=user)
+
+    # Setup sftp connection and transmit this script
+    sftp = client.open_sftp()
+    sftp.put(__file__, scriptname)
+    sftp.close()
+
+    # Run the transmitted script remotely without args and show its output.
+    # SSHClient.exec_command() returns the tuple (stdin,stdout,stderr)
+    stdout = client.exec_command(scriptname)[1]
+    for line in stdout:
+        # Process each line in the remote output
+        print(line)
+
+    client.close()
+    sys.exit(0)
+    
+    #Call add_variables_from_file for each file
+    state.save()
 
 @cli.command()
 @click.pass_context

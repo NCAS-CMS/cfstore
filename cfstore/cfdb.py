@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+from unicodedata import name
 from cfstore.config import CFSconfig
 import os, sys
 import click
@@ -300,6 +301,7 @@ def tag(ctx, collection, tagname):
     """
     view_state, db = _set_context(ctx, collection)
     db.tag_collection(view_state.collection, tagname)
+    print("Tag",tagname,"added to",collection)
     view_state.save()
 
 @cli.command()
@@ -344,9 +346,11 @@ def facet(ctx, key, value, collection, remove):
     c = db.retrieve_collection(view_state.collection)
  
     if remove:
+        print(key,"/",c[key],"pair removed")
         del c[key]
     else:
         c[key] = value
+        print(key,"/",value,"pair added")
     
     db.session.commit()
     view_state.save()
@@ -383,7 +387,7 @@ def linkbetween(ctx, col1, link, col2):
     """
     view_state, db = _set_context(ctx, col1)
     db.add_relationship(col1, col2, link)
-
+    print("Relationship -",link,"- added between",col1,"and",col2)
 
 @cli.command()
 @click.pass_context
@@ -454,6 +458,7 @@ def edit(ctx, collection):
     description = active_collection.description
     new_description = click.edit(description)
     active_collection.description = new_description
+    print("New description saved for",collection)
     db.save()
 
 @cli.command()
