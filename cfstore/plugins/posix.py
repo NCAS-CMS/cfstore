@@ -40,6 +40,12 @@ class Posix:
 
         """
         c = self.db.create_collection(collection_head_name, collection_head_description)
+        args=[path_to_collection_head, collection_head_name, collection_head_description,subcollections, checksum,regex]
+        keys=["_path_to_collection_head", "_collection_head_name", "_collection_head_description","_subcollections", "_checksum","_regex"]
+        
+        for n in range(len(args)):
+            c[keys[n]] = str(args[n])
+
         self._walk(path_to_collection_head, collection_head_name, subcollections, checksum,regex)
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum,regex):
