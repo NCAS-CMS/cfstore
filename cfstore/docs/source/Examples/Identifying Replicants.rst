@@ -81,48 +81,50 @@ Checking by property
 Notably, we set the "checkby" argument to "name" - this means the files are only compared by name.
 We can instead check by filesize:
 
-Input command:
+Input command::
 
-cfsdb locate-replicants --collection=xjlehjas2 --checkby=size
-Example outputs:
+    cfsdb locate-replicants --collection=xjlehjas2 --checkby=size
 
-...
-File: ioserver_stash_log.0019 has the following replicas:
-Replica file "ioserver_stash_log.0001"  in the following collections: ['et_582'] 
+Example outputs::
 
-Replica file "ioserver_stash_log.0003"  in the following collections: ['et_582'] 
+    ...
+    File: ioserver_stash_log.0019 has the following replicas:
+    Replica file "ioserver_stash_log.0001"  in the following collections: ['et_582'] 
 
-Replica file "ioserver_stash_log.0005"  in the following collections: ['et_582'] 
+    Replica file "ioserver_stash_log.0003"  in the following collections: ['et_582'] 
 
-Replica file "ioserver_stash_log.0007"  in the following collections: ['et_582'] 
+    Replica file "ioserver_stash_log.0005"  in the following collections: ['et_582'] 
 
-Replica file "ioserver_stash_log.0009"  in the following collections: ['et_582'] 
-...
+    Replica file "ioserver_stash_log.0007"  in the following collections: ['et_582'] 
+
+    Replica file "ioserver_stash_log.0009"  in the following collections: ['et_582'] 
+    ...
 
 This is useful for when names may have changed but files will not or if looking for specifically sized files - for example empty ones.
 By default "checkby" will be set to "both", checking both filesize and name.
 
-Input command:
+Input command::
 
-cfsdb locate-replicants --collection=xjlehjas2 --checkby=both
-Example outputs:
-...
-File: xjleha.pk19810921 has the following replicas:
-Replica file "xjleha.pk19810921"  in the following collections: ['et_601'] 
+    cfsdb locate-replicants --collection=xjlehjas2 --checkby=both
 
-Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']
-...
+Example outputs::
+    ...
+    File: xjleha.pk19810921 has the following replicas:
+    Replica file "xjleha.pk19810921"  in the following collections: ['et_601'] 
 
-...
-File: ioserver_stash_log.0019 has the following replicas:
-Replica file "ioserver_stash_log.0019"  in the following collections: ['et_582'] 
+    Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']
+    ...
 
-Replica file "ioserver_stash_log.0019"  in the following collections: ['et_601'] 
+    ...
+    File: ioserver_stash_log.0019 has the following replicas:
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['et_582'] 
 
-Replica file "ioserver_stash_log.0019"  in the following collections: ['et_602'] 
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['et_601'] 
 
-Replica file "ioserver_stash_log.0019"  in the following collections: ['xjlehjas2', 'xjlehjas3'] 
-...
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['et_602'] 
+
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['xjlehjas2', 'xjlehjas3'] 
+    ...
 
 Output is identical to name.
 
@@ -134,15 +136,15 @@ There are two additional arguments for parsing filepaths. "match-full-path" and 
 match-full-path defaults to False, if set true it only finds replicants that have exactly equal filepaths.
 That means files that have identical storage locations will be linked.
 
-Input command:
+Input command::
 
-cfsdb locate-replicants --collection=xjlehjas2 --checkby=both --match-full-path=true
+    cfsdb locate-replicants --collection=xjlehjas2 --checkby=both --match-full-path=true
 
-Example outputs:
+Example outputs::
 
-...
-File: xjleha.pk19810921 has the following replicas:
-Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']
-...
+    ...
+    File: xjleha.pk19810921 has the following replicas:
+    Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']
+    ...
 
 if a string is inputted into strip-base, then that string is removed from the search path.

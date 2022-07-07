@@ -4,48 +4,48 @@ Searching for Collections
 
 Finding collections by tags
 ---------------------------
-Input command:
+Input command::
 
-cfsdb findc --tagname=exampletag
+    cfsdb findc --tagname=exampletag
 
-Example output:
+Example output::
 
-testcollection
-linkedtestcollection
-linkedtestcollection2
+    testcollection
+    linkedtestcollection
+    linkedtestcollection2
 
 Finding collections by searching
 --------------------------------
-Input command:
+Input command::
 
-cfsdb findc --match=test
+    cfsdb findc --match=test
 
-Example output:
+Example output::
 
-*test*collection
-linked*test*collection
-linked*test*collection2
-collectionthatendswith*test*
+    *test*collection
+    linked*test*collection
+    linked*test*collection2
+    collectionthatendswith*test*
 
 Finding collections by relation
 -------------------------------
-Input command:
+Input command::
 
-cfsdb findr examplelink --collection=testcollection
+    cfsdb findr examplelink --collection=testcollection
 
-Example output:
+Example output::
 
-linkedtestcollection
-linkedtestcollection2
+    linkedtestcollection
+    linkedtestcollection2
 
 Finding files by searching
 --------------------------------
-Input command:
+Input command::
 
-cfsdb findf test --collection=all
+    cfsdb findf test --collection=all
 
-Example output:
+Example output::
 
-G:\\examplepath\\morepath\\testcollection.py
-G:\\examplepath\\morepath\\linkedtestcollection.py
-G:\\examplepath\\morepath\\linkedtestcollection.py
+    G:\\examplepath\\morepath\\testcollection.py
+    G:\\examplepath\\morepath\\linkedtestcollection.py
+    G:\\examplepath\\morepath\\linkedtestcollection.py

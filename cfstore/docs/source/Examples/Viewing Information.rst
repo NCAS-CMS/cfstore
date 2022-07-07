@@ -38,20 +38,21 @@ the collection description in your database.
 
 Adding tags: 
 
-You can add a tag to a collection using the `tag` command:
+You can add a tag to a collection using the `tag` command::
 
         cfsdb tag tagtestcollection testtag 
 
-Which will then return the confirmation message:
+Which will then return the confirmation message::
 
         Tag testtag added to tagtestcollection
 
 Adding key-value pairs: 
 
-You can add key-value pairs with the `Facet` command:        
+You can add key-value pairs with the `Facet` command::
+
         facet testfacet1 testfacet2 (--collection=facettestcollection)
 
-Which will then return the confirmation message:
+Which will then return the confirmation message::
 
         testfacet1 / testfacet2 pair added    
 
