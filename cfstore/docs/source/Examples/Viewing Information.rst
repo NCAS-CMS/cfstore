@@ -36,7 +36,22 @@ You can edit the description by using the `edit` command::
 which will open an editor, when you save the content it will replace
 the collection description in your database.
 
-Adding tags: TBD
+Adding tags: 
 
-Adding key-value pairs: TBD
+You can add a tag to a collection using the `tag` command:
+
+        cfsdb tag tagtestcollection testtag 
+
+Which will then return the confirmation message:
+
+        Tag testtag added to tagtestcollection
+
+Adding key-value pairs: 
+
+You can add key-value pairs with the `Facet` command:        
+        facet testfacet1 testfacet2 (--collection=facettestcollection)
+
+Which will then return the confirmation message:
+
+        testfacet1 / testfacet2 pair added    
 

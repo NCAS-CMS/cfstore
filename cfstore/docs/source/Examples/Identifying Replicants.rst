@@ -1,4 +1,4 @@
-
+----------------------
 Identifying Replicants
 ----------------------
 
@@ -8,6 +8,7 @@ Locate replicants takes in a single collection and identifies which of the store
 We'll start by providing an example set of collections:
 
 Input command:
+
 cfsdb ls
 
 Example output:
@@ -32,15 +33,18 @@ We'll therefore run locate-replicants on various files
 Basic searching
 ---------------
 Input command:
+
 cfsdb locate-replicants --collection=address --checkby=name
 
 Example output:
+
 No replicants found
 
 This is the simplest example - all files in address are unique across collections. This information is outputted and the command ends.
 
 
-Input command
+Input command:
+
 cfsdb locate-replicants --collection=xjlehjas2 --checkby=name
 Example outputs:
 ...
@@ -77,7 +81,8 @@ Checking by property
 Notably, we set the "checkby" argument to "name" - this means the files are only compared by name.
 We can instead check by filesize:
 
-Input command
+Input command:
+
 cfsdb locate-replicants --collection=xjlehjas2 --checkby=size
 Example outputs:
 
@@ -97,7 +102,8 @@ Replica file "ioserver_stash_log.0009"  in the following collections: ['et_582']
 This is useful for when names may have changed but files will not or if looking for specifically sized files - for example empty ones.
 By default "checkby" will be set to "both", checking both filesize and name.
 
-Input command
+Input command:
+
 cfsdb locate-replicants --collection=xjlehjas2 --checkby=both
 Example outputs:
 ...
@@ -128,9 +134,12 @@ There are two additional arguments for parsing filepaths. "match-full-path" and 
 match-full-path defaults to False, if set true it only finds replicants that have exactly equal filepaths.
 That means files that have identical storage locations will be linked.
 
-Input command
-match-full-path
+Input command:
+
+cfsdb locate-replicants --collection=xjlehjas2 --checkby=both --match-full-path=true
+
 Example outputs:
+
 ...
 File: xjleha.pk19810921 has the following replicas:
 Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']

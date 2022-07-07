@@ -139,8 +139,3 @@ but not step 3.
 (If you are going to run cfstore
 within JASMIN, you can use local posix, and you don't need to set anything
 special up for either local posix or elastic tape in that situation).
-
-
-
-
-

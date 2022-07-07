@@ -69,8 +69,3 @@ made in November 2021, this documentation needs to be updated!*
 
 
 
----------
-Ingestion
----------
-
-(This is more fully discussed in :doc:`../getting_started`.)
