@@ -38,33 +38,33 @@ cfsdb locate-replicants --collection=address --checkby=name
 
 Example output:
 
-No replicants found
+    No replicants found
 
 This is the simplest example - all files in address are unique across collections. This information is outputted and the command ends.
 
 
 Input command:
 
-cfsdb locate-replicants --collection=xjlehjas2 --checkby=name
-Example outputs:
-...
-File: xjleha.pk19810921 has the following replicas:
-Replica file "xjleha.pk19810921"  in the following collections: ['et_601'] 
+    cfsdb locate-replicants --collection=xjlehjas2 --checkby=name
+    Example outputs:
+    ...
+    File: xjleha.pk19810921 has the following replicas:
+    Replica file "xjleha.pk19810921"  in the following collections: ['et_601'] 
 
-Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']
-...
+    Replica file "xjleha.pk19810921"  in the following collections: ['xjlehjas2', 'xjlehjas3']
+    ...
 
 
-...
-File: ioserver_stash_log.0019 has the following replicas:
-Replica file "ioserver_stash_log.0019"  in the following collections: ['et_582'] 
+    ...
+    File: ioserver_stash_log.0019 has the following replicas:
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['et_582'] 
 
-Replica file "ioserver_stash_log.0019"  in the following collections: ['et_601'] 
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['et_601'] 
 
-Replica file "ioserver_stash_log.0019"  in the following collections: ['et_602'] 
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['et_602'] 
 
-Replica file "ioserver_stash_log.0019"  in the following collections: ['xjlehjas2', 'xjlehjas3'] 
-...
+    Replica file "ioserver_stash_log.0019"  in the following collections: ['xjlehjas2', 'xjlehjas3'] 
+    ...
 
 (example output is partial)
 
@@ -108,6 +108,7 @@ Input command::
     cfsdb locate-replicants --collection=xjlehjas2 --checkby=both
 
 Example outputs::
+
     ...
     File: xjleha.pk19810921 has the following replicas:
     Replica file "xjleha.pk19810921"  in the following collections: ['et_601'] 
