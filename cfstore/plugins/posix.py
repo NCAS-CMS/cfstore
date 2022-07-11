@@ -45,7 +45,6 @@ class Posix:
         
         for n in range(len(args)):
             c[keys[n]] = str(args[n])
-
         self._walk(path_to_collection_head, collection_head_name, subcollections, checksum,regex)
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum,regex):
@@ -107,7 +106,7 @@ class RemotePosix(Posix):
         self.ssh = SSHlite(hostname, username)
 
 
-    def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum):
+    def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum, regex):
         """
         Walk a remote directory and populate the collection
         """
@@ -118,6 +117,8 @@ class RemotePosix(Posix):
             raise ValueError('Cannot (ok, really we mean, will not) checksum remote files')
         if subcollections:
             raise NotImplementedError('No support for sub-collections as yet')
+        if regex:
+            raise NotImplementedError('No support for remote regex yet')
 
         files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
         dbfiles = [self._file2dict(f[0], f[1]) for f in files]
