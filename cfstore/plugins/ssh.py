@@ -1,8 +1,11 @@
+from inspect import walktree
 import paramiko
 import posixpath, os, glob, fnmatch
 from itertools import product
 from stat import S_ISREG, S_ISDIR
 import time
+
+from cfstore.cfparse_file import cfparse_file
 
 
 class SSHcore:
@@ -133,6 +136,26 @@ class SSHlite(SSHcore):
             print(f'Walking {remotepath} for {len(files)} files took {etime-stime:.2f}s')
 
         return files
+
+    def get_b_metadata(self, remotepath,db):
+        print(f'SSH is getting B metadata')
+        
+        parselambda = lambda file: self.sshparse(db,file)
+        self.walktree(remotepath, parselambda) 
+
+    def sshparse(self,db,file):
+        remotefile = self._sftp.open(file)
+        cfparse_file(db,remotefile)
+
+    def run_script(self, remotepath, script):
+        print("Putting script")
+        self._sftp.put(__file__, script)
+        print("Moving to filelocation")
+        self._client.exec_command('cd '+remotepath)
+        print("Executing script")
+        stdout = self._client.exec_command('python '+script)
+        for line in stdout:
+            print(line)
 
     def globish(self, remotepath, expression):
         """

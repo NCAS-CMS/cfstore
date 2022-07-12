@@ -1,5 +1,7 @@
 import os
+from cfstore import db
 from cfstore.plugins.ssh import SSHlite
+from cfstore.cfparse_file import cfparse_file
 import re
 
 class Posix:
@@ -67,6 +69,11 @@ class Posix:
                             dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
                     self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
+    def getBMetadata(self,path_to_collection_head, collection_head_name, subcollections, checksum,regex):
+        print("Getting b metadata")
+        #files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
+        #self.ssh.get_b_metadata(path_to_collection_head,self.db)
+        self.ssh.run_script(path_to_collection_head, "getallbmetadata.py")
 
     def _file2dict(self, path_to_file, size,  checksum=None):
         """
