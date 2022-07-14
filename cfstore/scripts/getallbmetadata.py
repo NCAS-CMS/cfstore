@@ -6,5 +6,6 @@ from cfstore.config import CFSconfig
 if __name__ == '__main__':
     state = CFSconfig()
     for filename in os.listdir(os.curdir):
+        print(filename)
         cfparse_file(state.db,filename)
        
