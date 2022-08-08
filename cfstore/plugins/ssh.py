@@ -184,7 +184,7 @@ class SSHlite(SSHcore):
         print(stderr)
         for line in stderr:
             print("err:",line)
-        for line in stdout.read():
+        for line in stdout:
             print("out:",line)
         self._sftp.remove(remotescript)
 
