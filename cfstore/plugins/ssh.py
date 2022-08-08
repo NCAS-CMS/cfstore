@@ -1,3 +1,4 @@
+from distutils.log import error
 from inspect import walktree
 import paramiko
 import posixpath, os, glob, fnmatch
@@ -147,15 +148,45 @@ class SSHlite(SSHcore):
         remotefile = self._sftp.open(file)
         cfparse_file(db,remotefile)
 
-    def run_script(self, remotepath, script):
+    def run_script(self, remotepath, collection, script):
+        scriptname = os.path.basename(script)
+        print("Running script:",scriptname)
         print("Putting script")
-        self._sftp.put(__file__, script)
+        print("Putting script ",scriptname,"from", script ,"to", remotepath)
+        remotescript = remotepath +"/donothing.py"
+        try:
+            self._sftp.put(script,remotescript)
+        except:
+            print("Failed to put script on remote server")
         print("Moving to filelocation")
-        self._client.exec_command('cd '+remotepath)
-        print("Executing script")
-        stdout = self._client.exec_command('python '+script)
+        print("Moving to filelocation",remotepath)
+        try:
+            self._client.exec_command('cd '+remotepath)
+        except:
+            print("Could not move to remote directory")
+            print("Removing script from remote server")
+            self._sftp.remove(remotescript)
+        stdin, stdout, stderr=self._client.exec_command('pwd')
+        for line in stderr:
+            print("err:",line)
         for line in stdout:
-            print(line)
+            print("lsout:",line)
+        print("Executing script")
+        print('Executing \"python '+scriptname+"\"")
+        try:
+#            stdin, stdout, stderr = self._client.exec_command('ls')
+            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+"/"+scriptname)
+            print("Script executed")
+        except:
+            print("Could not successfully execute script")
+            print("Removing script from remote server")
+            self._sftp.remove(remotescript)
+        print(stderr)
+        for line in stderr:
+            print("err:",line)
+        for line in stdout.read():
+            print("out:",line)
+        self._sftp.remove(remotescript)
 
     def globish(self, remotepath, expression):
         """

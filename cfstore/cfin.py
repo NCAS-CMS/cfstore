@@ -145,7 +145,7 @@ def getBMetadata(ctx, arg1, argm):
     state = CFSconfig()
 
     location = arg1
-    path, collection, scriptname = argm
+    remotepath, collection, scriptname = argm
 
     #Setup Remote Posix as normal
     x = RemotePosix(state.db, location)
@@ -158,7 +158,7 @@ def getBMetadata(ctx, arg1, argm):
 
     #Set up something that runs on Jasmin
     # Connect to remote host
-    x.getBMetadata(path, collection, False, False,None)
+    x.getBMetadata(remotepath,collection, scriptname, False, False,None)
 
     # Setup sftp connection and transmit this script
 
