@@ -123,7 +123,7 @@ class CollectionDB(CoreDB):
                 raise
         return c
 
-    def create_location(self, location, protocols=[]):
+    def create_location(self, location, protocols=[],overwrite=False):
         """
         Create a storage <location>. The database is ignorant about what
         "location" means. Other layers of software care about that.
@@ -144,21 +144,20 @@ class CollectionDB(CoreDB):
             self.session.add(loc)
             self.session.commit()
         else:
-            raise ValueError(f'{location} already exists')
+            if overwrite:
+                loc = StorageLocation(name=location)
+                if protocols:
+                    existing_protocols = self.retrieve_protocols()
+                    for p in protocols:
+                        if p not in existing_protocols:
+                            pdb = StorageProtocol(name=p)
+                            self.session.add(pdb)
+                        loc.protocols.append(pdb)
+                self.session.add(loc)
+                self.session.commit()
+            else:
+                raise ValueError(f'{location} already exists')
 
-    def delete_location(self, location, protocols=[]):
-        """
-        Delete a storage <location>. The database is ignorant about what
-        "location" means. Other layers of software care about that.
-        However, it may have one or more protocols associated with it.
-        Does not natively provide a warning
-        """
-        try:
-            loc = self.session.query(StorageLocation).filter_by(name=location).one()
-            self.session.remove(loc)
-            self.session.commit()
-        except NoResultFound:
-            raise ValueError(f'{location} doesn\'t exists')
 
     def create_tag(self, tagname):
         """
