@@ -146,6 +146,20 @@ class CollectionDB(CoreDB):
         else:
             raise ValueError(f'{location} already exists')
 
+    def delete_location(self, location, protocols=[]):
+        """
+        Delete a storage <location>. The database is ignorant about what
+        "location" means. Other layers of software care about that.
+        However, it may have one or more protocols associated with it.
+        Does not natively provide a warning
+        """
+        try:
+            loc = self.session.query(StorageLocation).filter_by(name=location).one()
+            self.session.remove(loc)
+            self.session.commit()
+        except NoResultFound:
+            raise ValueError(f'{location} doesn\'t exists')
+
     def create_tag(self, tagname):
         """
         Create a tag and insert into a database
