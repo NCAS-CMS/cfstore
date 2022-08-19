@@ -174,26 +174,33 @@ def getBMetadata(ctx, arg1, argm):
 @click.argument('location')
 @click.argument('host')
 @click.argument('user')
-def setup(ctx, location, host, user):
+@click.option('--overwrite', default=False, help='(Optional) If true, will overwrites current location')
+def setup(ctx, location, host, user,overwrite):
     """
     Add a new posix location
     """
-
+    if overwrite == "True":
+        overwrite = True
+    else:
+        overwrite = False
+        
     state = CFSconfig()
     target = ctx.obj['fstype']
     print(f"Atempting to setup:\n host:{host} \n location:{location}")
     if target == 'rp':
         # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces:
+        if location in state.interfaces and overwrite == False:
+            print(location in state.interfaces,location in state.interfaces and overwrite == False,overwrite == False)
+            print(location,overwrite)
             raise ValueError(f'Location {location} already exists in config file')
-        state.db.create_location(location)
+        state.db.create_location(location,overwrite=overwrite)
         state.add_location(target, location, user=user, host=host)
 
     elif target == 'local' or target == 'p':
         # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces:
+        if location in state.interfaces and overwrite == False:
             raise ValueError(f'Location {location} already exists in config file')
-        state.db.create_location(location)
+        state.db.create_location(location,overwrite=overwrite)
         state.add_location(target, location, user=user, host=host)
     else:
         raise ValueError(f'Unexpected location type {target}')

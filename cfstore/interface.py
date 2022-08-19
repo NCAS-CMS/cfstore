@@ -144,20 +144,9 @@ class CollectionDB(CoreDB):
             self.session.add(loc)
             self.session.commit()
         else:
-            if overwrite:
-                loc = StorageLocation(name=location)
-                if protocols:
-                    existing_protocols = self.retrieve_protocols()
-                    for p in protocols:
-                        if p not in existing_protocols:
-                            pdb = StorageProtocol(name=p)
-                            self.session.add(pdb)
-                        loc.protocols.append(pdb)
-                self.session.add(loc)
-                self.session.commit()
-            else:
+            if not overwrite:
                 raise ValueError(f'{location} already exists')
-
+            
 
     def create_tag(self, tagname):
         """

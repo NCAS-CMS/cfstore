@@ -87,8 +87,8 @@ class CFSconfig:
         <fstype> must be understood by the configuration.
         Will overwrite existing location if it exists!
         """
-        if location in self.interfaces:
-            raise ValueError(f'WARNING: Interface {location} already exists')
+        #if location in self.interfaces:
+        #    raise ValueError(f'WARNING: Interface {location} already exists')
         template = self.get_template(fstype)
         try:
             assert set(kw.keys()) == set(template.keys()) - set(['fstype',])
