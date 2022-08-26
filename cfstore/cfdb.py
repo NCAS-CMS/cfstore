@@ -123,19 +123,44 @@ def ls(ctx, collection, output):
             print(view_state.name)
 
         if output=="locations":
-            return_list = db.retrieve_locations()
+            return_list = []
+            loc_list = db.retrieve_locations()
             print(view_state.name)
-        
-        for r in return_list:
-            print(r)
+            for c in loc_list:
+                locationName = str(c)
+                if locationName == collection:
+                    return_list.append("Location details:")
+                    return_list.append("Name:",locationName)
+                    return_list.append("Host:",state.get_location(locationName)['host'])
+                    return_list.append("User:",state.get_location(locationName)['user'])
+            if return_list==[]:
+                if collection!=None:
+                    print(f"Location {collection} not found, showing all locations")
+                return_list = loc_list
+
+        state = _load()
+        try:
+            for r in return_list:
+                print(r)
+        except:
+            if output not in ["files","tags","facets","relationships","collections","locations"]:
+                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+            else:
+                print("Return list cannot be printed")
     else:
         return_list = db.retrieve_collections()
         print(view_state.name)
         if output=="locations":
             return_list = db.retrieve_locations()
             print(view_state.name)
+        
+        if output=="ssh":
+            return_list = db.retrieve_locations()
+        state = _load()
         for c in return_list:
             print(c)
+            print(state.get_location(c)['target'])
+            #print(c['host'],c['user'])
         
     view_state.save()
 
