@@ -1,5 +1,7 @@
 import os
+from cfstore import db
 from cfstore.plugins.ssh import SSHlite
+from cfstore.cfparse_file import cfparse_file
 import re
 
 class Posix:
@@ -45,7 +47,6 @@ class Posix:
         
         for n in range(len(args)):
             c[keys[n]] = str(args[n])
-
         self._walk(path_to_collection_head, collection_head_name, subcollections, checksum,regex)
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum,regex):
@@ -68,6 +69,11 @@ class Posix:
                             dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
                     self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
+    def getBMetadata(self,remotepath, collection, localpath, subcollections, checksum,regex):
+        print("Getting b metadata")
+        #files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
+        #self.ssh.get_b_metadata(path_to_collection_head,self.db)
+        self.ssh.run_script(remotepath, collection, localpath)
 
     def _file2dict(self, path_to_file, size,  checksum=None):
         """
@@ -107,7 +113,7 @@ class RemotePosix(Posix):
         self.ssh = SSHlite(hostname, username)
 
 
-    def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum):
+    def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum, regex):
         """
         Walk a remote directory and populate the collection
         """
@@ -118,6 +124,8 @@ class RemotePosix(Posix):
             raise ValueError('Cannot (ok, really we mean, will not) checksum remote files')
         if subcollections:
             raise NotImplementedError('No support for sub-collections as yet')
+        if regex:
+            raise NotImplementedError('No support for remote regex yet')
 
         files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
         dbfiles = [self._file2dict(f[0], f[1]) for f in files]

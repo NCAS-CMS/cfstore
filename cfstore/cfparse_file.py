@@ -35,7 +35,7 @@ def cfparse_file(db, filename):
     **Examples:**
     >>> cfparse_file(db, 'my_model_file.nc')
     """
-
+    print("Running cfparse_file")
     cff = cfdm.read(filename)
     # loop over fields in file (not the same as netcdf variables)
     for v in cff:

@@ -145,7 +145,7 @@ def getBMetadata(ctx, arg1, argm):
     state = CFSconfig()
 
     location = arg1
-    path, collection, scriptname = argm
+    remotepath, collection, scriptname = argm
 
     #Setup Remote Posix as normal
     x = RemotePosix(state.db, location)
@@ -154,28 +154,17 @@ def getBMetadata(ctx, arg1, argm):
 
 
     #Add collection, I guess?
-    x.add_collection(path, collection)
+#    x.add_collection(path, collection)
 
     #Set up something that runs on Jasmin
     # Connect to remote host
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(host, username=user)
+    x.getBMetadata(remotepath,collection, scriptname, False, False,None)
 
     # Setup sftp connection and transmit this script
-    sftp = client.open_sftp()
-    sftp.put(__file__, scriptname)
-    sftp.close()
+
 
     # Run the transmitted script remotely without args and show its output.
     # SSHClient.exec_command() returns the tuple (stdin,stdout,stderr)
-    stdout = client.exec_command(scriptname)[1]
-    for line in stdout:
-        # Process each line in the remote output
-        print(line)
-
-    client.close()
-    sys.exit(0)
     
     #Call add_variables_from_file for each file
     state.save()
@@ -185,26 +174,31 @@ def getBMetadata(ctx, arg1, argm):
 @click.argument('location')
 @click.argument('host')
 @click.argument('user')
-def setup(ctx, location, host, user):
+@click.option('--overwrite', default=False, help='(Optional) If true, will overwrites current location')
+def setup(ctx, location, host, user,overwrite):
     """
     Add a new posix location
     """
-
+    if overwrite == "True":
+        overwrite = True
+    else:
+        overwrite = False
+        
     state = CFSconfig()
     target = ctx.obj['fstype']
     print(f"Atempting to setup:\n host:{host} \n location:{location}")
     if target == 'rp':
         # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces:
+        if location in state.interfaces and overwrite == False:
             raise ValueError(f'Location {location} already exists in config file')
-        state.db.create_location(location)
+        state.db.create_location(location,overwrite=overwrite)
         state.add_location(target, location, user=user, host=host)
 
     elif target == 'local' or target == 'p':
         # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces:
+        if location in state.interfaces and overwrite == False:
             raise ValueError(f'Location {location} already exists in config file')
-        state.db.create_location(location)
+        state.db.create_location(location,overwrite=overwrite)
         state.add_location(target, location, user=user, host=host)
     else:
         raise ValueError(f'Unexpected location type {target}')
