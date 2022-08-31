@@ -5,6 +5,7 @@ import posixpath, os, glob, fnmatch
 from itertools import product
 from stat import S_ISREG, S_ISDIR
 import time
+import json
 
 from cfstore.cfparse_file import cfparse_file
 
@@ -153,7 +154,7 @@ class SSHlite(SSHcore):
         print("Running script:",scriptname)
         print("Putting script")
         print("Putting script ",scriptname,"from", script ,"to", remotepath)
-        remotescript = remotepath +"/donothing.py"
+        remotescript = remotepath +scriptname
         try:
             self._sftp.put(script,remotescript)
         except:
@@ -175,7 +176,7 @@ class SSHlite(SSHcore):
         print('Executing \"python '+scriptname+"\"")
         try:
 #            stdin, stdout, stderr = self._client.exec_command('ls')
-            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+"/"+scriptname)
+            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
             print("Script executed")
         except:
             print("Could not successfully execute script")
@@ -186,6 +187,8 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
+        with open("sample.json","w") as writepath:
+            json.dump(stdout,writepath) 
         self._sftp.remove(remotescript)
 
     def globish(self, remotepath, expression):
