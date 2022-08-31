@@ -1,6 +1,6 @@
-import cfparse_file
 import os
 import cfdm
+import json
 import numpy as np
 from cfstore.db import Variable
 from cfstore.config import CFSconfig
@@ -26,7 +26,6 @@ def manage_types(value):
         raise ValueError('Unrecognised type for database ',type(value))
 
 if __name__ == '__main__':
-    state = CFSconfig()
     for filename in os.listdir(os.curdir):
         print(filename)
         """  
@@ -42,30 +41,54 @@ if __name__ == '__main__':
         >>> cfparse_file(db, 'my_model_file.nc')
         """
         print("Running cfparse_file")
-        cff = cfdm.read(filename)
-        # loop over fields in file (not the same as netcdf variables)
-        for v in cff:
-            properties = v.properties()
+        variable_list = []
+        if filename.split(".")[1]=="nc":
+            with open("bmetadata.json","w") as writepath:
+                print("")
+            cff = cfdm.read(filename)
+            # loop over fields in file (not the same as netcdf variables)
+            for v in cff:
+                with open("bmetadata.json","a") as writepath:
+                    json.dump(str(v),writepath)
+                properties = v.properties()
 
-            if ('standard_name' not in properties and 'long_name' not in properties):
-                properties['long_name'] = v.identity
-            name, long_name = v.get_property('standard_name', None), v.get_property('long_name', None)
+                if ('standard_name' not in properties and 'long_name' not in properties):
+                    properties['long_name'] = v.identity
+                name, long_name = v.get_property('standard_name', None), v.get_property('long_name', None)
 
-            domain = v.domain._one_line_description()
-            size = v.size
+                domain = v.domain._one_line_description()
+                size = v.size
 
-            var = Variable(standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain)
-            for k,p in properties.items():
-                if k not in ['standard_name','long_name']:
-                    var[k] = manage_types(p) 
-                    print(var[k])
-            
-    """
-            db.session.add(var)
-            for m, cm in v.cell_methods().items():
-                for a in cm.get_axes(): 
-                    method = cm.get_method()
-                    dbmethod = db.cell_method_get_or_make(axis=a, method=method)
-                    dbmethod.used_in.append(var)
-            db.session.commit()
-    """    
+                var = Variable(standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain)
+                for k,p in properties.items():
+                    if k not in ['standard_name','long_name']:
+                        var[k] = manage_types(p) 
+                
+
+                with open("bmetadata.json","a") as writepath:
+                    #json.dump("Standard name \'=\'"+str(var.standard_name)+"\n",writepath) 
+                    #json.dump("Long name \'=\'"+str(var.long_name)+"\n",writepath) 
+                    #json.dump("Size \'=\'"+str(var.cfdm_size)+"\n",writepath) 
+                    #json.dump("Domain \'=\'"+str(var.cfdm_domain)+"\n",writepath) 
+
+                    for v in var.__dict__:
+                        vdump = str(v) + ","+str(var.__dict__[v])+"\n"
+                        json.dump(vdump,writepath)
+                    #json.dump(str(v.cell_methods())+"\n",writepath)  
+                    
+            with open("bmetadata.json","r") as readpath:
+                lines = readpath.readlines()[0]
+                lines=lines.replace("\\\\n","")
+                lines = lines.split("\\n")
+                for line in lines:
+                    print("||",line)
+
+        """
+                db.session.add(var)
+                for m, cm in v.cell_methods().items():
+                    for a in cm.get_axes(): 
+                        method = cm.get_method()
+                        dbmethod = db.cell_method_get_or_make(axis=a, method=method)
+                        dbmethod.used_in.append(var)
+                db.session.commit()
+        """    
