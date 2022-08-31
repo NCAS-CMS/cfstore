@@ -88,6 +88,7 @@ def setc(ctx,collection):
             db.retrieve_collection(collection)
         except ValueError as err:
             print(err, file=sys.stderr)
+    print(f"Collection set to {collection}")
     view_state.save()
 
 
@@ -207,6 +208,7 @@ def findrx(ctx, collection, match):
 @click.option('--strip-base', default='', help="String to remove from start of collection path")
 @click.option('--collection', default=None, help='Collection in which replicants are expected')
 @click.option('--match_entire_collection', default=False, help='If true, checks if there are any complete identical folders with all identical files')
+@click.option('--checkby', default=False, help='Checks by name or filesize or both')
 def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_collection,checkby):
     # this is using the capability from the interface locate replicants, so this docstring is duplicated from there
     """
