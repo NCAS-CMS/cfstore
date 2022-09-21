@@ -1,3 +1,4 @@
+from asyncore import write
 import os
 import cfdm
 import json
@@ -29,6 +30,7 @@ def manage_types(value):
         raise ValueError('Unrecognised type for database ',type(value))
 
 if __name__ == '__main__':
+    outputdicts=[]
     for filename in os.listdir(os.curdir):
         print(filename)
         """  
@@ -43,9 +45,8 @@ if __name__ == '__main__':
         **Examples:**
         >>> cfparse_file(db, 'my_model_file.nc')
         """
-        print("Running cfparse_file")
         variable_output_list = []
-        if filename.split(".")[1]=="nc":
+        if filename.endswith(".nc"):
             with open(filename+"bmetadata.json","w") as writepath:
                 print("")
             with open(filename+"_variables_bmetadata.json","w") as writepath:
@@ -71,7 +72,6 @@ if __name__ == '__main__':
                         var[k] = manage_types(p) 
                 var_dict = as_dict(var)
                 variable_output_list.append(var_dict)
-            print(len(variable_output_list))
             with open(filename+"bmetadata.json","a") as writepath:
                 #json.dump("Standard name \'=\'"+str(var.standard_name)+"\n",writepath) 
                 #json.dump("Long name \'=\'"+str(var.long_name)+"\n",writepath) 
@@ -81,5 +81,38 @@ if __name__ == '__main__':
                 #for v in var.__dict__:
                 #json.dump(str(v.cell_methods())+"\n",writepath)  
                 json.dump(variable_output_list,writepath)
+    
+            with open(filename+"bmetadata.json","r") as writepath:
+                json_writepath = json.loads(writepath.read())
+                print("Results from file \"",filename,"\":")        
+                print(json_writepath)
+                outputdicts.append(json_writepath)
+                repeatlist = []
+                repeat = 0
+                total = 0
+                for outp in json_writepath:
+                    for out in outp:
+                        print(out,":",outp[out])
+                        if outp[out] not in repeatlist:
+                            repeatlist.append(outp[out])
+                        else:
+                            repeat += 1
+                        total += 1
+                print(filename,"had a total of ",repeat,"repeats out of",total," variables (i.e ", 100*(repeat/total),"%)\n\n\n")
+                print("This indicates",len(repeatlist),"unique variables out of",total)
+        print("________________________")
 
-            
+    repeatlist = []
+    repeat = 0
+    total = 0
+    for output in outputdicts:
+        for outp in output:
+            for out in outp:
+                if outp[out] not in repeatlist:
+                    repeatlist.append(outp[out])
+                else:
+                    repeat += 1
+                total += 1
+    print(repeat,total, 100*(repeat/total))
+    print("The total dataset had a total of ",repeat,"repeats out of",total," variables (i.e ", 100*(repeat/total),"%)\n\n\n")
+    print("This indicates",len(repeatlist),"unique variables out of",total)

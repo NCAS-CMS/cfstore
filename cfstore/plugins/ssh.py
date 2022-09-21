@@ -172,11 +172,25 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("lsout:",line)
+
+        try:
+            stdin, stdout, stderr = self._client.exec_command('python3 -m pip install cfdm')
+            for line in stdin:
+                print("in:",line)
+            for line in stderr:
+                print("err:",line)
+            for line in stdout:
+                print("out:",line)
+            print("cfdm installed")
+        except:
+            print("Could not successfully install cfdm")
+
+
         print("Executing script")
         print('Executing \"python '+scriptname+"\"")
         try:
 #            stdin, stdout, stderr = self._client.exec_command('ls')
-            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
+            stdin, stdout, stderr = self._client.exec_command('python3 '+remotepath+scriptname)
             print("Script executed")
         except:
             print("Could not successfully execute script")
@@ -187,9 +201,10 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
+        self._sftp.remove(remotescript)
+
         with open("sample.json","w") as writepath:
             json.dump(stdout,writepath) 
-        self._sftp.remove(remotescript)
 
     def globish(self, remotepath, expression):
         """
