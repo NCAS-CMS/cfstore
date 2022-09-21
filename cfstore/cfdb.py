@@ -226,6 +226,20 @@ def findrx(ctx, collection, match):
 
 @cli.command()
 @click.pass_context
+@click.argument('jsonfile')
+@click.argument('collection')
+def UpdateFromJSON(ctx, jsonfile,collection):
+    state = CFSconfig()
+    view_state, db = _set_context(ctx,collection)
+
+    with open(jsonfile,"r") as readpath:
+        var = json.load(readpath)
+        #print(var[0:10])
+        print("hi")
+        readpath.close()
+
+@cli.command()
+@click.pass_context
 @click.option('--match-full-path', default=False, help='Match full path, if False, match end of path')
 @click.option('--strip-base', default='', help="String to remove from start of collection path")
 @click.option('--collection', default=None, help='Collection in which replicants are expected')

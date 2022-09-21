@@ -169,6 +169,7 @@ def getBMetadata(ctx, arg1, argm):
     #Call add_variables_from_file for each file
     state.save()
 
+
 @cli.command()
 @click.pass_context
 @click.argument('location')

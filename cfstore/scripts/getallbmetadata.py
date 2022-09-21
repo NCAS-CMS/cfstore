@@ -8,6 +8,9 @@ from cfstore.config import CFSconfig
 #I know this doesn't work
 #It doesn't fail in a way that makes things annoying either
 
+def as_dict(self):
+    return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 def manage_types(value):
     """ 
     The database only supports variable values which are boolean, int, string, and float. 
@@ -41,14 +44,17 @@ if __name__ == '__main__':
         >>> cfparse_file(db, 'my_model_file.nc')
         """
         print("Running cfparse_file")
-        variable_list = []
+        variable_output_list = []
         if filename.split(".")[1]=="nc":
-            with open("bmetadata.json","w") as writepath:
+            with open(filename+"bmetadata.json","w") as writepath:
+                print("")
+            with open(filename+"_variables_bmetadata.json","w") as writepath:
                 print("")
             cff = cfdm.read(filename)
             # loop over fields in file (not the same as netcdf variables)
+            variables=[]
             for v in cff:
-                with open("bmetadata.json","a") as writepath:
+                with open(filename+"_variables_bmetadata.json","a") as writepath:
                     json.dump(str(v),writepath)
                 properties = v.properties()
 
@@ -63,32 +69,17 @@ if __name__ == '__main__':
                 for k,p in properties.items():
                     if k not in ['standard_name','long_name']:
                         var[k] = manage_types(p) 
-                
+                var_dict = as_dict(var)
+                variable_output_list.append(var_dict)
+            print(len(variable_output_list))
+            with open(filename+"bmetadata.json","a") as writepath:
+                #json.dump("Standard name \'=\'"+str(var.standard_name)+"\n",writepath) 
+                #json.dump("Long name \'=\'"+str(var.long_name)+"\n",writepath) 
+                #json.dump("Size \'=\'"+str(var.cfdm_size)+"\n",writepath) 
+                #json.dump("Domain \'=\'"+str(var.cfdm_domain)+"\n",writepath) 
 
-                with open("bmetadata.json","a") as writepath:
-                    #json.dump("Standard name \'=\'"+str(var.standard_name)+"\n",writepath) 
-                    #json.dump("Long name \'=\'"+str(var.long_name)+"\n",writepath) 
-                    #json.dump("Size \'=\'"+str(var.cfdm_size)+"\n",writepath) 
-                    #json.dump("Domain \'=\'"+str(var.cfdm_domain)+"\n",writepath) 
+                #for v in var.__dict__:
+                #json.dump(str(v.cell_methods())+"\n",writepath)  
+                json.dump(variable_output_list,writepath)
 
-                    for v in var.__dict__:
-                        vdump = str(v) + ","+str(var.__dict__[v])+"\n"
-                        json.dump(vdump,writepath)
-                    #json.dump(str(v.cell_methods())+"\n",writepath)  
-                    
-            with open("bmetadata.json","r") as readpath:
-                lines = readpath.readlines()[0]
-                lines=lines.replace("\\\\n","")
-                lines = lines.split("\\n")
-                for line in lines:
-                    print("||",line)
-
-        """
-                db.session.add(var)
-                for m, cm in v.cell_methods().items():
-                    for a in cm.get_axes(): 
-                        method = cm.get_method()
-                        dbmethod = db.cell_method_get_or_make(axis=a, method=method)
-                        dbmethod.used_in.append(var)
-                db.session.commit()
-        """    
+            
