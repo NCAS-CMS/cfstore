@@ -46,7 +46,7 @@ class Test_cfin(unittest.TestCase):
         """
         This test requires you to sort out what is in the test directory.
         """
-        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        lpath = os.getcwd()+"/cfstore/plugins"
         #This path has 7 files and a folder containing 5 more files
         #3 files in each of the main and subfolder start with "et"
         runner = CliRunner()
@@ -60,7 +60,7 @@ class Test_cfin(unittest.TestCase):
         """
         This test requires you to sort out what is in the test directory.
         """
-        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        lpath = os.getcwd()+"/cfstore/plugins"
         #This path has 7 files and a folder containing 5 more files
         #3 files in each of the main and subfolder start with "et"
         runner = CliRunner()
@@ -74,7 +74,7 @@ class Test_cfin(unittest.TestCase):
         """
         This test requires you to sort out what is in the test directory.
         """
-        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        lpath = os.getcwd()+"/cfstore/plugins"
         #This path has 7 files and a folder containing 5 more files
         #3 files in each of the main and subfolder start with "et"
         runner = CliRunner()
@@ -88,7 +88,7 @@ class Test_cfin(unittest.TestCase):
         """
         This test requires you to sort out what is in the test directory.
         """
-        lpath = "G:\cfstore\cfstore\cfstore\plugins"
+        lpath = os.getcwd()+"/cfstore/plugins"
         #This path has 7 files and a folder containing 5 more files
         #3 files in each of the main and subfolder start with "et"
         runner = CliRunner()
