@@ -149,7 +149,8 @@ class SSHlite(SSHcore):
         remotefile = self._sftp.open(file)
         cfparse_file(db,remotefile)
 
-    def run_script(self, remotepath, collection, script):
+
+    def pushScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
         print("Running script:",scriptname)
         print("Putting script")
@@ -172,10 +173,13 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("lsout:",line)
+
+    def executeScript(self, remotepath, collection, script):
+        scriptname = os.path.basename(script)
+        remotescript = remotepath +scriptname
         print("Executing script")
         print('Executing \"python '+scriptname+"\"")
         try:
-#            stdin, stdout, stderr = self._client.exec_command('ls')
             stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
             print("Script executed")
         except:
@@ -187,9 +191,30 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
-        with open("sample.json","w") as writepath:
-            json.dump(stdout,writepath) 
         self._sftp.remove(remotescript)
+
+    def aggregateFiles(self, remotepath, collection, script):
+        scriptname = os.path.basename(script)
+        remotescript = remotepath +scriptname
+        print("Aggregating files")
+        print('Executing \"python '+scriptname+"\"")
+        try:
+            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
+            print("Script executed")
+        except:
+            print("Could not successfully execute script")
+            print("Removing script from remote server")
+            self._sftp.remove(remotescript)
+        print(stderr)
+        for line in stderr:
+            print("err:",line)
+        for line in stdout:
+            print("out:",line)
+        self._sftp.remove(remotescript)
+
+    def runScript(self, remotepath, collection, script):
+        self.pushScript(remotepath,collection,script)
+        self.executeScript(remotepath, collection, script)
 
     def globish(self, remotepath, expression):
         """

@@ -169,6 +169,42 @@ def getBMetadata(ctx, arg1, argm):
     #Call add_variables_from_file for each file
     state.save()
 
+#This with the right arguments can run scripts on Jasmin
+#Most of the work is done in the arguments though
+#So needs fiddling
+@cli.command()
+@click.pass_context
+@click.argument('arg1', nargs=1)
+@click.argument('argm', nargs=-1)
+def getBMetadataClean(ctx, arg1, argm):
+    state = CFSconfig()
+
+    location = arg1
+    remotepath, collection, scriptname, aggregatescriptname = argm
+
+    #SSH
+    #Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = state.get_location(location)['host'], state.get_location(location)['user']
+    x.configure(host, user)
+    
+    #Push Script(s)
+    x.ssh.pushScript(remotepath,collection, scriptname)
+    x.ssh.pushScript(remotepath,collection, aggregatescriptname)
+
+    #Generate Aggregation File
+    x.ssh.aggregateFiles(remotepath,collection, aggregatescriptname)
+    
+    #Generate JSON from Aggregation File
+    x.ssh.executeScript(remotepath,collection, scriptname)
+
+    #Retrieve JSON file
+    x.ssh.get(remotepath)
+
+    #Clean-up remote files (At present clean-up means remove them)
+    #Update database with JSON
+    state.save()
+
 @cli.command()
 @click.pass_context
 @click.argument('location')
