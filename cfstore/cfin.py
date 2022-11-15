@@ -176,11 +176,22 @@ def getBMetadata(ctx, arg1, argm):
 @click.pass_context
 @click.argument('arg1', nargs=1)
 @click.argument('argm', nargs=-1)
-def getBMetadataClean(ctx, arg1, argm):
+@click.option('--aggregatescriptname', default='aggregatebmetadata', help='(Optional) Lets you run a different script to the default')
+@click.option('--remotetempfilelocation', default='', help='(Optional) Sets where to put the remote temp file')
+def getBMetadataClean(ctx, arg1, argm, remotetempfilelocation):
+    """
+    Runs a remote script to aggregate metadata and store it in the database
+    Format is:
+        cfin rp getbmetadataclean sshlocation remotedirectory collection outputfile
+    Other scripts from /scripts/ folder can be used by setting --aggregatescript=scriptname (only name is needed, .py is optional)
+    """
     state = CFSconfig()
 
     location = arg1
-    remotepath, collection, aggregatescriptname, localpath = argm
+    remotepath, collection, localpath = argm
+    aggregatescriptname = "cfstore/scripts/"+aggregatescriptname
+    if not aggregatescriptname.endswith(".py"):
+        aggregatescriptname = aggregatescriptname + ".py"
 
     #SSH
     #Setup Remote Posix as normal
@@ -199,9 +210,11 @@ def getBMetadataClean(ctx, arg1, argm):
     x.ssh.executeScript(remotepath,collection, aggregatescriptname)
 
     #Retrieve JSON file
-    x.ssh.get("tempfile.json", localpath)
+    x.ssh.get(remotetempfilelocation+"tempfile.json", localpath)
 
     #Clean-up remote files (At present clean-up means remove them)
+    #This is actually an ongoing step done at the end of each remote transfer with except. It's very robust.
+
     #Update database with JSON
     state.save()
 
