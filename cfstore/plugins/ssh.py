@@ -51,10 +51,15 @@ class SSHlite(SSHcore):
         return self.transport.is_active()
 
     def get(self, remotepath, localpath):
-       """
-       Get remote_path and store it in local_path
-       """
-       self._sftp.get(remotepath, localpath)
+        """
+        Get remote_path and store it in local_path
+        """
+        try:
+            self._sftp.get(remotepath, localpath)
+        except:
+            self._sftp.remove(remotepath)
+        self._sftp.remove(remotepath)
+
 
     def walktree(self, remotepath, fcallback, dcallback=None, ucallback=None,
                  recurse=True):
@@ -193,24 +198,20 @@ class SSHlite(SSHcore):
             print("out:",line)
         self._sftp.remove(remotescript)
 
-    def aggregateFiles(self, remotepath, collection, script):
-        scriptname = os.path.basename(script)
-        remotescript = remotepath +scriptname
+    def aggregateFiles(self, remotepath):
         print("Aggregating files")
-        print('Executing \"python '+scriptname+"\"")
+        print('Executing \"python cfa -o ' + remotepath +'.nc *.nc\"')
         try:
-            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
-            print("Script executed")
+            stdin, stdout, stderr = self._client.exec_command('python cfa -o ' + remotepath +'.nc *.nc')
+            print("Aggregation file built")
         except:
             print("Could not successfully execute script")
             print("Removing script from remote server")
-            self._sftp.remove(remotescript)
         print(stderr)
         for line in stderr:
             print("err:",line)
         for line in stdout:
             print("out:",line)
-        self._sftp.remove(remotescript)
 
     def runScript(self, remotepath, collection, script):
         self.pushScript(remotepath,collection,script)

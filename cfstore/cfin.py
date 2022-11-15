@@ -180,7 +180,7 @@ def getBMetadataClean(ctx, arg1, argm):
     state = CFSconfig()
 
     location = arg1
-    remotepath, collection, scriptname, aggregatescriptname = argm
+    remotepath, collection, aggregatescriptname, localpath = argm
 
     #SSH
     #Setup Remote Posix as normal
@@ -189,17 +189,17 @@ def getBMetadataClean(ctx, arg1, argm):
     x.configure(host, user)
     
     #Push Script(s)
-    x.ssh.pushScript(remotepath,collection, scriptname)
+    #x.ssh.pushScript(remotepath,collection, scriptname)
     x.ssh.pushScript(remotepath,collection, aggregatescriptname)
 
     #Generate Aggregation File
-    x.ssh.aggregateFiles(remotepath,collection, aggregatescriptname)
+    x.ssh.aggregateFiles(remotepath)
     
     #Generate JSON from Aggregation File
-    x.ssh.executeScript(remotepath,collection, scriptname)
+    x.ssh.executeScript(remotepath,collection, aggregatescriptname)
 
     #Retrieve JSON file
-    x.ssh.get(remotepath)
+    x.ssh.get("tempfile.json", localpath)
 
     #Clean-up remote files (At present clean-up means remove them)
     #Update database with JSON
