@@ -50,16 +50,19 @@ class SSHlite(SSHcore):
     def isalive(self):
         return self.transport.is_active()
 
-    def get(self, remotepath, localpath):
+    def get(self, remotepath, localpath,delete=False):
         """
         Get remote_path and store it in local_path
         """
+        print("Getting file",remotepath,"and storing it in",localpath)
         try:
             self._sftp.get(remotepath, localpath)
+            if delete:
+                print("Deleting remote file")
+                self._sftp.remove(remotepath)
         except:
-            self._sftp.remove(remotepath)
-        self._sftp.remove(remotepath)
-
+            print("Get Failed")
+        
 
     def walktree(self, remotepath, fcallback, dcallback=None, ucallback=None,
                  recurse=True):
@@ -196,11 +199,11 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
-        self._sftp.remove(remotescript)
+        self._sftp.remove(remotepath+scriptname)
 
     def aggregateFiles(self, remotepath):
         print("Aggregating files")
-        print('Executing \"python cfa -o ' + remotepath +'.nc *.nc\"')
+        #print('Executing \"python cfa -o ' + remotepath +'.nc *.nc\"')
         try:
             stdin, stdout, stderr = self._client.exec_command('python cfa -o ' + remotepath +'.nc *.nc')
             print("Aggregation file built")

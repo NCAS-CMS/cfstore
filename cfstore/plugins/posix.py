@@ -1,4 +1,6 @@
 import os
+import cf
+import json
 from cfstore import db
 from cfstore.plugins.ssh import SSHlite
 from cfstore.cfparse_file import cfparse_file
@@ -98,6 +100,19 @@ class Posix:
         come what may. By default, use <processes> subprocesses to do the checksumming.
         """
         raise NotImplementedError
+
+    def aggregation_files_to_collection(self, aggfile,collection):
+        #open file
+        #read file into list of variables
+        print(aggfile)
+        aggfileobject = open(aggfile,'r')
+        variables = json.load(aggfileobject)
+        #for each variable
+        print(variables)
+        dbfiles = [(self.db.Variable(var)) for var in variables]
+        print(dbfiles)
+
+        #store a variable in collection
 
 
 class RemotePosix(Posix):
