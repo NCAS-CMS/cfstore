@@ -58,7 +58,7 @@ class Posix:
                 dbfiles = []
                 for f in files:
                     if not regex or re.match(regex, f):
-                        fp = dirName+"\\"+f
+                        fp = dirName+"/"+f
                         dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
                 self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
         else:
@@ -67,7 +67,7 @@ class Posix:
                 for f in files:
                     if not regex or re.match(regex, f):    
                         if dirName == path_to_collection_head:
-                            fp = path_to_collection_head+"\\"+f
+                            fp = path_to_collection_head+"/"+f
                             dbfiles.append(self._file2dict(fp, os.stat(fp).st_size, checksum=checksum))
                     self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
