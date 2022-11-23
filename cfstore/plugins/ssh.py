@@ -203,9 +203,9 @@ class SSHlite(SSHcore):
 
     def aggregateFiles(self, remotepath):
         print("Aggregating files")
-        #print('Executing \"python cfa -o ' + remotepath +'.nc *.nc\"')
+        print('Executing \"python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc\"')
         try:
-            stdin, stdout, stderr = self._client.exec_command('python cfa -o ' + remotepath +'.nc *.nc')
+            stdin, stdout, stderr = self._client.exec_command('python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc')
             print("Aggregation file built")
         except:
             print("Could not successfully execute script")

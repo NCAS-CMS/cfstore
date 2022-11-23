@@ -104,12 +104,17 @@ class Posix:
     def aggregation_files_to_collection(self, aggfile,collection):
         #open file
         #read file into list of variables
-        print(aggfile)
+        print("Adding variables from",aggfile,"to collection")
         aggfileobject = open(aggfile,'r')
         variables = json.load(aggfileobject)
+        dbfiles=[]
         #for each variable
         print(variables)
-        dbfiles = [(self.db.Variable(var)) for var in variables]
+        for variable in variables:
+            files = variables['files']
+            var = db.Variable(variables)
+            var.in_files(files)
+            dbfiles.append(var)
         print(dbfiles)
 
         #store a variable in collection

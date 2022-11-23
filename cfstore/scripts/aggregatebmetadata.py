@@ -69,7 +69,7 @@ if __name__ == '__main__':
                 print("Variable:")
                 print(v)
                 print("Properties:")
-                print(v.properties())
+                print(v.data.dumpd())
                 print("Filenames")
                 print(v.get_filenames())
                 print("____________________________________________")
