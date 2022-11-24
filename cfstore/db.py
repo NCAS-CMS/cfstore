@@ -309,14 +309,39 @@ class Variable(ProxiedDictMixin, Base):
     def __init__(self, standard_name=None, long_name=None, cfdm_size=0, cfdm_domain=''):
         """ Ensure either longname or cf_name is provided"""
         if standard_name is None and long_name is None:
-            raise ValueError("Cannot initialise a variable without either standard or long name")
+            print("This_variable_was_not_assigned_either_a_long_or_standard_name")
+            long_name = "This_variable_was_not_assigned_either_a_long_or_standard_name"
         super(Variable, self).__init__(standard_name=standard_name,long_name=long_name, cfdm_size=cfdm_size, cfdm_domain=cfdm_domain)
 
-    def __repr__(self):
-        if self.standard_name:
-            return self.standard_name
-        else:
-            return self.long_name
+    def __repr__(self,verbosity=0):
+        if verbosity==0:
+            if self.standard_name:
+                return self.standard_name
+            else:
+                return self.long_name
+    
+    def get_properties(self,verbosity=0):
+        if verbosity==0:
+            if self.standard_name:
+                return self.standard_name
+            else:
+                return self.long_name
+
+        if verbosity==1:
+            if self.standard_name:
+                name = self.standard_name
+            else:
+                name =  self.long_name
+            return [self.id,name,self.cfdm_size,self.cfdm_domain,self.in_files]
+
+        if verbosity==2:    
+            if self.standard_name:
+                name = self.standard_name
+            else:
+                name =  self.long_name
+            return [self.id,name,self.cfdm_size,self.cfdm_domain,self.in_files,self.other_attributes]
+
+
 
     def __setattr__(self, key, value):
         if key == 'cell_methods':

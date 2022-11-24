@@ -440,14 +440,15 @@ class CollectionDB(CoreDB):
         self.session.commit()
 
         
-    def retrieve_variable(self, **kw):
+    def retrieve_variable(self, key, value):
         """ Retrieve variable by arbitrary property"""
         queries = []
-        for k,v in kw.items():
-            if k in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
-                queries.append(getattr(Variable,k) == v)
-            else:
-                queries.append(Variable.with_other_attributes(k,v))
+        if key in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
+            queries.append(getattr(Variable,key) == value)
+        else:
+            queries.append(Variable.with_other_attributes(key,value))
+        if key == 'in_files':
+            queries.append([value == k for k in Variable.in_files])
         if len(queries) == 0:
             raise ValueError('No query received for retrieve variable')
         elif len(queries) == 1:

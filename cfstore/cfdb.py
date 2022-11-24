@@ -7,6 +7,7 @@ import os, sys
 import click
 from rich.console import Console
 from rich.markdown import Markdown
+import cf
 
 STATE_FILE = '.cftape'
 
@@ -90,6 +91,41 @@ def setc(ctx,collection):
             print(err, file=sys.stderr)
     print(f"Collection set to {collection}")
     view_state.save()
+
+@cli.command()
+@click.pass_context
+@click.argument('aggfile')
+@click.option('--collection', default=None, help='Where to send contents of aggregation file')
+def aaftc(ctx,aggfile,collection):
+    """
+    Set collection, or reset to default if --collection=all
+    """
+    view_state, db = _set_context(ctx, collection)
+    if collection!="all":
+        try:
+            c = db.retrieve_collection(collection)
+        except ValueError as err:
+            print(err, file=sys.stderr)
+    aggfileobject = open(aggfile,'r')
+    variables = cf.read(aggfile)
+    for var in variables:
+        print(var.get_filenames())
+    db.add_variables_from_file(aggfile)
+
+@cli.command()
+@click.pass_context
+@click.argument('key')
+@click.argument('value')
+@click.option('--verbosity', default=0, help='0 is just name, 2 is everything, 1 is id, name, size and domain')
+def searchvariable(ctx,key,value,verbosity):
+    """
+    Set collection, or reset to default if --collection=all
+    """
+    view_state, db = _set_context(ctx, "all")
+
+    variables = db.retrieve_variable(key,value)
+    for var in variables:
+        print(var.get_properties(verbosity))
 
 
 @cli.command()

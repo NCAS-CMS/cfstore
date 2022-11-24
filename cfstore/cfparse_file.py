@@ -1,6 +1,7 @@
 import cfdm
 from cfstore.db import Variable
 import numpy as np
+import os
 
 
 def manage_types(value):
@@ -52,9 +53,19 @@ def cfparse_file(db, filename):
         for k,p in properties.items():
             if k not in ['standard_name','long_name']:
                 var[k] = manage_types(p) 
-        
+
+        print(v.get_filenames())
+        for file in v.get_filenames():
+            print(file)
+            for f in db.retrieve_files_which_match(os.path.basename(file)):
+                print(f)
+                print("1",var.in_files)
+                var.in_files.append(f)
+                print("2",var.in_files)
+        print("END:",var.in_files)
 
         db.session.add(var)
+        
         for m, cm in v.cell_methods().items():
             for a in cm.get_axes(): 
                 method = cm.get_method()
