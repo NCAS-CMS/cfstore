@@ -98,7 +98,8 @@ def setc(ctx,collection):
 @click.option('--collection', default=None, help='Where to send contents of aggregation file')
 def aaftc(ctx,aggfile,collection):
     """
-    Set collection, or reset to default if --collection=all
+    (A)dd (A)ggregation (F)ile (T)o (C)ollection
+    Takes in an aggregation file and a collection. Collection is not actually an optional input.
     """
     view_state, db = _set_context(ctx, collection)
     if collection!="all":
@@ -135,7 +136,7 @@ def searchvariable(ctx,key,value,verbosity):
 def ls(ctx, collection, output):
     """ 
     List collections (collections=None),
-    or list files in a specific collection
+    or list other objects in a specific collection
     (which might be the last used one).
     """
     view_state, db = _set_context(ctx, collection)

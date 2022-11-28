@@ -144,6 +144,7 @@ class SSHlite(SSHcore):
         if self.logging:
             etime = time.time()
             print(f'Walking {remotepath} for {len(files)} files took {etime-stime:.2f}s')
+            print(f'This would take {(1000000/len(files))*(etime-stime):.2f}s ({(1000000/(60*len(files)))*(etime-stime):.2f}m or {(1000000/(60*60*len(files)))*(etime-stime):.2f}h) for 1 million files')
 
         return files
 
