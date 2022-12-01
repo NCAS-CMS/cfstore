@@ -128,7 +128,6 @@ def searchvariable(ctx,key,value,verbosity):
     for var in variables:
         print(var.get_properties(verbosity))
 
-
 @cli.command()
 @click.pass_context
 @click.option('--collection', default=None, help='Required collection (use and make default)')

@@ -357,6 +357,14 @@ class Variable(ProxiedDictMixin, Base):
     def with_other_attributes(self, key, value):
         return self.other_attributes.any(key=key,value=value)
 
+    @classmethod
+    def is_equals(self,var):
+        if self.standard_name==var.standard_name or self.long_name or var.long_name:
+            if self.cfdm_domain==var.cfdm_domain and self.cfdm_size == var.cfdm_size:
+                if [prop in self.get_properties for prop in var.get_properties]:
+                    return True
+        return False
+
 #
 # Collection Tables
 #

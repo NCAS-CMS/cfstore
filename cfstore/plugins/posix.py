@@ -37,10 +37,10 @@ class Posix:
         and call that collection <collection_head_name>, and decorate with <collection_head_description> text.
 
         Optionally (<subcollections=True>), create sub-collections for all internal directories
-        (default = False = do not create sub-collections). (NOT YET IMPLEMENTED)
+        (default = False = do not create sub-collections). (NOT YET IMPLEMENTED) Not Implemented
 
         If checksums required, provide a checksum method string.
-        (NOT YET IMPLEMENTED)
+        (NOT YET IMPLEMENTED) Not Implemented
 
         """
         c = self.db.create_collection(collection_head_name, collection_head_description)
@@ -101,10 +101,10 @@ class Posix:
         """
         raise NotImplementedError
 
-    def aggregation_files_to_collection(self, aggfile,collection):
+    def aggregation_files_to_collection(self, aggfile):
         #open file
         #read file into list of variables
-        print("Adding variables from",aggfile,"to collection")
+        print("Adding variables from",aggfile)
         aggfileobject = open(aggfile,'r')
         variables = json.load(aggfileobject)
         dbfiles=[]
