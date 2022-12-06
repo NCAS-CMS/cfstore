@@ -455,6 +455,8 @@ class CollectionDB(CoreDB):
             results = self.session.query(Variable).filter(queries[0]).all()
         else:
             results = self.session.query(Variable).filter(and_(*queries)).all()
+        if key == "all":
+            results = self.session.query(Variable).all()
         return results
 
 

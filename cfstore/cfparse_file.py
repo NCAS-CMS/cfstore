@@ -2,6 +2,8 @@ import cfdm
 from cfstore.db import Variable
 import numpy as np
 import os
+from deepdiff import DeepDiff
+import time
 
 
 def manage_types(value):
@@ -54,15 +56,16 @@ def cfparse_file(db, filename):
             if k not in ['standard_name','long_name']:
                 var[k] = manage_types(p) 
 
-        print(v.get_filenames())
         for file in v.get_filenames():
-            print(file)
             for f in db.retrieve_files_which_match(os.path.basename(file)):
                 var.in_files.append(f)
 
         #there is a more pythonic way of doing this
         #if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
         #I'm just leaving this working before I go mad but #FIXME later
+        #Post-fixme update - comparisons are now checking for exactness. Two things are missing - 
+        #   first should we be checking everything? Probably not, there will be some very similar variables we can group
+        #   second these only included ordered lists which definitely needs to be changed - those are at least one example of similar variables we can group
         querylist = []
         duplicate = True
         if var.long_name:
@@ -73,19 +76,17 @@ def cfparse_file(db, filename):
             querylist = db.retrieve_variable("long_name",var.long_name)+db.retrieve_variable("standard_name",var.standard_name)
         if querylist:
             for queryvar in querylist:
-                print(var.cfdm_domain,queryvar.cfdm_domain,var.cfdm_size,queryvar.cfdm_size)
                 if var.cfdm_domain == queryvar.cfdm_domain and var.cfdm_size == queryvar.cfdm_size:
-                    if var.get_properties(verbosity=2)[1:]==queryvar.get_properties(verbosity=2)[1:]:
+                    if DeepDiff(var.get_properties(verbosity=2)[1:],queryvar.get_properties(verbosity=2)[1:]):
                         duplicate=True
                     else:
-                        print("duplicate properties1")
+                        duplicate = False
                 else:
-                    print("duplicate properties2")
+                    duplicate = False
         else:   
-            print("duplicate properties3")
-
+            duplicate = False
+        
         if not duplicate:
-            print("Mission failed, we'll get 'em next time")
             db.session.add(var)
 
         for m, cm in v.cell_methods().items():

@@ -131,7 +131,7 @@ def searchvariable(ctx,key,value,verbosity):
 @cli.command()
 @click.pass_context
 @click.option('--collection', default=None, help='Required collection (use and make default)')
-@click.option('--output', default="files",help="What information is printed (files, tags, facets, relationships, collections or locations)")
+@click.option('--output', default="files",help="What information is printed (files, tags, facets, relationships, collections, variables or locations)")
 def ls(ctx, collection, output):
     """ 
     List collections (collections=None),
@@ -159,6 +159,10 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_collections()
             print(view_state.name)
 
+        if output=="variables":
+            return_list = db.retrieve_variable("all","")
+            print(view_state.name)
+
         if output=="locations":
             state = _load()
             return_list = []
@@ -176,14 +180,24 @@ def ls(ctx, collection, output):
                     print(f"Location {collection} not found, showing all locations")
                 return_list = loc_list
 
-        try:
-            for r in return_list:
-                print(r)
-        except:
-            if output not in ["files","tags","facets","relationships","collections","locations"]:
-                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
-            else:
-                print("Return list cannot be printed")
+        if output=="variables" or "var":
+            try:
+                for r in return_list:
+                    print(r.get_properties(1))
+            except:
+                if output not in ["files","tags","facets","relationships","collections","locations"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+                else:
+                    print("Return list cannot be printed")
+        else:
+            try:
+                for r in return_list:
+                    print(r)
+            except:
+                if output not in ["files","tags","facets","relationships","collections","locations"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+                else:
+                    print("Return list cannot be printed")
     else:
         return_list = db.retrieve_collections()
         print(view_state.name)
@@ -199,6 +213,14 @@ def ls(ctx, collection, output):
                 print("Return list cannot be printed")
     view_state.save()
 
+@cli.command()
+@click.pass_context
+@click.argument('keys')
+@click.argument('search')
+@click.option('--collection', default=None, help='Required collection (use and make default)')
+def search_variables(ctx,keys,search,collection):
+    view_state, db = _set_context(ctx, collection)
+    db.retrieve_variable(keys,search)
 
 @cli.command()
 @click.pass_context
