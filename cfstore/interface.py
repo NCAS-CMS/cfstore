@@ -459,6 +459,22 @@ class CollectionDB(CoreDB):
             results = self.session.query(Variable).all()
         return results
 
+    def retrieve_variable_query(self, key, value, query):
+        """ Retrieve variable by arbitrary property"""
+        queries = query
+        if key in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
+            queries.append(getattr(Variable,key) == value)
+        else:
+            queries.append(Variable.with_other_attributes(key,value))
+        if key == 'in_files':
+            queries.append([value == k for k in Variable.in_files])
+        if len(queries) == 0:
+            raise ValueError('No query received for retrieve variable')
+        elif len(queries) == 1:
+            results = self.session.query(Variable).filter(queries[0]).all()
+        else:
+            results = self.session.query(Variable).filter(and_(*queries)).all()
+        return results, queries
 
     def delete_collection(self, collection_name,force):
         """

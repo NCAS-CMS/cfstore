@@ -130,6 +130,33 @@ def searchvariable(ctx,key,value,verbosity):
 
 @cli.command()
 @click.pass_context
+@click.argument('key')
+@click.argument('value')
+@click.option('--verbosity', default=0, help='0 is just name, 2 is everything, 1 is id, name, size and domain')
+def browsevariable(ctx,key,value,verbosity):
+    """
+    Set collection, or reset to default if --collection=all
+    """
+    view_state, db = _set_context(ctx, "all")
+    variables,query = db.retrieve_variable_query(key,value,[])
+    loop = True
+    while loop:
+        print("There are ",len(variables),"results found.")
+        print("Print them all or continue to browse")
+        user_input = input("Input (p)rint or (b)rowse")
+        if user_input == "p" or "print":
+            user_input = input("Are you sure you want to print",len(variables),"items?")
+            for var in variables:
+                print(var.get_properties(verbosity))
+            loop = False
+        elif user_input == "b" or "browse":
+            user_input = input("Input additional search in the format \"key,value\".")
+            k,v=user_input.split(",")
+            variables,query = db.retrieve_variable_query(key,value,query)
+
+
+@cli.command()
+@click.pass_context
 @click.option('--collection', default=None, help='Required collection (use and make default)')
 @click.option('--output', default="files",help="What information is printed (files, tags, facets, relationships, collections, variables or locations)")
 def ls(ctx, collection, output):
