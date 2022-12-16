@@ -594,9 +594,9 @@ def delete_col(ctx, collection,force):
 def pr(ctx, collection):
     """
     Print information about a collection/json
-    #FIXME add json support
     Usage: cfsdb pr {collection}
     """
+    #FIXME add json support
     view_state, db = _set_context(ctx, None)
     markdown = db.collection_info(collection)
     md = Markdown(markdown)
