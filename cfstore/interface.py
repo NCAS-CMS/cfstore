@@ -462,6 +462,7 @@ class CollectionDB(CoreDB):
     def retrieve_variable_query(self, key, value, query):
         """ Retrieve variable by arbitrary property"""
         queries = query
+        print(queries)
         if key in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
             queries.append(getattr(Variable,key) == value)
         else:
@@ -475,6 +476,21 @@ class CollectionDB(CoreDB):
         else:
             results = self.session.query(Variable).filter(and_(*queries)).all()
         return results, queries
+
+    def show_collections_with_variable(self,variable):
+        """Find all collections with a given variable"""
+        coldict = {}
+        for file in variable.in_files:
+            for collection in file.in_collections:
+                if collection not in coldict:
+                    coldict[collection]=1
+                else:
+                    coldict[collection]+=1
+        if coldict:
+            for collection in coldict:
+                print(f"The collection \"{collection.name}\" contains {coldict[collection]} files with the variable {variable} (ID:{variable.id})")
+        else:
+            print("This variable doesn't actually appear in any collections.")   
 
     def delete_collection(self, collection_name,force):
         """

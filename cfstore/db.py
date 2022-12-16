@@ -245,6 +245,15 @@ class VariableMetadata(PolymorphicVerticalProperty, Base):
     real_value = Column(Float, info={"type": (float, "float")})
     char_value = Column(UnicodeText, info={"type": (str, "string")})
 
+    def __repr__(self):
+        if self.char_value:
+            return f'{self.char_value}'
+        if self.real_value:
+            return f'{self.real_value}'
+        if self.int_value:
+            return f'{self.int_value}'
+        if self.boolean_value:
+            return f'{self.boolean_value}'
 
 class CellMethod(Base):
     """ 

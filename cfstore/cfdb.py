@@ -120,13 +120,52 @@ def aaftc(ctx,aggfile,collection):
 @click.option('--verbosity', default=0, help='0 is just name, 2 is everything, 1 is id, name, size and domain')
 def searchvariable(ctx,key,value,verbosity):
     """
-    Set collection, or reset to default if --collection=all
+    Search for collections with a variable
+    Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
+    Other properties can also be searched
     """
     view_state, db = _set_context(ctx, "all")
 
     variables = db.retrieve_variable(key,value)
     for var in variables:
-        print(var.get_properties(verbosity))
+        #print(var.get_properties(verbosity))
+        db.show_collections_with_variable(var)
+
+
+@cli.command()
+@click.pass_context
+@click.option('--name_contains', default=None, help='Search by collection name')
+@click.option('--description_contains', default=None, help='Search by text in description')
+@click.option('--contains_file', default=None, help='Search for collections containing a file')
+@click.option('--tagname', default=None, help='Search by tag')
+@click.option('--facet', default=None, help='Search by facet')
+
+def search_collections(ctx,name_contains, description_contains, contains_file, tagname, facet):
+    """
+    Search for collections with specific features
+    The supported search properties are name_contains, description_contains, contains_file, tagname, facet
+    """
+    if not (name_contains or description_contains or contains_file or tagname or facet):
+        print("You might want to put in some search options")
+    view_state, db = _set_context(ctx, "all")
+    collections = db.retrieve_collections(name_contains, description_contains, contains_file, tagname, facet)
+    print("Your search of ")
+    if name_contains:
+        print(f"Name contains {name_contains}")
+    if description_contains:
+        print(f"Description contains {description_contains}")
+    if contains_file:
+        print(f"Collection contains file called {contains_file}")
+    if tagname:
+        print(f"Collection tagged as {tagname}")
+    if facet:
+        print(f"Collection has facet {facet}")
+    if collections:
+        print("Produces the following collections:")
+        for col in collections:
+            print("|",col.name)
+    else:
+        print("Found nothing!")
 
 @cli.command()
 @click.pass_context
@@ -135,24 +174,30 @@ def searchvariable(ctx,key,value,verbosity):
 @click.option('--verbosity', default=0, help='0 is just name, 2 is everything, 1 is id, name, size and domain')
 def browsevariable(ctx,key,value,verbosity):
     """
-    Set collection, or reset to default if --collection=all
+    Iterative user input to build compound search
+    Browse starts with initial key/value pair then iteratively take in additional key/value pairs gradually narrowing search
+    Will not print collections without checking first - make sure the output is of a reasonable size
     """
     view_state, db = _set_context(ctx, "all")
     variables,query = db.retrieve_variable_query(key,value,[])
     loop = True
     while loop:
         print("There are ",len(variables),"results found.")
-        print("Print them all or continue to browse")
-        user_input = input("Input (p)rint or (b)rowse")
-        if user_input == "p" or "print":
-            user_input = input("Are you sure you want to print",len(variables),"items?")
-            for var in variables:
-                print(var.get_properties(verbosity))
-            loop = False
-        elif user_input == "b" or "browse":
-            user_input = input("Input additional search in the format \"key,value\".")
+        print("Print them all or continue to browse\n")
+        user_input = input("Input (p)rint or (b)rowse\n")
+        print(user_input)
+        if user_input == "p" or user_input == "print":
+            user_input = input("Are you sure you want to print "+str(len(variables))+" items?\n")
+            if user_input == "yes" or user_input == "y":
+                for var in variables:
+                    print(var.get_properties(verbosity))
+                loop = False
+            else:
+                print("Nevermind, then\n")
+        elif user_input == "b" or user_input == "browse":
+            user_input = input("Input additional search in the format \"key,value\".\n")
             k,v=user_input.split(",")
-            variables,query = db.retrieve_variable_query(key,value,query)
+            variables,query = db.retrieve_variable_query(k,v,query)
 
 
 @cli.command()
@@ -207,7 +252,7 @@ def ls(ctx, collection, output):
                     print(f"Location {collection} not found, showing all locations")
                 return_list = loc_list
 
-        if output=="variables" or "var":
+        if output=="variables" or output=="var":
             try:
                 for r in return_list:
                     print(r.get_properties(1))
@@ -237,17 +282,9 @@ def ls(ctx, collection, output):
             if output not in ["files","tags","facets","relationships","collections","locations"]:
                 print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
             else:
-                print("Return list cannot be printed")
+                print("Return list failed to print")
     view_state.save()
 
-@cli.command()
-@click.pass_context
-@click.argument('keys')
-@click.argument('search')
-@click.option('--collection', default=None, help='Required collection (use and make default)')
-def search_variables(ctx,keys,search,collection):
-    view_state, db = _set_context(ctx, collection)
-    db.retrieve_variable(keys,search)
 
 @cli.command()
 @click.pass_context
@@ -488,7 +525,7 @@ def facet(ctx, key, value, collection, remove):
 @click.argument('col2')
 def linkto(ctx, col1, link, col2):
     """
-    Add a one way connection between col1 and col2.
+    Add a one way link between two collections.
     e.g. col1 parent_of col2, would be
     linkto (col1, 'parent_of, col2)
     Makes no reciprocal links. This link can only
@@ -543,12 +580,9 @@ def delete_col(ctx, collection,force):
     # look out difference between method name _ and usage -
     # that's a click "feature"
     """
-
-    Delete an empty <collection>
-    (raising an error if the collection still has files in it)
-
+    Delete an <collection> that contains no files
+    Raises an error if the collection is not empty
     Usage: cfsdb delete-col <collection>
-
     """
     view_state, db = _set_context(ctx, None)
     _print(db.delete_collection(collection,force))
@@ -559,8 +593,9 @@ def delete_col(ctx, collection,force):
 @click.argument('collection')
 def pr(ctx, collection):
     """
-    Print information about a collection to stdout (or json eventually)
-    Usage: cfsdb pr <collection>
+    Print information about a collection/json
+    #FIXME add json support
+    Usage: cfsdb pr {collection}
     """
     view_state, db = _set_context(ctx, None)
     markdown = db.collection_info(collection)
