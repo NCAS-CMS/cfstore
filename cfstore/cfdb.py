@@ -27,6 +27,7 @@ def _load():
 def _set_context(ctx, collection):
     """
     Set the config_state context
+    Importantly, this sets the active collection
     """
     def doset(c):
         if c == 'all':
@@ -82,6 +83,7 @@ def cli(ctx, collection):
 def setc(ctx,collection):
     """
     Set collection, or reset to default if --collection=all
+    Usage: cfsdb setc --collection=<collection>
     """
     view_state, db = _set_context(ctx, collection)
     if collection!="all":
@@ -100,6 +102,8 @@ def aaftc(ctx,aggfile,collection):
     """
     (A)dd (A)ggregation (F)ile (T)o (C)ollection
     Takes in an aggregation file and a collection. Collection is not actually an optional input.
+    The contents of the aggregation file are added to the collection.
+    Usage: #FIXME
     """
     view_state, db = _set_context(ctx, collection)
     if collection!="all":
@@ -123,6 +127,7 @@ def searchvariable(ctx,key,value,verbosity):
     Search for collections with a variable
     Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
     Other properties can also be searched
+    Usage: #FIXME
     """
     view_state, db = _set_context(ctx, "all")
 
@@ -144,6 +149,7 @@ def search_collections(ctx,name_contains, description_contains, contains_file, t
     """
     Search for collections with specific features
     The supported search properties are name_contains, description_contains, contains_file, tagname, facet
+    Usage: #FIXME
     """
     if not (name_contains or description_contains or contains_file or tagname or facet):
         print("You might want to put in some search options")
@@ -177,6 +183,7 @@ def browsevariable(ctx,key,value,verbosity):
     Iterative user input to build compound search
     Browse starts with initial key/value pair then iteratively take in additional key/value pairs gradually narrowing search
     Will not print collections without checking first - make sure the output is of a reasonable size
+    Usage: #FIXME
     """
     view_state, db = _set_context(ctx, "all")
     variables,query = db.retrieve_variable_query(key,value,[])
@@ -209,6 +216,7 @@ def ls(ctx, collection, output):
     List collections (collections=None),
     or list other objects in a specific collection
     (which might be the last used one).
+    Usage: cfsdb ls --collection=<collection> --output= <files|tags|facets|relationships|collections|variables|locations>
     """
     view_state, db = _set_context(ctx, collection)
     output= output.lower()
@@ -294,6 +302,7 @@ def findf(ctx, match, collection):
     """
     Find files in collection (or entire database if --collection=all), which include MATCH
     anywhere in their path and filename.
+    Usage: cfsdb findf <string to find> --collection=<collection>
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
@@ -325,7 +334,7 @@ def findrx(ctx, collection, match):
     anywhere in their path and filename.
 
     (The default collection must be set, or the --collection argument used.)
-
+    (Depreciated, replaced by locate replicants)
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
@@ -383,6 +392,8 @@ def locate_replicants(ctx, collection, strip_base, match_full_path,match_entire_
         We normally assume that there we are looking in a large set of *other* files for matches into a smaller
         set of collection files. If the collection likely contains more files than exist in the set of others,
         then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
+    Usage: cfsdb locate-replicants --collection=<collection> --checkby=<name>
+    See "Identifying Replicants.rst" for further usage information
     """
     view_state, db = _set_context(ctx, collection)
 
@@ -423,7 +434,9 @@ def organise(ctx, collection, description_file):
     If invoked from a terminal, provide an editor for entering files.
     Can also be invoked in a pipeline or using an input file (e.g. cfsdb organise yourc << YourFileListing)
     Files must exist in database before they can be organised.
+    Usage: cfsdb organise <collectionname> --description_file=<file_location>
     """
+    #FIXME This could probably do with a doc page
     view_state, db = _set_context(ctx, collection)
 
     if os.isatty(0):
@@ -460,6 +473,7 @@ def tag(ctx, collection, tagname):
     """
     Tag a COLLECTION with TAGNAME
     (and save collection as current default collection)
+    Usage: cfsdb tag <collection>
     """
     view_state, db = _set_context(ctx, collection)
     db.tag_collection(view_state.collection, tagname)
@@ -475,6 +489,8 @@ def findc(ctx, match, tagname, facet):
     """
     Find all collections which either have MATCH in their name, or
     are tagged with TAGNAME
+    Usage: cfsdb findc --match|tagname=<string>
+    Alternate usage: cfsdb findc --facet <key> <value>
     """
     view_state, db = _set_context(ctx, 'all')
     if facet == ():
@@ -500,6 +516,7 @@ def facet(ctx, key, value, collection, remove):
     (or remove if -r/--remove is present)
     As usual, do this with current default collection or be specific with
     --collection=collection
+    Usage: cfsdb facet key value --collection=collection
     """
     view_state, db = _set_context(ctx, collection)
     if not view_state.collection:
@@ -530,6 +547,7 @@ def linkto(ctx, col1, link, col2):
     linkto (col1, 'parent_of, col2)
     Makes no reciprocal links. This link can only
     be discovered from col1.
+    Usage: cfsdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
     db.add_relationships(col1, col2, link, None)
@@ -546,6 +564,7 @@ def linkbetween(ctx, col1, link, col2):
     result in being able to find all collections
     which are "brother_of" col2 (which would be col1), and
     vice versa.
+    Usage: cfsdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
     db.add_relationship(col1, col2, link)
@@ -577,8 +596,6 @@ def findr(ctx, link, collection):
 @click.argument('collection')
 @click.option('--force', default=False, help='(Optional) Deletes even if collection is full')
 def delete_col(ctx, collection,force):
-    # look out difference between method name _ and usage -
-    # that's a click "feature"
     """
     Delete an <collection> that contains no files
     Raises an error if the collection is not empty
@@ -595,7 +612,7 @@ def pr(ctx, collection):
     """
     Print information about a collection/json
     #FIXME add json support
-    Usage: cfsdb pr {collection}
+    Usage: cfsdb pr <collection>
     """
     view_state, db = _set_context(ctx, None)
     markdown = db.collection_info(collection)
