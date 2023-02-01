@@ -72,6 +72,11 @@ class Posix:
                     self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
     def getBMetadata(self,remotepath, collection, localpath, subcollections, checksum,regex):
+        """
+        Currently runs a remote script
+        Used in conjunction with "getBMetadata" script to aquire BMetadata from remote files
+        #FIXME This just needs to be massively cleaned up
+        """
         print("Getting b metadata")
         #files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
         #self.ssh.get_b_metadata(path_to_collection_head,self.db)
@@ -102,6 +107,9 @@ class Posix:
         raise NotImplementedError
 
     def aggregation_files_to_collection(self, aggfile):
+        """
+        Uses a cf python aggregation file to add metadata variables to the appropriate files
+        """
         #open file
         #read file into list of variables
         print("Adding variables from",aggfile)
