@@ -127,7 +127,7 @@ def searchvariable(ctx,key,value,verbosity):
     Search for collections with a variable
     Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
     Other properties can also be searched
-    Usage: #FIXME
+    Usage: cfsdb searchvariable <key> <value>
     """
     view_state, db = _set_context(ctx, "all")
 
@@ -149,7 +149,6 @@ def search_collections(ctx,name_contains, description_contains, contains_file, t
     """
     Search for collections with specific features
     The supported search properties are name_contains, description_contains, contains_file, tagname, facet
-    Usage: #FIXME
     """
     if not (name_contains or description_contains or contains_file or tagname or facet):
         print("You might want to put in some search options")
@@ -183,7 +182,6 @@ def browsevariable(ctx,key,value,verbosity):
     Iterative user input to build compound search
     Browse starts with initial key/value pair then iteratively take in additional key/value pairs gradually narrowing search
     Will not print collections without checking first - make sure the output is of a reasonable size
-    Usage: #FIXME
     """
     view_state, db = _set_context(ctx, "all")
     variables,query = db.retrieve_variable_query(key,value,[])
@@ -473,7 +471,7 @@ def tag(ctx, collection, tagname):
     """
     Tag a COLLECTION with TAGNAME
     (and save collection as current default collection)
-    Usage: cfsdb tag <collection>
+    Usage: cfsdb tag <collection> <tagname>
     """
     view_state, db = _set_context(ctx, collection)
     db.tag_collection(view_state.collection, tagname)
