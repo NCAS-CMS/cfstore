@@ -612,6 +612,7 @@ def pr(ctx, collection):
     #FIXME add json support
     Usage: cfsdb pr <collection>
     """
+    #FIXME add json support
     view_state, db = _set_context(ctx, None)
     markdown = db.collection_info(collection)
     md = Markdown(markdown)
