@@ -78,8 +78,13 @@ class CollectionDB(CoreDB):
         """
         c1 = self.retrieve_collection(collection_one)
         c2 = self.retrieve_collection(collection_two)
+        print("1")
         c1.add_relationship(relationship, c2)
+        print("2")
+        
         c2.add_relationship(relationship, c1)
+        print("4")
+        
         self.session.commit()
 
     def add_relationships(self, collection_one, collection_two, relationship_12, relationship_21):
@@ -93,7 +98,7 @@ class CollectionDB(CoreDB):
         c1 = self.retrieve_collection(collection_one)
         c2 = self.retrieve_collection(collection_two)
         c1.add_relationship(relationship_12, c2)
-        if relationship_21 is not None:
+        if relationship_21 is not None and collection_one!=collection_two:
             c2.add_relationship(relationship_21, c1)
         self.session.commit()
 
@@ -372,6 +377,14 @@ class CollectionDB(CoreDB):
             return r
         except KeyError:
             return []
+
+    def retrieve_relationships(self, collection):
+        """
+        Find all related collections to <collection> which have
+        <relationship> as the predicate.
+        """
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        return c.related
 
     def retrieve_files_which_match(self, match):
         """

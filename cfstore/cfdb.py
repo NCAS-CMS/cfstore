@@ -231,8 +231,8 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_collection(view_state.collection).properties
         
         if output=="relationships":
-            return_list = db.retrieve_related(view_state.collection)
-
+            return_list = db.retrieve_relationships(view_state.collection)
+ 
         if output=="collections":
             return_list = db.retrieve_collections()
             print(view_state.name)
@@ -565,7 +565,7 @@ def linkbetween(ctx, col1, link, col2):
     Usage: cfsdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
-    db.add_relationship(col1, col2, link)
+    db.add_relationships(col1, col2, link, link)
     print("Relationship -",link,"- added between",col1,"and",col2)
 
 @cli.command()

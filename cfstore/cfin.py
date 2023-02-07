@@ -104,7 +104,7 @@ def add(ctx, description, regexselect, subcollections, arg1, argm):
             #if len(argm) != 2:
             #    raise InputError('InputError: Missing arguments', add.__doc__)
             today = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
-            if target == 'local':
+            if target == 'local' or target == 'p':
                 intro = f'\n#### Adding collection {argm[0]}\n\n(loaded locally,  at {today})\n\n' + \
                     '[Enter description (text or markdown) (maybe using the above and deleting this line)]\n'
             else:
