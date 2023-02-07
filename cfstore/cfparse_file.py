@@ -1,6 +1,9 @@
 import cfdm
 from cfstore.db import Variable
 import numpy as np
+import os
+from deepdiff import DeepDiff
+import time
 
 
 def manage_types(value):
@@ -52,9 +55,40 @@ def cfparse_file(db, filename):
         for k,p in properties.items():
             if k not in ['standard_name','long_name']:
                 var[k] = manage_types(p) 
-        
 
-        db.session.add(var)
+        for file in v.get_filenames():
+            for f in db.retrieve_files_which_match(os.path.basename(file)):
+                var.in_files.append(f)
+
+        #there is a more pythonic way of doing this
+        #if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
+        #I'm just leaving this working before I go mad but #FIXME later
+        #Post-fixme update - comparisons are now checking for exactness. Two things are missing - 
+        #   first should we be checking everything? Probably not, there will be some very similar variables we can group
+        #   second these only included ordered lists which definitely needs to be changed - those are at least one example of similar variables we can group
+        querylist = []
+        duplicate = True
+        if var.long_name:
+            querylist = db.retrieve_variable("long_name",var.long_name)
+        if var.standard_name:
+            querylist = db.retrieve_variable("standard_name",var.standard_name)
+        if var.long_name and var.standard_name:
+            querylist = db.retrieve_variable("long_name",var.long_name)+db.retrieve_variable("standard_name",var.standard_name)
+        if querylist:
+            for queryvar in querylist:
+                if var.cfdm_domain == queryvar.cfdm_domain and var.cfdm_size == queryvar.cfdm_size:
+                    if DeepDiff(var.get_properties(verbosity=2)[1:],queryvar.get_properties(verbosity=2)[1:]):
+                        duplicate=True
+                    else:
+                        duplicate = False
+                else:
+                    duplicate = False
+        else:   
+            duplicate = False
+        
+        if not duplicate:
+            db.session.add(var)
+
         for m, cm in v.cell_methods().items():
             for a in cm.get_axes(): 
                 method = cm.get_method()

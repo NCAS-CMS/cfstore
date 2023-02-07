@@ -50,11 +50,19 @@ class SSHlite(SSHcore):
     def isalive(self):
         return self.transport.is_active()
 
-    def get(self, remotepath, localpath):
-       """
-       Get remote_path and store it in local_path
-       """
-       self._sftp.get(remotepath, localpath)
+    def get(self, remotepath, localpath,delete=False):
+        """
+        Get remote_path and store it in local_path
+        """
+        print("Getting file",remotepath,"and storing it in",localpath)
+        try:
+            self._sftp.get(remotepath, localpath)
+            if delete:
+                print("Deleting remote file")
+                self._sftp.remove(remotepath)
+        except:
+            print("Get Failed")
+        
 
     def walktree(self, remotepath, fcallback, dcallback=None, ucallback=None,
                  recurse=True):
@@ -136,6 +144,7 @@ class SSHlite(SSHcore):
         if self.logging:
             etime = time.time()
             print(f'Walking {remotepath} for {len(files)} files took {etime-stime:.2f}s')
+            print(f'This would take {(1000000/len(files))*(etime-stime):.2f}s ({(1000000/(60*len(files)))*(etime-stime):.2f}m or {(1000000/(60*60*len(files)))*(etime-stime):.2f}h) for 1 million files')
 
         return files
 
@@ -149,7 +158,8 @@ class SSHlite(SSHcore):
         remotefile = self._sftp.open(file)
         cfparse_file(db,remotefile)
 
-    def run_script(self, remotepath, collection, script):
+
+    def pushScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
         print("Running script:",scriptname)
         print("Putting script")
@@ -172,10 +182,13 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("lsout:",line)
+
+    def executeScript(self, remotepath, collection, script):
+        scriptname = os.path.basename(script)
+        remotescript = remotepath +scriptname
         print("Executing script")
         print('Executing \"python '+scriptname+"\"")
         try:
-#            stdin, stdout, stderr = self._client.exec_command('ls')
             stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
             print("Script executed")
         except:
@@ -187,9 +200,26 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
-        with open("sample.json","w") as writepath:
-            json.dump(stdout,writepath) 
-        self._sftp.remove(remotescript)
+        self._sftp.remove(remotepath+scriptname)
+
+    def aggregateFiles(self, remotepath):
+        print("Aggregating files")
+        print('Executing \"python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc\"')
+        try:
+            stdin, stdout, stderr = self._client.exec_command('python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc')
+            print("Aggregation file built")
+        except:
+            print("Could not successfully execute script")
+            print("Removing script from remote server")
+        print(stderr)
+        for line in stderr:
+            print("err:",line)
+        for line in stdout:
+            print("out:",line)
+
+    def runScript(self, remotepath, collection, script):
+        self.pushScript(remotepath,collection,script)
+        self.executeScript(remotepath, collection, script)
 
     def globish(self, remotepath, expression):
         """

@@ -133,7 +133,7 @@ def add(ctx, description, regexselect, subcollections, arg1, argm):
             raise ValueError(f'Unexpected location type {target}')
     state.save()
 
-
+"""
 #This with the right arguments can run scripts on Jasmin
 #Most of the work is done in the arguments though
 #So needs fiddling
@@ -167,6 +167,60 @@ def getBMetadata(ctx, arg1, argm):
     # SSHClient.exec_command() returns the tuple (stdin,stdout,stderr)
     
     #Call add_variables_from_file for each file
+    state.save()
+"""
+#This with the right arguments can run scripts on Jasmin
+#Most of the work is done in the arguments though
+#So needs fiddling
+@cli.command()
+@click.pass_context
+@click.argument('arg1', nargs=1)
+@click.argument('argm', nargs=-1)
+@click.option('--aggscriptname', default='aggregatebmetadata', help='(Optional) Lets you run a different script to the default')
+@click.option('--remotetempfilelocation', default='', help='(Optional) Sets where to put the remote temp file')
+@click.option('--scriptlocation', default='', help='(Optional) Sets where to find the script')
+@click.option('--outputfilename',default='tempfile.json', help='the name of the output file')
+def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, scriptlocation,outputfilename):
+    """
+    Runs a remote script to aggregate metadata and store it in the database
+    Format is:
+        cfin rp getbmetadataclean sshlocation remotedirectory collection
+    Other scripts from /scripts/ folder can be used by setting --aggscript=scriptname (only name is needed, .py is optional)
+    Other locations for scripts can be used by setting --scriptlocation=afolder 
+    """
+    state = CFSconfig()
+
+    location = arg1
+    remotepath, collection = argm
+    if not aggscriptname.endswith(".py"):
+        aggscriptname = aggscriptname + ".py"
+    aggscriptpath = scriptlocation+aggscriptname
+
+
+    #SSH
+    #Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = state.get_location(location)['host'], state.get_location(location)['user']
+    x.configure(host, user)
+    
+    #Push Script(s)
+    #x.ssh.pushScript(remotepath,collection, scriptname)
+    x.ssh.pushScript(remotepath,collection, aggscriptpath)
+
+    #Generate Aggregation File
+    x.ssh.aggregateFiles(remotepath)
+    
+    #Generate JSON from Aggregation File
+    x.ssh.executeScript(remotepath,collection, aggscriptname)
+
+    #Retrieve JSON file
+    x.ssh.get(remotetempfilelocation+"tempfile.json", scriptlocation+outputfilename,delete=True)
+
+    #Clean-up remote files (At present clean-up means remove them)
+    #This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
+
+    #Update database with JSON
+    x.aggregation_files_to_collection("/home/george/Documents/cfs/cfstore/cfstore/scripts/newfilebmetadata.json","newcol2")
     state.save()
 
 @cli.command()

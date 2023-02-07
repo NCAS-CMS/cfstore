@@ -440,22 +440,57 @@ class CollectionDB(CoreDB):
         self.session.commit()
 
         
-    def retrieve_variable(self, **kw):
+    def retrieve_variable(self, key, value):
         """ Retrieve variable by arbitrary property"""
         queries = []
-        for k,v in kw.items():
-            if k in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
-                queries.append(getattr(Variable,k) == v)
-            else:
-                queries.append(Variable.with_other_attributes(k,v))
+        if key in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
+            queries.append(getattr(Variable,key) == value)
+        else:
+            queries.append(Variable.with_other_attributes(key,value))
+        if key == 'in_files':
+            queries.append([value == k for k in Variable.in_files])
         if len(queries) == 0:
             raise ValueError('No query received for retrieve variable')
         elif len(queries) == 1:
             results = self.session.query(Variable).filter(queries[0]).all()
         else:
             results = self.session.query(Variable).filter(and_(*queries)).all()
+        if key == "all":
+            results = self.session.query(Variable).all()
         return results
 
+    def retrieve_variable_query(self, key, value, query):
+        """ Retrieve variable by arbitrary property"""
+        queries = query
+        print(queries)
+        if key in ['long_name','standard_name','cfdm_size','cfdm_domain','cell_methods']:
+            queries.append(getattr(Variable,key) == value)
+        else:
+            queries.append(Variable.with_other_attributes(key,value))
+        if key == 'in_files':
+            queries.append([value == k for k in Variable.in_files])
+        if len(queries) == 0:
+            raise ValueError('No query received for retrieve variable')
+        elif len(queries) == 1:
+            results = self.session.query(Variable).filter(queries[0]).all()
+        else:
+            results = self.session.query(Variable).filter(and_(*queries)).all()
+        return results, queries
+
+    def show_collections_with_variable(self,variable):
+        """Find all collections with a given variable"""
+        coldict = {}
+        for file in variable.in_files:
+            for collection in file.in_collections:
+                if collection not in coldict:
+                    coldict[collection]=1
+                else:
+                    coldict[collection]+=1
+        if coldict:
+            for collection in coldict:
+                print(f"The collection \"{collection.name}\" contains {coldict[collection]} files with the variable {variable} (ID:{variable.id})")
+        else:
+            print("This variable doesn't actually appear in any collections.")   
 
     def delete_collection(self, collection_name,force):
         """

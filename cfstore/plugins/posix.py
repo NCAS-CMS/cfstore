@@ -1,4 +1,6 @@
 import os
+import cf
+import json
 from cfstore import db
 from cfstore.plugins.ssh import SSHlite
 from cfstore.cfparse_file import cfparse_file
@@ -35,10 +37,10 @@ class Posix:
         and call that collection <collection_head_name>, and decorate with <collection_head_description> text.
 
         Optionally (<subcollections=True>), create sub-collections for all internal directories
-        (default = False = do not create sub-collections). (NOT YET IMPLEMENTED)
+        (default = False = do not create sub-collections). (NOT YET IMPLEMENTED) Not Implemented
 
         If checksums required, provide a checksum method string.
-        (NOT YET IMPLEMENTED)
+        (NOT YET IMPLEMENTED) Not Implemented
 
         """
         c = self.db.create_collection(collection_head_name, collection_head_description)
@@ -70,6 +72,11 @@ class Posix:
                     self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
 
     def getBMetadata(self,remotepath, collection, localpath, subcollections, checksum,regex):
+        """
+        Currently runs a remote script
+        Used in conjunction with "getBMetadata" script to aquire BMetadata from remote files
+        #FIXME This just needs to be massively cleaned up
+        """
         print("Getting b metadata")
         #files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
         #self.ssh.get_b_metadata(path_to_collection_head,self.db)
@@ -98,6 +105,27 @@ class Posix:
         come what may. By default, use <processes> subprocesses to do the checksumming.
         """
         raise NotImplementedError
+
+    def aggregation_files_to_collection(self, aggfile):
+        """
+        Uses a cf python aggregation file to add metadata variables to the appropriate files
+        """
+        #open file
+        #read file into list of variables
+        print("Adding variables from",aggfile)
+        aggfileobject = open(aggfile,'r')
+        variables = json.load(aggfileobject)
+        dbfiles=[]
+        #for each variable
+        print(variables)
+        for variable in variables:
+            files = variables['files']
+            var = db.Variable(variables)
+            var.in_files(files)
+            dbfiles.append(var)
+        print(dbfiles)
+
+        #store a variable in collection
 
 
 class RemotePosix(Posix):
