@@ -4,6 +4,7 @@ from cfstore.db import StorageLocation, Collection, CoreDB, File, Tag, StorageLo
 from sqlalchemy import or_, and_, func
 from sqlalchemy.orm.exc import NoResultFound
 from cfstore.cfparse_file import cfparse_file
+from tqdm import tqdm
 import hashlib
 
 class CollectionError(Exception):
@@ -659,7 +660,7 @@ class CollectionDB(CoreDB):
             loc.volume += f.size
         self.session.commit()
 
-    def upload_files_to_collection(self, location, collection, files):
+    def upload_files_to_collection(self, location, collection, files,lazy=0, update=True):
         """
         Add new files which exist at <location> to a <collection>. Both
         location and collection must already exist.
@@ -668,8 +669,48 @@ class CollectionDB(CoreDB):
             {name:..., path: ..., checksum: ..., size: ..., format: ...}
 
         """
-        for f in files:
-            self.upload_file_to_collection(location, collection, f)
+
+        try:
+            c = self.session.query(Collection).filter_by(name=collection).one()
+            loc = self.session.query(StorageLocation).filter_by(name=location).one()
+        except NoResultFound:
+            raise ValueError('Either location or collection not yet available in database')
+
+        for f in tqdm(files):
+            if 'checksum' not in f:
+                f['checksum'] = 'None'
+            name, path, size, checksum = f['name'], f['path'], f['size'], f['checksum']
+            c.volume+=f["size"]
+            try:
+                if lazy == 0:
+                    check = self.retrieve_file(path, name)
+                elif lazy == 1:
+                    check = self.retrieve_file(path, name, size=size)
+                elif lazy == 2:
+                    check = self.retrieve_file(path, name, checksum=checksum)
+                else:
+                    raise ValueError(f'Unexpected value of lazy {lazy}')
+            except FileNotFoundError:
+                check = False
+
+            if check:
+                if not update:
+                    raise ValueError(f'Cannot upload file {os.path.join(path, name)} as it already exists')
+                else:
+                    check.replicas.append(loc)
+                    c.holds_files.append(check)
+            else:
+                try:
+                    fmt = f['format']
+                except KeyError:
+                    fmt = os.path.splitext(name)[1]
+                f = File(name=name, path=path, checksum=checksum, size=size, format=fmt, initial_collection=c.id)
+                f.replicas.append(loc)
+                c.holds_files.append(f)
+                loc.holds_files.append(f)
+                c.volume += f.size
+                loc.volume += f.size
+            self.session.commit()
 
     def remove_file_from_collection(self, collection, file_path, file_name, checksum=None):
         """
