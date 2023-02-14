@@ -22,7 +22,7 @@ copyright = '2020, Bryan Lawrence'
 author = 'Bryan Lawrence and George OBrien'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2'
+release = '1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -47,7 +47,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'logilab'
+html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'logo':'ncas-logo.jpg',
     'logo_url':'https://cms.ncas.ac.uk'

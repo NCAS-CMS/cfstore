@@ -16,13 +16,31 @@ Welcome to cfstore's documentation!
 
 Concept
 -------
-This package provides an interface to data held in a "cfstore",
-that consists of views of data files held in one or more different storage locations
-(e.g. POSIX disk, object store, tape).
-The tools allow you to ingest information about collections (defined by you) of the data
-into a "cfstore database", to create and document new views (virtual
-collections) of your data, and where necessary move collections of data
-between storage locations.
+
+Storage locations are places where you keep data. The purpose of cfstore is to maintain *views*
+of the data (in those multiple locations) *in one place* and to allow you to decorate
+those views with information about the data to help you both remember things about the
+data and to able to organise it in ways that allow you to find specific subsets of data, and 
+potentially move them around.
+
+The ``cfstore`` package provides three sets of tools to provide this view:
+
+* ``cfin`` is used to ingest information about data held in a number of storage *locations*.
+* ``cfsdb`` is used to add, organise and manipulate that information.
+* ``cfmv`` allows you to use that information to move data between the storage *locations*.
+
+
+Where To Begin
+--------------
+See :doc:`getting_started` to understand how to
+get going and work with remote posix storage locations.
+
+See :doc:`Examples/index` for some worked examples describing how to
+ingest some data into your database, add information about that
+data, and how to find and view your collections.
+
+What We're Using (and Compatible With)
+--------------------------------------
 
 As well as the original files, the CF aggregation rules can be used to
 provide simplified views of multiple files, and both the original files
@@ -41,13 +59,8 @@ developers. A future release will provide a suitable interface for
 using in scientific scripts and python notebooks. Meanwhile
 we are concentrating on support via the command line.
 
-See :doc:`getting_started` to understand how to
-get going and work with remote posix storage locations.
-
-See :doc:`Examples/index` for some worked examples describing how to
-ingest some data into your database, add information about that
-data, and how to find and view your collections.
-
+Our main focus is Linux compatibility but there's no reason that Windows and Mac shouldn't also *mostly* work.
+If using a non-Linux machine, do tread carefully.
 
 Command Line Interface
 ----------------------

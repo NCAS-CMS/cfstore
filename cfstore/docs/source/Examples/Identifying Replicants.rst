@@ -12,6 +12,7 @@ Input command:
 cfsdb ls
 
 Example output:
+
     cfstore.db
     Collection <et_582> has  1.1TiB in 71 files
     Collection <et_601> has  1.1TiB in 64 files
@@ -32,18 +33,18 @@ We'll therefore run locate-replicants on various files
 
 Basic searching
 ---------------
-Input command:
+Input command::
 
-cfsdb locate-replicants --collection=address --checkby=name
+    cfsdb locate-replicants --collection=address --checkby=name
 
-Example output:
+Example output::
 
     No replicants found
 
 This is the simplest example - all files in address are unique across collections. This information is outputted and the command ends.
 
 
-Input command:
+Input command::
 
     cfsdb locate-replicants --collection=xjlehjas2 --checkby=name
     Example outputs:
