@@ -1,5 +1,5 @@
 from distutils.log import error
-from inspect import walktree
+from operator import attrgetter
 import paramiko
 import posixpath, os, glob, fnmatch
 from itertools import product
@@ -87,24 +87,27 @@ class SSHlite(SSHcore):
 
         :returns: None
         """
-
-        for entry in self._sftp.listdir(remotepath):
-            pathname = posixpath.join(remotepath, entry)
-            mode = self._sftp.stat(pathname).st_mode
-            if S_ISDIR(mode):
-                # It's a directory, call the dcallback function
-                if dcallback is not None:
-                    dcallback(pathname)
-                if recurse:
-                    # now, recurse into it
-                    self.walktree(pathname, fcallback, dcallback, ucallback)
-            elif S_ISREG(mode):
-                # It's a file, call the fcallback function
-                fcallback(pathname)
-            else:
-                # Unknown file type
-                if ucallback is not None:
-                    ucallback(pathname)
+        try:
+            for entry in self._sftp.listdir(remotepath):
+                pathname = posixpath.join(remotepath, entry)
+                mode = self._sftp.stat(pathname).st_mode
+                if S_ISDIR(mode):
+                    # It's a directory, call the dcallback function
+                    if dcallback is not None:
+                        dcallback(pathname)
+                    if recurse:
+                        # now, recurse into it
+                        self.walktree(pathname, fcallback, dcallback, ucallback)
+                elif S_ISREG(mode):
+                    # It's a file, call the fcallback function
+                    fcallback(pathname)
+                else:
+                    # Unknown file type
+                    if ucallback is not None:
+                        ucallback(pathname)
+                
+        except FileNotFoundError:
+            pass
 
     def get_size(self, remote_path):
         """
@@ -135,10 +138,9 @@ class SSHlite(SSHcore):
         if self.logging:
             stime = time.time()
 
-        try:
-            self.walktree(remotepath, callback)
-        except FileNotFoundError:
-            raise FileNotFoundError(f' check {remotepath} exists?')
+        
+        self.walktree(remotepath, callback)
+
 
 
         if self.logging:

@@ -459,7 +459,8 @@ class Collection(ProxiedDictMixin, Base):
         assert target == 'dict', "Collection can only be serialised to a python dictionary"
         blob = {x: getattr(self, x) for x in ['name', 'description', 'volume', 'filecount']}
         blob['tags'] = [str(k) for k in self.tags]
-        blob['related'] = "[relationships not yet serialised]"
+        #blob['related'] = self.related
+        #blob['holds_files'] = self.holds_files
         return blob
 
     @property

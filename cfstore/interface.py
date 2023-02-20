@@ -553,6 +553,18 @@ class CollectionDB(CoreDB):
             raise ValueError(f'No such collection {name}')
         return c.md
 
+    def collection_json(self, name):
+        """
+        Return information about a collection in a json file
+        """
+        try:
+            c = self.session.query(Collection).filter_by(name=name).first()
+        except NoResultFound:
+            raise ValueError(f'No such collection {name}')
+        output = {}
+        print(c)
+        return output
+
     def organise(self, collection, files, description):
         """
         Organise files already known to the environment into collection,
@@ -671,6 +683,7 @@ class CollectionDB(CoreDB):
         """
 
         try:
+            print("Searching")
             c = self.session.query(Collection).filter_by(name=collection).one()
             loc = self.session.query(StorageLocation).filter_by(name=location).one()
         except NoResultFound:

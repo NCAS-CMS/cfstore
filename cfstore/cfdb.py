@@ -8,6 +8,8 @@ import click
 from rich.console import Console
 from rich.markdown import Markdown
 import cf
+import requests
+from json2html import *
 
 STATE_FILE = '.cftape'
 
@@ -606,19 +608,58 @@ def delete_col(ctx, collection,force):
 @cli.command()
 @click.pass_context
 @click.argument('collection')
-def pr(ctx, collection):
+@click.option('--format', default="markdown", help='select output format from: markdown, json')
+def pr(ctx, collection,format):
     """
     Print information about a collection/json
     #FIXME add json support
     Usage: cfsdb pr <collection>
     """
-    #FIXME add json support
+
     view_state, db = _set_context(ctx, None)
-    markdown = db.collection_info(collection)
-    md = Markdown(markdown)
-    console = Console()
-    console.print(md)
+    collection_data = db.collection_info(collection)
+    md = Markdown(collection_data)
+    print(collection_data.files)
+    #console = Console()
+    #console.print(md)
     view_state.save()
+
+@cli.command()
+@click.pass_context
+@click.argument('collection')
+@click.argument('file')
+def publishhtml(ctx, collection, file):
+    view_state, db = _set_context(ctx, None)
+    active_collection = db.retrieve_collection(collection)
+    myobj = {'somekey': 'somevalue'}
+
+    x = requests.post("http://localhost:5009", data=myobj)
+    print(x.json())
+
+@cli.command()
+@click.pass_context
+@click.argument('collections')
+@click.argument('file')
+def publishhtmloffline(ctx, collections, file):
+    view_state, db = _set_context(ctx, None)
+    active_collections = db.retrieve_collections()
+    # Creating an HTML file
+    Func = open("jsonoutput.html","w")
+    count = 1
+    json= {}
+    for collection in active_collections:
+        
+        serialised = collection.serialise()
+
+        json[count] = serialised
+        count+=1
+
+        # Adding input data to the HTML file
+    html = json2html.convert(json = json)
+    Func.write(html)
+                    
+    # Saving the data into the HTML file
+    Func.close()
 
 
 @cli.command()
