@@ -456,11 +456,12 @@ class Collection(ProxiedDictMixin, Base):
         Serialise to a particular target format. Currently the only target understood is "dict"
         which is suitable for use in json.
         """
-        assert target == 'dict', "Collection can only be serialised to a python dictionary"
+        assert target in ['dict','full_dict'], "Collection can only be serialised to a python dictionary"
         blob = {x: getattr(self, x) for x in ['name', 'description', 'volume', 'filecount']}
         blob['tags'] = [str(k) for k in self.tags]
-        #blob['related'] = self.related
-        #blob['holds_files'] = self.holds_files
+        if target == 'full_dict':
+            blob['related'] = self.related
+            blob['holds_files'] = self.holds_files
         return blob
 
     @property

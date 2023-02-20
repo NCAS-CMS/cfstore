@@ -9,7 +9,6 @@ from rich.console import Console
 from rich.markdown import Markdown
 import cf
 import requests
-from json2html import *
 
 STATE_FILE = '.cftape'
 
@@ -643,23 +642,7 @@ def publishhtml(ctx, collection, file):
 def publishhtmloffline(ctx, collections, file):
     view_state, db = _set_context(ctx, None)
     active_collections = db.retrieve_collections()
-    # Creating an HTML file
-    Func = open("jsonoutput.html","w")
-    count = 1
-    json= {}
-    for collection in active_collections:
-        
-        serialised = collection.serialise()
-
-        json[count] = serialised
-        count+=1
-
-        # Adding input data to the HTML file
-    html = json2html.convert(json = json)
-    Func.write(html)
-                    
-    # Saving the data into the HTML file
-    Func.close()
+    db.publishhtmloffline(collections,file)
 
 
 @cli.command()

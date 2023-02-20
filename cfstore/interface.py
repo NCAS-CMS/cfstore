@@ -6,6 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from cfstore.cfparse_file import cfparse_file
 from tqdm import tqdm
 import hashlib
+from json2html import *
 
 class CollectionError(Exception):
     def __init__(self, name, message):
@@ -564,6 +565,47 @@ class CollectionDB(CoreDB):
         output = {}
         print(c)
         return output
+
+    def publishhtmloffline(self, collection, file):
+        if collection != "all":
+            active_collection = self.retrieve_collection(collection_name=collection)
+            # Creating an HTML file
+            Func = open("jsonoutput.html","w")
+            Func.write("<h1>Collections<h1>\n")
+            count = 1
+            json= {}
+            
+            serialised = active_collection.serialise(target="full_dict")
+
+            json[count] = serialised
+            count+=1
+
+            # Adding input data to the HTML file
+            html = json2html.convert(json = json)
+            Func.write(html)
+                            
+            # Saving the data into the HTML file
+            Func.close()   
+        else:
+            active_collections = self.retrieve_collections()
+            # Creating an HTML file
+            Func = open("jsonoutput.html","w")
+            Func.write("<h1>Collections<h1>\n")
+            count = 1
+            json= {}
+            for collection in active_collections:
+                
+                serialised = collection.serialise()
+
+                json[count] = serialised
+                count+=1
+
+            # Adding input data to the HTML file
+            html = json2html.convert(json = json)
+            Func.write(html)
+                            
+            # Saving the data into the HTML file
+            Func.close()
 
     def organise(self, collection, files, description):
         """
