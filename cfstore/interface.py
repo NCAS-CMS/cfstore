@@ -431,6 +431,17 @@ class CollectionDB(CoreDB):
             return files
 
 
+    def delete_relation_from_collection(self, collection, file):
+        """
+        Delete a relation from a collection
+        """
+        print("something")
+        r = self.retrieve_relationships(collection)
+
+        c = self.session.query(Collection).filter_by(name=collection).one()
+        del c["related"][r]    
+        self.session.commit()
+
     def delete_file_from_collection(self, collection, file):
         """
         Delete a file from a collection
@@ -511,17 +522,28 @@ class CollectionDB(CoreDB):
         """
         Remove a collection from the database, ensuring all files have already been removed first.
         """
+        print("Deleting")
         files = self.retrieve_files_in_collection(collection_name)
+        print("Files Retrieved")
+        relations = self.retrieve_relationships(collection_name)
+        if relations:
+                for r in relations:
+                    print("deleting",r)
+                    self.delete_relation_from_collection(collection_name,r)
         if files and force:
             for f in files:
                 self.delete_file_from_collection(collection_name, f)
             c = self.retrieve_collection(collection_name)
+            print("Deleting")
             self.session.delete(c)
+            print("Deleted")
             self.session.commit()
         elif files:
             raise CollectionError(collection_name, f'not empty (contains {len(files)} files)')
         else:
+            print("looking to delete")
             c = self.retrieve_collection(collection_name)
+            print("retrieve")
             self.session.delete(c)
             self.session.commit()
 
@@ -566,42 +588,89 @@ class CollectionDB(CoreDB):
         print(c)
         return output
 
-    def publishhtmloffline(self, collection, file):
+    def byte_format(self, num, suffix='B'):
+        for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+            if abs(num) < 1024.0:
+                return "%3.1f%s%s" % (num, unit, suffix)
+            num /= 1024.0
+        return "%.1f%s%s" % (num, 'Yi', suffix)
+
+    def publish_as_html(self, collection):
         if collection != "all":
             active_collection = self.retrieve_collection(collection_name=collection)
             # Creating an HTML file
-            Func = open("jsonoutput.html","w")
-            Func.write("<h1>Collections<h1>\n")
+            Func = open(""+collection+".html","w")
+            Func.write("<link rel=\"stylesheet\" href=\"style.css\">")
+            Func.write("<h1><a href=\"file:///home/george/Documents/cfs/cfstore/index.html\">Collections</a><h1>\n")
+            Func.write("<input type=\"text\" placeholder=\"Browse\">")
+            Func.write("<button type=\"Browse\">Go!</button>\n")
+            Func.write("\n<input type=\"text\" placeholder=\"Save as Collection\">")
+            Func.write("<button type=\"Save\">Save!</button>\n")
+            Func.write("\n<button type=\"Browse\">A third button, I suppose</button>")
             count = 1
             json= {}
             
             serialised = active_collection.serialise(target="full_dict")
-
             json[count] = serialised
             count+=1
-
+            
             # Adding input data to the HTML file
-            html = json2html.convert(json = json)
+            html = "<table border=\"1\"><tr><td><table border=\"1\"><tr>"
+            for j in json:
+                if j:
+                    html = html + "<h3><a href=\"file:///home/george/Documents/cfs/cfstore/" + json[j]["name"] + ".html\">" +json[j]["name"]  + "</a><h3></tr>"
+                    html = html + "<tr><th>Description</th><td>"+str(json[j]["description"])+"</td></tr>"
+                    html = html + "<tr><th>Volume</th><td>"+str(self.byte_format(json[j]["volume"]))+"</td></tr>"
+                    html = html + "<tr><th>Filecount</th><td>"+str(json[j]["filecount"])+"</td>"
+                    if json[j]["tags"]:
+                        html = html + "<tr><th>tags</th><td>"+str(json[j]["tags"])+"</td></tr>"
+                    if json[j]["related"]:
+                        html = html + "<tr><th>tags</th><td>"+str(json[j]["related"])+"</td></tr>"
+                    html = html + "<tr><th>Files</th><td><ul>"
+                   # if len(json[j]["holds_files"])<100:
+                    for f in json[j]["holds_files"]:
+                        html = html + ("<li> <div class=\"hover\">"+str(f)+"<div class=\"tooltip\">"+"some metadata"+"</div></div> </li>")
+                   # else:
+                   #     for f in json[j]["holds_files"][0:10000]:
+                   #         html = html + ("<li> <div class=\"hover\">"+str(f)+"<div class=\"tooltip\">"+"some metadata"+"</div></div> </li>")
+
+                    html = html + "</ul></td>"
+                    html = html + "</table></td></tr><tr>"
+                    
+            html = html + "</table></td></tr></table>"
             Func.write(html)
-                            
+
             # Saving the data into the HTML file
             Func.close()   
         else:
             active_collections = self.retrieve_collections()
             # Creating an HTML file
-            Func = open("jsonoutput.html","w")
-            Func.write("<h1>Collections<h1>\n")
+            Func = open("index.html","w")
+            Func.write("<link rel=\"stylesheet\" href=\"style.css\">")
+            Func.write("<h1><a href=\"file:///home/george/Documents/cfs/cfstore/index.html\">Collections</a><h1>\n")
+            Func.write("<input type=\"text\" placeholder=\"Browse\">")
+            Func.write("<button type=\"Browse\">Go!</button>\n")
+            Func.write("\n<button type=\"Browse\">A second button, I suppose</button>")
             count = 1
             json= {}
             for collection in active_collections:
-                
-                serialised = collection.serialise()
+                if collection.holds_files:
+                    serialised = collection.serialise()
+                    
 
-                json[count] = serialised
+                    json[count] = serialised
+                    self.publish_as_html(json[count]["name"])
+                else:
+                    json[count] = {}
                 count+=1
-
+                
             # Adding input data to the HTML file
+            json = {k: v for k, v in json.items() if v}
             html = json2html.convert(json = json)
+            for c in json:
+                html = html.replace("<th>name</th><td>"+json[c]["name"]+"</td>","<h3><a href=\"file:///home/george/Documents/cfs/cfstore/"+json[c]["name"]+".html\">"+json[c]["name"]+"</a><h3>")
+#            html[1]["name"] = "<h1><a href=\"file:///home/george/Documents/cfs/cfstore/"+html[1]["name"]+".html\">Collections</a><h1>"
+
             Func.write(html)
                             
             # Saving the data into the HTML file

@@ -1,0 +1,20 @@
+.hover {
+    position: relative;
+  }
+  
+  .tooltip {
+    /* hide and position tooltip */
+    background-color: black;
+    color: white;
+    opacity: 0;
+    -webkit-transition: opacity 0.5s;
+    -moz-transition: opacity 0.5s;
+    -ms-transition: opacity 0.5s;
+    -o-transition: opacity 0.5s;
+    transition: opacity 0.5s;
+  }
+  
+  .hover:hover .tooltip {
+    /* display tooltip on hover */
+    opacity: 1;
+  }

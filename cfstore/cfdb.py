@@ -556,6 +556,23 @@ def linkto(ctx, col1, link, col2):
 @click.argument('col1')
 @click.argument('link')
 @click.argument('col2')
+def unlinkto(ctx, col1, link, col2):
+    """
+    Add a one way link between two collections.
+    e.g. col1 parent_of col2, would be
+    linkto (col1, 'parent_of, col2)
+    Makes no reciprocal links. This link can only
+    be discovered from col1.
+    Usage: cfsdb linkto collection1 relationshiplink collection2
+    """
+    view_state, db = _set_context(ctx, col1)
+    db.add_relationships(col1, col2, link, None)
+
+@cli.command()
+@click.pass_context
+@click.argument('col1')
+@click.argument('link')
+@click.argument('col2')
 def linkbetween(ctx, col1, link, col2):
     """
     Add a symmetric link between col1 and col2.
@@ -626,23 +643,16 @@ def pr(ctx, collection,format):
 @cli.command()
 @click.pass_context
 @click.argument('collection')
-@click.argument('file')
-def publishhtml(ctx, collection, file):
-    view_state, db = _set_context(ctx, None)
-    active_collection = db.retrieve_collection(collection)
-    myobj = {'somekey': 'somevalue'}
-
-    x = requests.post("http://localhost:5009", data=myobj)
-    print(x.json())
-
-@cli.command()
-@click.pass_context
-@click.argument('collections')
-@click.argument('file')
-def publishhtmloffline(ctx, collections, file):
+def publish_as_html(ctx, collection):
+    """
+    Publishes a collection as an HTML page
+    If collections is set as "all" then an index page will be generated as well individual pages for each collection
+    Usage: cfsdb publish-as-html <collection>
+    Recommended usage: cfsdb publish-as-html all
+    """
     view_state, db = _set_context(ctx, None)
     active_collections = db.retrieve_collections()
-    db.publishhtmloffline(collections,file)
+    db.publish_as_html(collection)
 
 
 @cli.command()
