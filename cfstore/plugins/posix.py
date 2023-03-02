@@ -3,8 +3,10 @@ import cf
 import json
 from cfstore import db
 from cfstore.plugins.ssh import SSHlite
-from cfstore.cfparse_file import cfparse_file
+from cfstore.cfparse_file import manage_types
 import re
+from cfstore.db import Variable
+from deepdiff import DeepDiff
 
 class Posix:
     """
@@ -117,12 +119,63 @@ class Posix:
         variables = json.load(aggfileobject)
         dbfiles=[]
         #for each variable
-        print(variables)
-        for variable in variables:
-            files = variables['files']
-            var = db.Variable(variables)
-            var.in_files(files)
-            dbfiles.append(var)
+        
+        for v in variables:
+            print(v)
+            v = Variable(standard_name=v['standard_name'],long_name=v['long_name'],cfdm_size=v['cfdm_size'],cfdm_domain=['cfdm_domain'])
+            properties = v.properties()
+
+            if ('standard_name' not in properties and 'long_name' not in properties):
+                properties['long_name'] = v.identity
+            name, long_name = v.get_property('standard_name', None), v.get_property('long_name', None)
+
+            domain = v.domain._one_line_description()
+            size = v.size
+
+            var = Variable(standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain)
+            for k,p in properties.items():
+                if k not in ['standard_name','long_name']:
+                    var[k] = manage_types(p) 
+
+            for file in v.get_filenames():
+                for f in db.retrieve_files_which_match(os.path.basename(file)):
+                    var.in_files.append(f)
+
+            #there is a more pythonic way of doing this
+            #if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
+            #I'm just leaving this working before I go mad but #FIXME later
+            #Post-fixme update - comparisons are now checking for exactness. Two things are missing - 
+            #   first should we be checking everything? Probably not, there will be some very similar variables we can group
+            #   second these only included ordered lists which definitely needs to be changed - those are at least one example of similar variables we can group
+            querylist = []
+            duplicate = True
+            if var.long_name:
+                querylist = db.retrieve_variable("long_name",var.long_name)
+            if var.standard_name:
+                querylist = db.retrieve_variable("standard_name",var.standard_name)
+            if var.long_name and var.standard_name:
+                querylist = db.retrieve_variable("long_name",var.long_name)+db.retrieve_variable("standard_name",var.standard_name)
+            if querylist:
+                for queryvar in querylist:
+                    if var.cfdm_domain == queryvar.cfdm_domain and var.cfdm_size == queryvar.cfdm_size:
+                        if DeepDiff(var.get_properties(verbosity=2)[1:],queryvar.get_properties(verbosity=2)[1:]):
+                            duplicate=True
+                        else:
+                            duplicate = False
+                    else:
+                        duplicate = False
+            else:   
+                duplicate = False
+            
+            if not duplicate:
+                db.session.add(var)
+
+            for m, cm in v.cell_methods().items():
+                for a in cm.get_axes(): 
+                    method = cm.get_method()
+                    dbmethod = db.cell_method_get_or_make(axis=a, method=method)
+                    dbmethod.used_in.append(var)
+            db.session.commit()
         print(dbfiles)
 
         #store a variable in collection

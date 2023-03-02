@@ -191,7 +191,7 @@ class SSHlite(SSHcore):
         print("Executing script")
         print('Executing \"python '+scriptname+"\"")
         try:
-            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
+            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+"/"+scriptname)
             print("Script executed")
         except:
             print("Could not successfully execute script")
@@ -202,13 +202,12 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
-        self._sftp.remove(remotepath+scriptname)
 
     def aggregateFiles(self, remotepath):
         print("Aggregating files")
         print('Executing \"python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc\"')
         try:
-            stdin, stdout, stderr = self._client.exec_command('python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc')
+            stdin, stdout, stderr = self._client.exec_command('python i -f CFA4 --overwrite ' + remotepath +'.nca *.nc')
             print("Aggregation file built")
         except:
             print("Could not successfully execute script")
