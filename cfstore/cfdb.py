@@ -635,7 +635,7 @@ def edit(ctx, collection):
     new_description = click.edit(description)
     active_collection.description = new_description
     print("New description saved for",collection)
-    db.save()
+    view_state.save()
 
 @cli.command()
 @click.pass_context

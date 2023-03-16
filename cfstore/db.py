@@ -1,9 +1,31 @@
 from ast import For, In
 from xml.etree.ElementTree import canonicalize
-from django.db import models
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Unicode,
+    Boolean,
+    ForeignKey,
+    Table,
+    UnicodeText,
+    MetaData,
+    Float,
+    BigInteger,
+)
+from sqlalchemy import create_engine
+from sqlalchemy.orm import relationship, Session, backref
+from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy import event, cast, case, null
+from sqlalchemy import literal_column
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm.interfaces import PropComparator
 
 import os, re
 from cfstore.parse_cell_methods import parse_cell_methods
+
+from sqlalchemy.ext.declarative import declarative_base
 
 # sqlalchemy relationships etc:
 # https://docs.sqlalchemy.org/en/13/orm/basic_relationships.html
@@ -17,33 +39,32 @@ from cfstore.parse_cell_methods import parse_cell_methods
 
 Base = declarative_base()
 
-class collection_files_associations(models.models):
-    
-    class Meta:
-        db_table = "collection_files_associations",
-    
-    collections.id = models.ForeignKey("collections.id",primary_key=True)
-    files.id = models.ForeignKey("files.id",primary_key=True)
+collection_files_associations = Table(
+    "collection_files_associations",
+    Base.metadata,
+    Column("collections_id", Integer, ForeignKey("collections.id"), primary_key=True),
+    Column("files_id", Integer, ForeignKey("files.id"), primary_key=True),
+)
 
 collection_tags_associations = Table(
     "collection_tags_associations",
     Base.metadata,
-    models.ForeignKey("collections.id",primary_key=True),
-    models.ForeignKey("tags.id",primary_key=True)
+    Column("collections_id", Integer, ForeignKey("collections.id"), primary_key=True),
+    Column("tags_id", Integer, ForeignKey("tags.id"), primary_key=True),
 )
 
 storage_files_associations = Table(
     "storage_files_associations",
     Base.metadata,
-    models.ForeignKey("collections.id",primary_key=True),
-    models.ForeignKey("tags.id",primary_key=True)
+    Column("locations_id", Integer, ForeignKey("locations.id"), primary_key=True),
+    Column("files_id", Integer, ForeignKey("files.id"), primary_key=True),
 )
 
 relationship_associations = Table(
     "related_objects",
     Base.metadata,
-    models.ForeignKey("relationship_id",primary_key=True),
-    models.ForeignKey("objects_id",primary_key=True)
+    Column("relationship_id", Integer, ForeignKey("relationship.id"), primary_key=True),
+    Column("objects_id", Integer, ForeignKey("collections.id"), primary_key=True),
 )
 
 location_protocol_associations = Table(
@@ -230,7 +251,7 @@ class VariableMetadata(PolymorphicVerticalProperty, Base):
     # could serialise json into value if necessary
     key = Column(Unicode(128), primary_key=True)
     type = Column(Unicode(16))
-    json = models.BooleanField()
+    json = Column(Boolean)
 
     # add information about storage for different types
     # in the info dictionary of Columns. We expect we will do
@@ -251,23 +272,25 @@ class VariableMetadata(PolymorphicVerticalProperty, Base):
             return f"{self.boolean_value}"
 
 
-class CellMethod(models.Model):
+class CellMethod(Base):
     """
     Collection of possible cell methods
     """
 
     __tablename__ = "cell_method"
-    id = models.IntegerField(primary_key=True)
-    axis = models.CharField(max_length=128)
-    method = models.CharField(max_length=128)
+    id = Column(Integer, primary_key=True)
+    axis = Column(String)
+    method = Column(String)
 
-    used_in = models.ManyToManyField(Variable)
- 
+    used_in = relationship(
+        "Variable", secondary=var_cell_associations, back_populates="_cell_methods"
+    )
+
     def __repr__(self):
         return f"{self.axis} : {self.method}"
 
 
-class Variable(models.Model):
+class Variable(ProxiedDictMixin, Base):
     """
     Representation of a Variable in the database.
 
@@ -280,29 +303,32 @@ class Variable(models.Model):
 
     """
 
-    class Meta:
-        __tablename__ = "variable"
+    __tablename__ = "variable"
 
-    id = models.IntegerField(primary_key=True)
-    standard_name = models.CharField(max_length=128)
+    id = Column(Integer, primary_key=True)
+    standard_name = Column(String)
+    long_name = Column(String)
+    cfdm_size = Column(BigInteger)
+    cfdm_domain = Column(String)
 
-    long_name = models.CharField(max_length=1024)
-    cfdm_size = models.BigIntegerField()
-    cfdm_domain = models.CharField(max_length=128)
+    in_files = relationship(
+        "File", secondary=var_files_associations, back_populates="variables"
+    )
 
-    in_files = models.ManyToManyField(File)
+    _cell_methods = relationship(
+        "CellMethod", secondary=var_cell_associations, back_populates="used_in"
+    )
 
-    _cell_methods = models.ManyToManyField(CellMethod)
+    other_attributes = relationship(
+        "VariableMetadata", collection_class=attribute_mapped_collection("key")
+    )
 
-
-    other_attributes = models.ManyToManyField(VariableMetadata)
-
-"""    _proxied = association_proxy(
+    _proxied = association_proxy(
         "other_attributes",
         "value",
         creator=lambda key, value: VariableMetadata(key=key, value=value),
     )
-"""
+
     def __init__(self, standard_name=None, long_name=None, cfdm_size=0, cfdm_domain=""):
         """Ensure either longname or cf_name is provided"""
         if standard_name is None and long_name is None:
@@ -384,39 +410,42 @@ class CollectionProperty(Base):
     """
 
     # see https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html for heritage
-    class Meta:
-        db_table = "collection_properties"
-    
+    __tablename__ = "collection_properties"
+    collection_id = Column(ForeignKey("collections.id"), primary_key=True)
 
-    collection_id = models.ForeignKey("collections.id",primary_key=True)
     # 128 characters would seem to allow plenty of room for "interesting" keys
     # could serialise json into value if necessary
-    key = models.CharField(max_length=128,primary_key=True)
-    value = models.CharField(max_length=128)
+    key = Column(Unicode(128), primary_key=True)
+    value = Column(UnicodeText)
 
 
 class Collection(ProxiedDictMixin, Base):
     """
     The key concept of cftape is that files are organised into one or more collections.
     """
-    class Meta:
-        db_table = "collections"
 
-    id = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=128, unique=True)
-    description = models.CharField(max_length=128)
-    volume = models.IntegerField()
+    __tablename__ = "collections"
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode, unique=True)
+    description = Column(UnicodeText)
+    volume = Column(Integer)
 
     # Use the triple mechanism to hold a relationship (the method which creates
     # relationships is responsible for sorting out the backward relationships, if any.)
+    related = association_proxy(
+        "collection_relationships",
+        "objects",
+        creator=lambda p, o: Relationship(predicate=p, objects=o),
+    )
 
-    holds_files = models.ManyToManyField(File)
-
+    holds_files = relationship(
+        "File", secondary=collection_files_associations, back_populates="in_collections"
+    )
     # association_proxy('holds_files', 'files')
 
     # collections which correspond to #ed batches, and which cannot be
     # deleted unless there are no references to the files within it elsewhere
-    batch = models.BooleanField() models.BooleanField()
+    batch = Column(Boolean)
 
     tags = relationship(
         "Tag",
@@ -488,7 +517,7 @@ class Collection(ProxiedDictMixin, Base):
 
 class Relationship(Base):
     __tablename__ = "relationship"
-    id = models.IntegerField(primary_key=True)
+    id = Column(Integer, primary_key=True)
     # one relationship
     predicate = Column(String(50))
     subject_id = Column(Integer, ForeignKey("collections.id"))
@@ -513,7 +542,7 @@ class Tag(Base):
     """
 
     __tablename__ = "tags"
-    id = models.IntegerField(primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(Unicode(64), nullable=False, unique=True)
 
     in_collections = relationship(
@@ -532,7 +561,7 @@ class StorageProtocol(Base):
     # Resisted the temptation to use an enum, as otherwise new enums (storage interfaces)
     # would require client-side database upgrades and that sounds like a recipe for trouble.
     __tablename__ = "protocol"
-    id = models.IntegerField(primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
 
     used_by = relationship(
@@ -550,7 +579,7 @@ class StorageLocation(Base):
     """
 
     __tablename__ = "locations"
-    id = models.IntegerField(primary_key=True)
+    id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     volume = Column(Integer, default=0)
 
@@ -576,21 +605,20 @@ class StorageLocation(Base):
         return f"Location <{self.name}> has  {sizeof_fmt(self.volume)} in {len(self.holds_files)} files"
 
 
-class File(models.Model):
+class File(Base):
     """
     Representation of a file
     """
 
     __tablename__ = "files"
-    id = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=128)
-    
-    path = models.CharField(max_length=128)
-    checksum = models.CharField(max_length=128)
-    checksum_method = models.CharField(max_length=128)
-    size = models.IntegerField()
-    initial_collection = models.ForeignKey("collections.id")
-    format = models.CharField(max_length=128)
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    path = Column(String)
+    checksum = Column(String)
+    checksum_method = Column(String)
+    size = Column(Integer)
+    initial_collection = Column(Integer, ForeignKey("collections.id"))
+    format = Column(String)
 
     replicas = relationship(
         "StorageLocation",
