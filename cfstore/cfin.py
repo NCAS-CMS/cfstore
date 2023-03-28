@@ -124,7 +124,6 @@ def add(ctx, description, regexselect, subcollections, arg1, argm):
         elif target == 'local' or target == 'p':
             
             location = 'local'
-            print(location)
             collection = arg1
             path = argm[0]
             x = Posix(state.db, collection)

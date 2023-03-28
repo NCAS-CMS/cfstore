@@ -1,18 +1,19 @@
 import os, sys
+import django
+from django.db import IntegrityError
+django.setup()
+
 from cfstore.db import (
-    StorageLocation,
     Collection,
     CoreDB,
     File,
     Tag,
-    StorageLocation,
-    StorageProtocol,
-    CellMethod,
+    Location,
+    Protocol,
+    Cell_Method,
     Variable,
 )
 
-from sqlalchemy import or_, and_, func
-from sqlalchemy.orm.exc import NoResultFound
 from cfstore.cfparse_file import cfparse_file
 from tqdm import tqdm
 import hashlib
@@ -31,8 +32,8 @@ class CollectionDB(CoreDB):
         """
         try:
             cm = self.cell_method_retrieve(axis=axis, method=method)
-        except NoResultFound:
-            cm = CellMethod(axis=axis, method=method)
+        except Cell_Method.DoesNotExist:
+            cm = Cell_Method(axis=axis, method=method)
             self.session.add(cm)
             self.session.commit()
             return cm
@@ -45,18 +46,15 @@ class CollectionDB(CoreDB):
         """
         try:
             self.cell_method_retrieve(axis=axis, method=method)
-        except NoResultFound:
+        except Cell_Method.DoesNotExist:
             return self.cell_method_add(axis=axis, method=method)
 
     def cell_method_retrieve(self, axis, method):
         """
         Retrieve a specific cell method
         """
-        cm = (
-            self.session.query(CellMethod)
-            .filter(and_(CellMethod.axis == axis, CellMethod.method == method))
-            .one()
-        )
+        cm = Cell_Method.get(axis=axis,method=method)
+        
         return cm
 
     def add_protocol(self, protocol_name, locations=[]):
@@ -67,15 +65,15 @@ class CollectionDB(CoreDB):
 
         try:
             pdb = (
-                self.session.query(StorageProtocol).filter_by(name=protocol_name).one()
+                self.session.query(Protocol).filter_by(name=protocol_name).one()
             )
         except NoResultFound:
-            pdb = StorageProtocol(name=protocol_name)
+            pdb = Protocol(name=protocol_name)
             if locations:
                 existing_locations = [e.name for e in self.retrieve_locations()]
                 for p in locations:
                     if p not in existing_locations:
-                        loc = StorageLocation(name=p)
+                        loc = Location(name=p)
                         self.session.add(loc)
                     else:
                         loc = self.retrieve_location(p)
@@ -127,24 +125,22 @@ class CollectionDB(CoreDB):
         """
         Add a collection and any properties, and return instance
         """
-        c = Collection(name=collection_name, volume=0, description=description)
+        if not description:
+            description="No Description"
+       # c = Collection.objects.get(name=collection_name)[0]
+        try:
+            c = Collection.objects.create(name=collection_name, volume=0, description=description, batch=1)
+        except IntegrityError:
+            print('ERROR: Collection with that name already exists ')   
+            sys.exit()
 
+        
         for k in kw:
             c[k] = kw[k]
             print(k.size)
             c.volume += k.size
-        self.session.add(c)
-
-        try:
-            self.session.commit()
-        except Exception as e:
-            # Couldn't work out how to trap this properly ... so
-            if "UNIQUE constraint" in str(e):
-                raise ValueError(
-                    f"Cannot add duplicate collection (name={collection_name})"
-                )
-            else:
-                raise
+        #FIXME check for duplicates
+        c.save()
         return c
 
     def create_location(self, location, protocols=[], overwrite=False):
@@ -153,24 +149,21 @@ class CollectionDB(CoreDB):
         "location" means. Other layers of software care about that.
         However, it may have one or more protocols associated with it.
         """
-        try:
-            loc = self.session.query(StorageLocation).filter_by(name=location).one()
-        except NoResultFound:
-            loc = StorageLocation(name=location)
-
-            if protocols:
-                existing_protocols = self.retrieve_protocols()
-                for p in protocols:
-                    if p not in existing_protocols:
-                        pdb = StorageProtocol(name=p)
-                        self.session.add(pdb)
-                    loc.protocols.append(pdb)
-            self.session.add(loc)
-            self.session.commit()
+        if protocols:
+            existing_protocols = self.retrieve_protocols()
+            for p in protocols:
+                if p not in existing_protocols:
+                    pdb = Protocol.objects.create(name=p)
+                loc.protocols.append(pdb)
         else:
-            if not overwrite:
-                raise ValueError(f"{location} already exists")
+            protocols = [Protocol.objects.get_or_create(name="none")[0]]
+        loc = Location.objects.create(name=location,volume=0)
+        for p in protocols:
+            loc.protocols.add(p)
+        loc.save()
 
+        #FIXME add protocols to location
+        
     def create_tag(self, tagname):
         """
         Create a tag and insert into a database
@@ -344,8 +337,8 @@ class CollectionDB(CoreDB):
         Retrieve a particular collection via it's name <collection_name>.
         """
         try:
-            c = self.session.query(Collection).filter_by(name=collection_name).one()
-        except NoResultFound:
+            c = Collection.objects.get(name=collection_name)
+        except Collection.DoesNotExist:
             raise ValueError(f"No such collection {collection_name}")
         assert c.name == collection_name
         return c
@@ -407,12 +400,10 @@ class CollectionDB(CoreDB):
         elif facet:
             key, value = facet
             return (
-                self.session.query(Collection)
-                .filter(Collection.with_property(key, value))
-                .all()
+                Collection.objects.filter(properties_key=key,properties_value=value)
             )
         else:
-            return self.session.query(Collection).all()
+            return Collection.objects.all()
 
     def retrieve_file(self, path, name, size=None, checksum=None):
         """
@@ -427,27 +418,11 @@ class CollectionDB(CoreDB):
         if size and checksum:
             raise ValueError("Can only retrieve files by size OR checksum, not both!")
         if size:
-            x = (
-                self.session.query(File)
-                .filter(and_(File.name == name, File.path == path, File.size == size))
-                .all()
-            )
+            x = File.objects.filter(name=name,path=path,size=size).all()
         elif checksum:
-            x = (
-                self.session.query(File)
-                .filter(
-                    and_(
-                        File.name == name, File.path == path, File.checksum == checksum
-                    )
-                )
-                .all()
-            )
+            x = File.objects.filter(name=name,path=path,checksum=checksum).all()
         else:
-            x = (
-                self.session.query(File)
-                .filter(and_(File.name == name, File.path == path))
-                .all()
-            )
+            x = File.objects.filter(name=name,path=path).all()
         if x:
             assert len(x) == 1
             return x[0]
@@ -459,7 +434,7 @@ class CollectionDB(CoreDB):
         Retrieve information about a specific location
         """
         try:
-            x = self.session.query(StorageLocation).filter_by(name=location_name).one()
+            x = self.session.query(Location).filter_by(name=location_name).one()
         except NoResultFound:
             raise ValueError(f"No such collection {location_name}")
         assert x.name == location_name
@@ -470,14 +445,14 @@ class CollectionDB(CoreDB):
         Retrieve locations.
         Currently retrieves all known locations.
         """
-        locs = self.session.query(StorageLocation).all()
+        locs = Location.objects.all()
         return locs
 
     def retrieve_protocols(self):
         """
         Retrieve protocols.
         """
-        p = self.session.query(StorageProtocol).all()
+        p = Protocol.objects.all()
         return p
 
     def retrieve_related(self, collection, relationship):
@@ -518,7 +493,7 @@ class CollectionDB(CoreDB):
         """
         # do all the query combinations separately, likely to be more efficient ...
         if match is None and replicants is False:
-            return self.retrieve_collection(collection).holds_files
+            return self.retrieve_collection(collection).files.all()
         elif match and replicants is False:
             m = f"%{match}%"
             # this gives the collection with files that match this ... not what we wanted
@@ -541,7 +516,7 @@ class CollectionDB(CoreDB):
                 .filter(File.in_collections.any(Collection.name == collection))
                 .join(File.replicas)
                 .group_by(File)
-                .having(func.count(StorageLocation.id) > 1)
+                .having(func.count(Location.id) > 1)
                 .all()
             )
             return files
@@ -557,7 +532,7 @@ class CollectionDB(CoreDB):
                 )
                 .join(File.replicas)
                 .group_by(File)
-                .having(func.count(StorageLocation.id) > 1)
+                .having(func.count(Location.id) > 1)
                 .all()
             )
             # TODO add checksum here
@@ -875,7 +850,7 @@ class CollectionDB(CoreDB):
         """
         try:
             c = self.session.query(Collection).filter_by(name=collection).one()
-            loc = self.session.query(StorageLocation).filter_by(name=location).one()
+            loc = self.session.query(Location).filter_by(name=location).one()
         except NoResultFound:
             raise ValueError(
                 "Either location or collection not yet available in database"
@@ -936,16 +911,21 @@ class CollectionDB(CoreDB):
             {name:..., path: ..., checksum: ..., size: ..., format: ...}
 
         """
+        print("DONE")
 
         try:
-            c = self.session.query(Collection).filter_by(name=collection).one()
-            loc = self.session.query(StorageLocation).filter_by(name=location).one()
-        except NoResultFound:
+            c = Collection.objects.get(name=collection)
+            loc = Location.objects.get(name=location)
+        except Collection.DoesNotExist:
             raise ValueError(
-                "Either location or collection not yet available in database"
+                "Collection not yet available in database"
             )
-
+        except Location.DoesNotExist:
+            raise ValueError(
+                "Location not yet available in database"
+            )
         for f in tqdm(files):
+            print(f)
             if "checksum" not in f:
                 f["checksum"] = "None"
             name, path, size, checksum = f["name"], f["path"], f["size"], f["checksum"]
@@ -968,14 +948,15 @@ class CollectionDB(CoreDB):
                         f"Cannot upload file {os.path.join(path, name)} as it already exists"
                     )
                 else:
-                    check.replicas.append(loc)
-                    c.holds_files.append(check)
+                    #check.replicas.add(loc)
+                    c.files.add(check)
             else:
                 try:
                     fmt = f["format"]
                 except KeyError:
                     fmt = os.path.splitext(name)[1]
-                f = File(
+                print("something")
+                f = File.objects.create(
                     name=name,
                     path=path,
                     checksum=checksum,
@@ -983,12 +964,14 @@ class CollectionDB(CoreDB):
                     format=fmt,
                     initial_collection=c.id,
                 )
-                f.replicas.append(loc)
-                c.holds_files.append(f)
-                loc.holds_files.append(f)
+                #f.replicas.add(loc)
+                c.files.add(f)
+                #loc.holds_files.add(f)
                 c.volume += f.size
                 loc.volume += f.size
-            self.session.commit()
+                c.save()
+                loc.save()
+                f.save()
 
     def remove_file_from_collection(
         self, collection, file_path, file_name, checksum=None

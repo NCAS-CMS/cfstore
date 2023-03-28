@@ -17,6 +17,7 @@ class CFSconfig:
             filename = os.getenv('CFS_CONFIG_FILE', None)
             if not filename:
                 cfdir = Path.home()/'.cfstore'
+                print(cfdir)
                 if not cfdir.exists():
                     os.mkdir(cfdir)
                 self.filepath = cfdir/'cfstore.ini'
@@ -111,7 +112,7 @@ class CFSconfig:
 # do not edit anything except the _DB section
 
 [_DB]
-db = cfstore.db
+db = cfstoresqlalchemy.db
 db_protocol = sqlite:///
 last_collection =  
 last_location = 

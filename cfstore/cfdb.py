@@ -204,6 +204,12 @@ def browsevariable(ctx,key,value,verbosity):
             k,v=user_input.split(",")
             variables,query = db.retrieve_variable_query(k,v,query)
 
+def sizeof_fmt(num, suffix="B"):
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, "Yi", suffix)
 
 @cli.command()
 @click.pass_context
@@ -218,7 +224,6 @@ def ls(ctx, collection, output):
     """
     view_state, db = _set_context(ctx, collection)
     output= output.lower()
-    print(output)
     
     if view_state.collection:
         if output=="files":
@@ -270,7 +275,7 @@ def ls(ctx, collection, output):
         else:
             try:
                 for r in return_list:
-                    print(r)
+                    print(r.name, sizeof_fmt(r.size))
             except:
                 if output not in ["files","tags","facets","relationships","collections","locations"]:
                     print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
@@ -283,7 +288,7 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_locations()
         try:
             for r in return_list:
-                print(r)
+                print(r.name)
         except:
             if output not in ["files","tags","facets","relationships","collections","locations"]:
                 print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
