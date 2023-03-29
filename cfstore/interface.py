@@ -64,10 +64,8 @@ class CollectionDB(CoreDB):
         """
 
         try:
-            pdb = (
-                self.session.query(Protocol).filter_by(name=protocol_name).one()
-            )
-        except NoResultFound:
+            pdb = Protocol.objects.get(name=protocol_name)
+        except Protocol.DoesNotExist:
             pdb = Protocol(name=protocol_name)
             if locations:
                 existing_locations = [e.name for e in self.retrieve_locations()]
@@ -207,129 +205,74 @@ class CollectionDB(CoreDB):
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [
-                            self.session.query(File)
-                            .filter(
-                                and_(
-                                    File.name == f.name,
-                                    File.path == strip(f.path, strip_base),
-                                    File.size == f.size,
-                                )
-                            )
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        path=f.path,
+                                        size=f.size) for f in candidates]
                     else:
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.name == f.name, File.size == f.size))
-                            .all()
-                            for f in candidates
+                        possibles = [File.objects.filter(
+                            name=f.name,
+                            size=f.size,) for f in candidates
                         ]
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [
-                            self.session.query(File)
-                            .filter(
-                                and_(
-                                    File.name == f.name,
-                                    File.path == f.path,
-                                    File.size == f.size,
-                                )
-                            )
-                            .all()
-                            for f in candidates
-                        ]
-
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        path=f.path,
+                                        size=f.size) for f in candidates]                                    
                     else:
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.name == f.name, File.size == f.size))
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        size=f.size) for f in candidates]
             if check.lower() == "name":
                 if strip_base:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [
-                            self.session.query(File)
-                            .filter(
-                                and_(
-                                    File.name == f.name,
-                                    File.path == strip(f.path, strip_base),
-                                )
-                            )
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        path=strip(f.path, strip_base),
+                                        size=f.size) for f in candidates]
                     else:
-                        possibles = [
-                            self.session.query(File).filter(
-                                (File.name == strip(f.name, strip_base))
-                            )
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=strip(f.name,strip_base)) for f in candidates]
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [
-                            self.session.query(File)
-                            .filter(
-                                and_(
-                                    File.name == f.name,
-                                    File.path == f.path,
-                                )
-                            )
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        path=(f.path)) for f in candidates]
                     else:
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.name == f.name))
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name) for f in candidates]
+           
             if check.lower() == "size":
                 if strip_base:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.size == f.size))
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        size=f.size) for f in candidates]
+                    
                     else:
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.size == f.size))
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        size=f.size) for f in candidates]
+                
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.size == f.size, File.path == f.path))
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        name=f.name,
+                                        path=f.path) for f in candidates]
+                        
                     else:
-                        possibles = [
-                            self.session.query(File)
-                            .filter(and_(File.size == f.size))
-                            .all()
-                            for f in candidates
-                        ]
+                        possibles = [File.objects.filter(
+                                        size=f.size) for f in candidates]
         return candidates, possibles
 
     def retrieve_collection(self, collection_name):
@@ -370,31 +313,16 @@ class CollectionDB(CoreDB):
             )
 
         if name_contains:
-            return (
-                self.session.query(Collection)
-                .filter(Collection.name.like(f"%{name_contains}%"))
-                .all()
-            )
+            return Collection.objects.filter(name_contains(f'%{name_contains}%'))
         elif description_contains:
-            return (
-                self.session.query(Collection)
-                .filter(Collection.description.like(f"%{description_contains}%"))
-                .all()
-            )
+            return Collection.objects.filter(name_contains(f'%{description_contains}%'))
         elif contains:
-            contains = f"%{contains}%"
-            return (
-                self.session.query(Collection)
-                .filter(
-                    or_(
-                        Collection.description.like(contains),
-                        Collection.name.like(contains),
-                    )
-                )
-                .all()
-            )
+            contains = f'%{contains}%'
+            #FIXME Should be an OR
+            return Collection.objects.filter(name_contains(contains),description_contains(contains))
         elif tagname:
-            tag = self.session.query(Tag).filter_by(name=tagname).one()
+            tag = Tag.objects.get(name=tagname)
+#            tag = self.session.query(Tag).filter_by(name=tagname).one()
             return tag.in_collections
             # return self.session.query(Collection).join(Collection.tags).filter_by(name=tagname).all()
         elif facet:
@@ -403,6 +331,7 @@ class CollectionDB(CoreDB):
                 Collection.objects.filter(properties_key=key,properties_value=value)
             )
         else:
+            return Collection.objects.all()
             return Collection.objects.all()
 
     def retrieve_file(self, path, name, size=None, checksum=None):
@@ -434,9 +363,9 @@ class CollectionDB(CoreDB):
         Retrieve information about a specific location
         """
         try:
-            x = self.session.query(Location).filter_by(name=location_name).one()
-        except NoResultFound:
-            raise ValueError(f"No such collection {location_name}")
+            x = StorageLocation.objects.get(name=location_name)
+        except StorageLocation.DoesNotExist:
+            raise ValueError(f'No such collection {location_name}')
         assert x.name == location_name
         return x
 
@@ -460,7 +389,7 @@ class CollectionDB(CoreDB):
         Find all related collections to <collection> which have
         <relationship> as the predicate.
         """
-        c = self.session.query(Collection).filter_by(name=collection).one()
+        c = Collection.objects.get(name=collection)
         try:
             r = c.related[relationship]
             return r
@@ -472,19 +401,17 @@ class CollectionDB(CoreDB):
         Find all related collections to <collection> which have
         <relationship> as the predicate.
         """
-        c = self.session.query(Collection).filter_by(name=collection).one()
+        c = Collection.objects.get(name=collection)
         return c.related
 
     def retrieve_files_which_match(self, match):
         """
         Retrieve files where <match> appears in either the path or the name.
         """
-        m = f"%{match}%"
-        return (
-            self.session.query(File)
-            .filter(or_(File.name.like(m), File.path.like(m)))
-            .all()
-        )
+        m = f'%{match}%'
+        #FIXME make this an OR
+        return File.objects.filter(name_contains=m,path_contains=m)
+#        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
 
     def retrieve_files_in_collection(self, collection, match=None, replicants=False):
         """
@@ -502,40 +429,27 @@ class CollectionDB(CoreDB):
             # However, given we know that the number of files is much greater than the number
             # of collections, it's likely that searching the files that match a collection first
             # could be faster. We can investigate that another day ...
-            files = (
-                self.session.query(File)
-                .filter(or_(File.name.like(m), File.path.like(m)))
-                .join(File.in_collections)
-                .filter_by(name=collection)
-                .all()
-            )
+            #FIXME make this an OR
+            files = File.objects.filter(name_contains=m,path_contains=m).filter(name=collection)
+#            files = self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).join(
+             #   File.in_collections).filter_by(name=collection).all()
             return files
         elif replicants and match is None:
-            files = (
-                self.session.query(File)
-                .filter(File.in_collections.any(Collection.name == collection))
-                .join(File.replicas)
-                .group_by(File)
-                .having(func.count(Location.id) > 1)
-                .all()
-            )
+            #FIXME this might take a second to DJANGIFY
+            files = self.session.query(File).filter(File.in_collections.any(
+                                Collection.name == collection)).join(
+                                File.replicas).group_by(File).having(
+                                func.count(StorageLocation.id) > 1).all()
             return files
         else:
-            m = f"%{match}%"
-            files = (
-                self.session.query(File)
-                .filter(
-                    and_(
-                        File.in_collections.any(Collection.name == collection),
-                        or_(File.name.like(m), File.path.like(m)),
-                    )
-                )
-                .join(File.replicas)
-                .group_by(File)
-                .having(func.count(Location.id) > 1)
-                .all()
-            )
-            # TODO add checksum here
+            m = f'%{match}%'
+            #FIXME this one too
+            files = self.session.query(File).filter(and_(
+                File.in_collections.any(Collection.name == collection),
+                or_(File.name.like(m), File.path.like(m)))).join(
+                File.replicas).group_by(File).having(
+                func.count(StorageLocation.id) > 1).all()
+            #TODO add checksum here
             return files
 
     def delete_file_from_collection(self, collection, file):
@@ -546,20 +460,16 @@ class CollectionDB(CoreDB):
         path, filename = os.path.split(str(file))
         f = self.retrieve_file(path, filename)
 
-        c = self.session.query(Collection).filter_by(name=collection).one()
-        if not (str(file) in map(str, c.holds_files)):
-            raise ValueError(
-                f"Attempt to delete file {file} from {c} - but it's already not there"
-            )
-        c.holds_files.remove(f)
+        c = Collection.objects.get(name=collection)
+        if not (str(file) in map(str,c.holds_files)):
+            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
+        c.holds_files.remove(f)      
         c.volume -= f.size
         if not any([f in self.collections]):
             try:
-                uc = self.session.query(Collection).filter_by(name="unlisted").one()
-            except NoResultFound:
-                uc = Collection(
-                    name="unlisted", volume=0, description="Holds unlisted files"
-                )
+                uc = Collection.objects.get(name="_unlisted")
+            except Collection.DoesNotExist:
+                uc = Collection(name="_unlisted", volume=0, description="Holds unlisted files")
                 self.session.add(uc)
             uc.holds_files.append(f)
             uc.volume += f.size
@@ -583,11 +493,11 @@ class CollectionDB(CoreDB):
         if len(queries) == 0:
             raise ValueError("No query received for retrieve variable")
         elif len(queries) == 1:
-            results = self.session.query(Variable).filter(queries[0]).all()
+            results = Variable.objects.filter(queries[0])
         else:
-            results = self.session.query(Variable).filter(and_(*queries)).all()
+            results = Variable.objects.filter(*queries)
         if key == "all":
-            results = self.session.query(Variable).all()
+            results = Variable.objects.all()
         return results
 
     def retrieve_variable_query(self, key, value, query):
@@ -609,9 +519,10 @@ class CollectionDB(CoreDB):
         if len(queries) == 0:
             raise ValueError("No query received for retrieve variable")
         elif len(queries) == 1:
-            results = self.session.query(Variable).filter(queries[0]).all()
+            results = Variable.objects.all()
         else:
-            results = self.session.query(Variable).filter(and_(*queries)).all()
+            #FIXME make sure queries format is DJANGOfyed
+            results = Variable.objects.filter(*queries).all()
         return results, queries
 
     def show_collections_with_variable(self, variable):
@@ -655,7 +566,7 @@ class CollectionDB(CoreDB):
         """
         Delete a tag, from wherever it is used
         """
-        t = self.session.query(Tag).filter_by(name=tagname)
+        t = Tag.objects.filter(name=tagname)
         self.session.delete(t)
         self.session.commit()
 
@@ -663,23 +574,24 @@ class CollectionDB(CoreDB):
         """
         Add file to a collection
         """
-        c = self.session.query(Collection).filter_by(name=collection).one()
+        c = Collection.objects.get(name=collection)
         if file in c.holds_files:
             raise ValueError(
                 f"Attempt to add file {file} to {c} - but it's already there"
             )
         c.holds_files.append(file)
-        c.volume += file.size
-        self.session.commit()
+        c.volume += file.size        
+        c.save()
 
     def collection_info(self, name):
         """
         Return information about a collection
         """
         try:
-            c = self.session.query(Collection).filter_by(name=name).first()
-        except NoResultFound:
-            raise ValueError(f"No such collection {name}")
+#FIXME ask bryan            c = self.session.query(Collection).filter_by(name=name).first()
+            c = Collection.objects.get(name=name)
+        except Collection.DoesNotExist:
+            raise ValueError(f'No such collection {name}')
         return c.md
 
     def collection_json(self, name):
@@ -815,7 +727,7 @@ class CollectionDB(CoreDB):
         """
         Associate a tag with a collection
         """
-        tag = self.session.query(Tag).filter_by(name=tagname).first()
+        tag = Tag.objects.get(name=tagname)
         if not tag:
             tag = Tag(name=tagname)
             self.session.add(tag)
@@ -849,12 +761,13 @@ class CollectionDB(CoreDB):
         a link to the new file as a replica. If <update> is False, we raise an error.
         """
         try:
-            c = self.session.query(Collection).filter_by(name=collection).one()
-            loc = self.session.query(Location).filter_by(name=location).one()
-        except NoResultFound:
-            raise ValueError(
-                "Either location or collection not yet available in database"
-            )
+            c = Collection.objects.get(name=collection)
+            loc = StorageLocation.obects.get(name=location)
+        except Collection.DoesNotExist:
+            raise ValueError('Collection not yet available in database')
+        except StorageLocation.DoesNotExist:
+            raise ValueError('Location not yet available in database')
+
 
         if "checksum" not in f:
             f["checksum"] = "None"
@@ -911,8 +824,7 @@ class CollectionDB(CoreDB):
             {name:..., path: ..., checksum: ..., size: ..., format: ...}
 
         """
-        print("DONE")
-
+        
         try:
             c = Collection.objects.get(name=collection)
             loc = Location.objects.get(name=location)
