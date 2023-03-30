@@ -188,7 +188,8 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     Other locations for scripts can be used by setting --scriptlocation=afolder 
     """
     state = CFSconfig()
-
+    print(arg1)
+    print(argm)
     location = arg1
     remotepath, collection = argm
     if not aggscriptname.endswith(".py"):
@@ -219,7 +220,7 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     #This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
 
     #Update database with JSON
-    x.aggregation_files_to_collection("/home/george/Documents/cfs/cfstore/cfstore/scripts/newfilebmetadata.json","newcol2")
+    x.aggregation_files_to_collection("/home/george/Documents/cfs/cfstore/cfstore/scripts/newfilebmetadata.json",collection)
     state.save()
 
 @cli.command()

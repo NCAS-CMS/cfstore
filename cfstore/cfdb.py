@@ -266,10 +266,19 @@ def ls(ctx, collection, output):
         if output=="variables" or output=="var":
             try:
                 for r in return_list:
-                    print(r.get_properties(1))
+                    print("Variable:")
+                    if r.standard_name:
+                        print(r.standard_name)
+                    elif r.long_name:
+                        print(r.long_name)
+                    else:
+                        print("id "+str(r.id)+"(which has no name for some reason)")
+                    print("         is in")
+                    for f in r.in_collection.all():
+                        print("         "+f.name)
             except:
-                if output not in ["files","tags","facets","relationships","collections","locations"]:
-                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
                 else:
                     print("Return list cannot be printed")
         else:
@@ -277,8 +286,8 @@ def ls(ctx, collection, output):
                 for r in return_list:
                     print(r.name, sizeof_fmt(r.size))
             except:
-                if output not in ["files","tags","facets","relationships","collections","locations"]:
-                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
                 else:
                     print("Return list cannot be printed")
     else:
@@ -290,8 +299,8 @@ def ls(ctx, collection, output):
             for r in return_list:
                 print(r.name)
         except:
-            if output not in ["files","tags","facets","relationships","collections","locations"]:
-                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+            if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections,variables or locations instead")
             else:
                 print("Return list failed to print")
     view_state.save()

@@ -71,6 +71,7 @@ class CollectionDB(CoreDB):
                 existing_locations = [e.name for e in self.retrieve_locations()]
                 for p in locations:
                     if p not in existing_locations:
+                        print(existing_locations)
                         loc = Location(name=p)
                         self.session.add(loc)
                     else:
@@ -363,8 +364,8 @@ class CollectionDB(CoreDB):
         Retrieve information about a specific location
         """
         try:
-            x = StorageLocation.objects.get(name=location_name)
-        except StorageLocation.DoesNotExist:
+            x = Location.objects.get(name=location_name)
+        except Location.DoesNotExist:
             raise ValueError(f'No such collection {location_name}')
         assert x.name == location_name
         return x
@@ -439,7 +440,7 @@ class CollectionDB(CoreDB):
             files = self.session.query(File).filter(File.in_collections.any(
                                 Collection.name == collection)).join(
                                 File.replicas).group_by(File).having(
-                                func.count(StorageLocation.id) > 1).all()
+                                func.count(Location.id) > 1).all()
             return files
         else:
             m = f'%{match}%'
@@ -448,7 +449,7 @@ class CollectionDB(CoreDB):
                 File.in_collections.any(Collection.name == collection),
                 or_(File.name.like(m), File.path.like(m)))).join(
                 File.replicas).group_by(File).having(
-                func.count(StorageLocation.id) > 1).all()
+                func.count(Location.id) > 1).all()
             #TODO add checksum here
             return files
 
@@ -487,17 +488,19 @@ class CollectionDB(CoreDB):
         ]:
             queries.append(getattr(Variable, key) == value)
         else:
-            queries.append(Variable.with_other_attributes(key, value))
+            pass
+            #queries.append(Variable.with_other_attributes(key, value))
         if key == "in_files":
             queries.append([value == k for k in Variable.in_files])
-        if len(queries) == 0:
+        if key == "all":
+            results = Variable.objects.all()
+        elif len(queries) == 0:
             raise ValueError("No query received for retrieve variable")
         elif len(queries) == 1:
             results = Variable.objects.filter(queries[0])
         else:
             results = Variable.objects.filter(*queries)
-        if key == "all":
-            results = Variable.objects.all()
+
         return results
 
     def retrieve_variable_query(self, key, value, query):
@@ -541,6 +544,10 @@ class CollectionDB(CoreDB):
                 )
         else:
             print("This variable doesn't actually appear in any collections.")
+
+    def retrieve_variables_in_collection(self, collection_name):
+        collection = Collection.objects.get(name=collection_name)
+        return Variable.objects.filter(in_collection=collection)
 
     def delete_collection(self, collection_name, force):
         """
@@ -762,10 +769,10 @@ class CollectionDB(CoreDB):
         """
         try:
             c = Collection.objects.get(name=collection)
-            loc = StorageLocation.obects.get(name=location)
+            loc = Location.objects.get(name=location)
         except Collection.DoesNotExist:
             raise ValueError('Collection not yet available in database')
-        except StorageLocation.DoesNotExist:
+        except Location.DoesNotExist:
             raise ValueError('Location not yet available in database')
 
 
