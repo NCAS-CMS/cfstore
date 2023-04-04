@@ -21,6 +21,7 @@ urlpatterns = [
     path('', views.ls, name='index'),
     path('viewcollections',views.ls, name='allcollections'),
     path('viewcollections/<str:page>',views.ls),
+    path('viewcollections/variables/',views.lsvar, name="index"),
     path('viewcollections/variables/<str:col>',views.lsvar)
 
     ]
