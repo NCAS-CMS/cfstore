@@ -19,9 +19,10 @@ from . import views
 
 urlpatterns = [
     path('', views.ls, name='index'),
-    path('viewcollections',views.ls, name='allcollections'),
-    path('viewcollections/<str:page>',views.ls),
-    path('viewcollections/variables/',views.lsvar, name="index"),
-    path('viewcollections/variables/<str:col>',views.lsvar)
+    path('viewcollections/',views.ls, name='allcollections'),
+    path('viewcollections/search/',views.lsbrowse, name='allcollections'),
+    path('viewcollections/<str:page>/',views.lscol),
+    path('viewcollections/variables/',views.lsvar, name="variableindex"),
+    path('viewcollections/variables/<str:var>',views.lsvar)
 
     ]
