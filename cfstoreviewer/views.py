@@ -55,6 +55,7 @@ def lsbrowse(request):
                 collections = collections.filter(files__in=var.in_files.all())
             if not collections:
                 return render(request, "no_result_view.html")
+    collections = collections.distinct()
     return render(request, "index_view.html",{"collections":collections,"form":form})
 
 
