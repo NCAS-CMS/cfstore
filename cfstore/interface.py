@@ -71,7 +71,6 @@ class CollectionDB(CoreDB):
                 existing_locations = [e.name for e in self.retrieve_locations()]
                 for p in locations:
                     if p not in existing_locations:
-                        print(existing_locations)
                         loc = Location(name=p)
                         self.session.add(loc)
                     else:
@@ -90,13 +89,8 @@ class CollectionDB(CoreDB):
         """
         c1 = self.retrieve_collection(collection_one)
         c2 = self.retrieve_collection(collection_two)
-        print("1")
         c1.add_relationship(relationship, c2)
-        print("2")
-
         c2.add_relationship(relationship, c1)
-        print("4")
-
         self.session.commit()
 
     def add_relationships(
@@ -136,11 +130,34 @@ class CollectionDB(CoreDB):
         
         for k in kw:
             c[k] = kw[k]
-            print(k.size)
             c.volume += k.size
         #FIXME check for duplicates
         c.save()
         return c
+
+    def save_as_collection(self, grouping, name, description="Saved collection", grouping_id="collections"):
+        """
+        Groups already stored collections into new named collection
+        """
+        self.create_collection(name,description=description)
+        if grouping_id=="variables":
+            for var in grouping:
+                for file in var.in_files:
+                    self.add_file_to_collection(name,file)
+        else:
+            for col in grouping:
+                files = self.retrieve_files_in_collection(col.name)
+                variables = self.retrieve_variables_in_collection(col.name)
+                for file in files.distinct():
+                    try:
+                        self.add_file_to_collection(name,file)
+                        for var in file.variable_set():
+                            self.add_variable_to_collection(var,name)
+                    except:
+                        pass
+                    file.save()
+            
+
 
     def create_location(self, location, protocols=[], overwrite=False):
         """
@@ -156,7 +173,7 @@ class CollectionDB(CoreDB):
                 loc.protocols.append(pdb)
         else:
             protocols = [Protocol.objects.get_or_create(name="none")[0]]
-        loc = Location.objects.create(name=location,volume=0)
+        loc, created = Location.objects.get_or_create(name=location,volume=0)
         for p in protocols:
             loc.protocols.add(p)
         loc.save()
@@ -333,7 +350,6 @@ class CollectionDB(CoreDB):
             )
         else:
             return Collection.objects.all()
-            return Collection.objects.all()
 
     def retrieve_file(self, path, name, size=None, checksum=None):
         """
@@ -426,7 +442,7 @@ class CollectionDB(CoreDB):
             m = f"%{match}%"
             # this gives the collection with files that match this ... not what we wanted
             # files = self.session.query(Collection).filter_by(name=collection).join(
-            #    Collection.holds_files).filter(or_(File.name.like(m), File.path.like(m))).all()
+            #    Collection.files).filter(or_(File.name.like(m), File.path.like(m))).all()
             # However, given we know that the number of files is much greater than the number
             # of collections, it's likely that searching the files that match a collection first
             # could be faster. We can investigate that another day ...
@@ -462,9 +478,9 @@ class CollectionDB(CoreDB):
         f = self.retrieve_file(path, filename)
 
         c = Collection.objects.get(name=collection)
-        if not (str(file) in map(str,c.holds_files)):
+        if not (str(file) in map(str,c.files)):
             raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
-        c.holds_files.remove(f)      
+        c.files.remove(f)      
         c.volume -= f.size
         if not any([f in self.collections]):
             try:
@@ -472,7 +488,7 @@ class CollectionDB(CoreDB):
             except Collection.DoesNotExist:
                 uc = Collection(name="_unlisted", volume=0, description="Holds unlisted files")
                 self.session.add(uc)
-            uc.holds_files.append(f)
+            uc.files.append(f)
             uc.volume += f.size
         self.session.commit()
 
@@ -493,20 +509,25 @@ class CollectionDB(CoreDB):
         if key == "in_files":
             queries.append([value == k for k in Variable.in_files])
         if key == "all":
-            results = Variable.objects.all()
+            return Variable.objects.all()
         elif len(queries) == 0:
             raise ValueError("No query received for retrieve variable")
         elif len(queries) == 1:
-            results = Variable.objects.filter(queries[0])
+            if key == "standard_name":
+                results = Variable.objects.filter(standard_name=value).all()
+            else:
+                results = Variable.objects.filter(long_name=value).all()
+
+
         else:
             results = Variable.objects.filter(*queries)
-
+        if results:
+            results=results[0]
         return results
 
     def retrieve_variable_query(self, key, value, query):
         """Retrieve variable by arbitrary property"""
         queries = query
-        print(queries)
         if key in [
             "long_name",
             "standard_name",
@@ -527,27 +548,54 @@ class CollectionDB(CoreDB):
             #FIXME make sure queries format is DJANGOfyed
             results = Variable.objects.filter(*queries).all()
         return results, queries
+    
+    def search_variable(self, key, value):
+        """Retrieve variable by arbitrary property"""
+        queries = []
+        if key in [
+            "long_name",
+            "standard_name",
+            "cfdm_size",
+            "cfdm_domain",
+            "cell_methods",
+        ]:
+            queries.append(getattr(Variable, key) == value)
+        else:
+            pass
+            #queries.append(Variable.with_other_attributes(key, value))
+        if key == "in_files":
+            queries.append([value == k for k in Variable.in_files])
+        if key == "all":
+            return Variable.objects.all()
+        elif len(queries) == 0:
+            raise ValueError("No query received for retrieve variable")
+        elif len(queries) == 1:
+            if key == "standard_name":
+                results = Variable.objects.filter(standard_name__contains=value).all()
+            else:
+                results = Variable.objects.filter(long_name__contains=value).all()
+
+
+        else:
+            results = Variable.objects.filter(*queries)
+        if results:
+            results=results[0]
+        return results
 
     def show_collections_with_variable(self, variable):
         """Find all collections with a given variable"""
         coldict = {}
-        for file in variable.in_files:
-            for collection in file.in_collections:
+        for file in variable.in_files.all():
+            for collection in Collection.objects.filter(files=file).all():
                 if collection not in coldict:
                     coldict[collection] = 1
                 else:
                     coldict[collection] += 1
-        if coldict:
-            for collection in coldict:
-                print(
-                    f'The collection "{collection.name}" contains {coldict[collection]} files with the variable {variable} (ID:{variable.id})'
-                )
-        else:
-            print("This variable doesn't actually appear in any collections.")
+        return coldict
 
     def retrieve_variables_in_collection(self, collection_name):
         collection = Collection.objects.get(name=collection_name)
-        return Variable.objects.filter(in_collection=collection)
+        return collection.variable_set.all()
 
     def delete_collection(self, collection_name, force):
         """
@@ -582,12 +630,29 @@ class CollectionDB(CoreDB):
         Add file to a collection
         """
         c = Collection.objects.get(name=collection)
-        if file in c.holds_files:
+        if c.files.filter(name=file.name).exists():
             raise ValueError(
                 f"Attempt to add file {file} to {c} - but it's already there"
             )
-        c.holds_files.append(file)
-        c.volume += file.size        
+        c.files.add(file)
+        c.volume += file.size 
+
+        for variable in file.variable_set.all():
+            self.add_variable_to_collection(variable)  
+        c.save()
+
+    def add_variable_to_collection(self, collection, variable):
+        """
+        Add file to a collection
+        """
+        c = Collection.objects.get(name=collection)
+        if c.variables.filter(name=variable.name).exists():
+            raise ValueError(
+                f"Attempt to add file {variable} to {c} - but it's already there"
+            )
+        c.in_collection.add(variable)
+        c.variable_set.add(variable)
+        variable.save()
         c.save()
 
     def collection_info(self, name):
@@ -607,10 +672,9 @@ class CollectionDB(CoreDB):
         """
         try:
             c = self.session.query(Collection).filter_by(name=name).first()
-        except NoResultFound:
+        except Collection.DoesNotExist:
             raise ValueError(f'No such collection {name}')
         output = {}
-        print(c)
         return output
 
     def byte_format(self, num, suffix='B'):
@@ -719,15 +783,13 @@ class CollectionDB(CoreDB):
             path, name = os.path.split(f)
             try:
                 ff = self.retrieve_file(path, name)
-                c.holds_files.append(ff)
+                c.files.append(ff)
             except FileNotFoundError:
                 missing.append(f)
         if missing:
             message = "ERROR: Operation not completed: The following files were not found in database:\n-> "
             message += "\n-> ".join(missing)
             raise FileNotFoundError(message)
-
-        print([x for x in c.holds_files])
         self.session.commit()
 
     def tag_collection(self, collection_name, tagname):
@@ -747,7 +809,7 @@ class CollectionDB(CoreDB):
         Remove a tag from a collection
         """
         c = self.retrieve_collection(collection_name)
-        print(c)
+        c.tags.remove(tagname)
 
     def upload_file_to_collection(self, location, collection, f, lazy=0, update=True):
         """
@@ -799,7 +861,7 @@ class CollectionDB(CoreDB):
                 )
             else:
                 check.replicas.append(loc)
-                c.holds_files.append(check)
+                c.files.append(check)
         else:
             try:
                 fmt = f["format"]
@@ -814,7 +876,7 @@ class CollectionDB(CoreDB):
                 initial_collection=c.id,
             )
             f.replicas.append(loc)
-            c.holds_files.append(f)
+            c.files.append(f)
             loc.holds_files.append(f)
             c.volume += f.size
             loc.volume += f.size
@@ -844,7 +906,6 @@ class CollectionDB(CoreDB):
                 "Location not yet available in database"
             )
         for f in tqdm(files):
-            print(f)
             if "checksum" not in f:
                 f["checksum"] = "None"
             name, path, size, checksum = f["name"], f["path"], f["size"], f["checksum"]
@@ -874,7 +935,6 @@ class CollectionDB(CoreDB):
                     fmt = f["format"]
                 except KeyError:
                     fmt = os.path.splitext(name)[1]
-                print("something")
                 f = File.objects.create(
                     name=name,
                     path=path,

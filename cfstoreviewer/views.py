@@ -10,7 +10,7 @@ from pathlib import Path
 from cfstore import interface, cfdb
 from cfstore.config import CFSconfig
 
-from .forms import SearchForm
+from .forms import VariableSearchForm, SaveAsCollectionForm
 
 def outputvar(var):
     """ Can't use the django built in coz not everything is a float.
@@ -30,33 +30,66 @@ def index(request):
 def ls(request):
     db = CFSconfig().db
     collections = db.retrieve_collections()
-    form = SearchForm()
-    return render(request, "index_view.html",{"collections":collections,"form":form})
+    variable_search_form = VariableSearchForm()
+    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form})
 
 def lsbrowse(request):
     db = CFSconfig().db
+    search=""
+    search_method="fsdgs"
+    collection_save_name=""
     if request.method == "POST":
-        form = SearchForm(request.POST)
-        search = request.POST["srch"]
+        variable_search_form = VariableSearchForm(request.POST)
+        collection_save_form = SaveAsCollectionForm(request.POST)
+        if "variablename" in request.POST:
+            search = request.POST["variablename"]
+        else:
+            variable_search_form = VariableSearchForm()
+        if "collectionname" in request.POST:
+            collection_save_name = request.POST["collectionname"]
+        else:
+            collection_save_form = SaveAsCollectionForm
     else:
-        form = SearchForm()
-        search=""
-    
+        variable_search_form = VariableSearchForm()
+        collection_save_form = SaveAsCollectionForm()
+       
+
     collections = db.retrieve_collections()
 
     if search:
         search = search.split(":")
         for s in search:
+            try:
+                try:
+                    try:
+                        var = db.retrieve_variable("standard_name",s)
+                        collections = collections.filter(files__in=var.in_files.all())
+                    except:
+                        var = db.retrieve_variable("long_name",s)
+                        collections = collections.filter(files__in=var.in_files.all())
 
-            var = db.retrieve_variable("standard_name",s)
-            if not var:
-                var = db.retrieve_variable("long_name",s)
-            if var.in_files:
-                collections = collections.filter(files__in=var.in_files.all())
-            if not collections:
+                    search_method = "Exact match found"
+                except:
+                    try:
+                        var = db.search_variable("standard_name",s)
+                        collections = collections.filter(files__in=var.in_files.all())
+                    except:
+                        var = db.search_variable("long_name",s)
+                        collections = collections.filter(files__in=var.in_files.all())
+
+                    search_method = "Partial match found"
+            except:
                 return render(request, "no_result_view.html")
+            
     collections = collections.distinct()
-    return render(request, "index_view.html",{"collections":collections,"form":form})
+    if collection_save_name:
+        db.save_as_collection(collections,collection_save_name)
+
+    print("search",search_method)
+    if search_method:
+        return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_save_form":collection_save_form,"search_method":search_method})
+
+    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_save_form":collection_save_form})
 
 
 def lscol(request,page="all"):
@@ -70,10 +103,8 @@ def lscol(request,page="all"):
 
 def lsvar(request,var="all"):
     db = CFSconfig().db
-    try:
-        variable = db.retrieve_variable("standard_name",var)
-    except:
+    variable = db.retrieve_variable("standard_name",var)
+    if not variable:
         variable = db.retrieve_variable("long_name",var)
     collections = db.show_collections_with_variable(variable)
     return render(request, "variables_view.html",{'variable':variable,'collections':collections,'colcount':len(collections)})
-

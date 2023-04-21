@@ -61,12 +61,15 @@ a:active {
 </head>
 <html>
 <h1><a href="http://127.0.0.1:8000/cfstoreviewer/viewcollections">Collections</a><h1>
-    <form action="search/" method="post">
+    <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
-      {{form}}
-      <input type="submit" value="Browse!">
+      {{variable_search_form}}
     </form>
-    <input type="text" placeholder="Save as Collection"><button type="Save">Save!</button>
+    <form action="" method="post">
+      {% csrf_token %}
+      {{ collection_save_form }}
+    </form>
+    <h4>{{search_method}}</h4>
     <table border="1"><tr><td>
     {% for collection in collections %}
     <table border="1">
