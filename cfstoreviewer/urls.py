@@ -23,6 +23,8 @@ urlpatterns = [
     path('viewcollections/search/',views.lsbrowse, name='allcollections'),
     path("viewcollections/search/",views.lsbrowse, name='allcollections'),
     path('viewcollections/<str:page>/',views.lscol),
+    path('viewcollections/<str:collection>/delete',views.deletecol),
+    path('viewcollections/<str:collection>/confirmdelete',views.confirmdelete),
     path('viewcollections/variables/',views.lsvar, name="variableindex"),
     path('viewcollections/variables/<str:var>',views.lsvar)
 

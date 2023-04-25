@@ -1,6 +1,8 @@
 import os, sys
 import django
 from django.db import IntegrityError
+from django.db.models import Q
+
 django.setup()
 
 from cfstore.db import (
@@ -70,7 +72,7 @@ class CollectionDB(CoreDB):
             if locations:
                 existing_locations = [e.name for e in self.retrieve_locations()]
                 for p in locations:
-                    if p not in existing_locations:
+                    if p.name not in existing_locations:
                         loc = Location(name=p)
                         self.session.add(loc)
                     else:
@@ -478,20 +480,24 @@ class CollectionDB(CoreDB):
         f = self.retrieve_file(path, filename)
 
         c = Collection.objects.get(name=collection)
-        if not (str(file) in map(str,c.files)):
-            raise ValueError(f"Attempt to delete file {file} from {c} - but it's already not there")
+        
+        if file not in c.files.all():
+            print(f"Attempt to delete file {file} from {c} - but it's already not there")
         c.files.remove(f)      
         c.volume -= f.size
-        if not any([f in self.collections]):
+        print("collections")
+        print("collections",f.collection_set.all())
+        if not f.collection_set.all():
             try:
                 uc = Collection.objects.get(name="_unlisted")
             except Collection.DoesNotExist:
-                uc = Collection(name="_unlisted", volume=0, description="Holds unlisted files")
-                self.session.add(uc)
-            uc.files.append(f)
+                uc = self.create_collection("_unlisted", description="Holds unlisted files")
+            self.add_file_to_collection(uc.name,f)
+    
+            uc.files.add(f)
             uc.volume += f.size
-        self.session.commit()
-
+        f.save()
+        uc.save()
     def retrieve_variable(self, key, value):
         """Retrieve variable by arbitrary property"""
         queries = []
@@ -604,18 +610,27 @@ class CollectionDB(CoreDB):
         files = self.retrieve_files_in_collection(collection_name)
         if files and force:
             for f in files:
-                self.delete_file_from_collection(collection_name, f)
+                print(collection_name,f.path+"/"+f.name)
+                self.delete_file_from_collection(collection_name, f.path+"/"+f.name)
             c = self.retrieve_collection(collection_name)
-            self.session.delete(c)
-            self.session.commit()
+            c.save()
+            c.delete()
+
         elif files:
             raise CollectionError(
                 collection_name, f"not empty (contains {len(files)} files)"
             )
         else:
             c = self.retrieve_collection(collection_name)
-            self.session.delete(c)
-            self.session.commit()
+            c.save()
+            c.delete()
+
+    def delete_location(self, location_name):
+        """
+        Remove a location from the database, ensuring all collections have already been removed first.
+        """
+        loc = Location.objects.filter(name=location_name)
+        loc.delete()
 
     def delete_tag(self, tagname):
         """
@@ -638,7 +653,7 @@ class CollectionDB(CoreDB):
         c.volume += file.size 
 
         for variable in file.variable_set.all():
-            self.add_variable_to_collection(variable)  
+            self.add_variable_to_collection(collection,variable)  
         c.save()
 
     def add_variable_to_collection(self, collection, variable):
@@ -646,14 +661,12 @@ class CollectionDB(CoreDB):
         Add file to a collection
         """
         c = Collection.objects.get(name=collection)
-        if c.variables.filter(name=variable.name).exists():
-            raise ValueError(
-                f"Attempt to add file {variable} to {c} - but it's already there"
-            )
-        c.in_collection.add(variable)
-        c.variable_set.add(variable)
-        variable.save()
-        c.save()
+        if c.variable_set.filter(Q(long_name=variable.long_name)|Q(standard_name=variable.standard_name)).exists():
+            print(f"Attempt to add file {variable} to {c.variable_set.all()} - but it's already there")
+        else:
+            variable.in_collection.add(c)
+            variable.save()
+            c.save()
 
     def collection_info(self, name):
         """

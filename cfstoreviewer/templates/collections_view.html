@@ -68,6 +68,11 @@ a:active {
     <input type="text" placeholder="search here...">
     <input type="submit" value="Browse!">
   </form>
+
+  <form action="confirmdelete">
+    <input type="submit" value="Delete Collection" />
+  </form>
+
 <table border="1"><tr><td>
     <table border="1">
         <tr><h3><a href="">{{collection.name}}</a><h3></tr>
@@ -84,6 +89,16 @@ a:active {
                 </div>
               </div> </td>
         </tr>
+        <tr><th>Files</th>
+          <td><div class="dropdown">
+              <button class="dropbtn">{{filecount}} Files ({{displayed}} displayed)</button>
+              <div class="dropdown-content">
+                  {% for file in files %}
+                      {{file.name}}
+                  {% endfor %}
+              </div>
+            </div> </td>
+      </tr>
     </table>
 
     </tr></td></table>

@@ -27,6 +27,17 @@ def outputvar(var):
 def index(request):
     return HttpResponse("Welcome to CFstore. You're at the polls index.")
 
+def confirmdelete(request,collection):
+    return render(request, "confirmdelete_view.html")
+
+def deletecol(request,collection):
+    db = CFSconfig().db
+    db.delete_collection(collection_name=collection,force=True)
+    collections = db.retrieve_collections()
+    variable_search_form = VariableSearchForm()
+    return HttpResponseRedirect("..")
+    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form})
+
 def ls(request):
     db = CFSconfig().db
     collections = db.retrieve_collections()
@@ -97,8 +108,11 @@ def lscol(request,page="all"):
     variables = db.retrieve_variables_in_collection(page)
     collection = db.retrieve_collection(page)
     files = db.retrieve_files_in_collection(page)
-    
-    return render(request,"collections_view.html",{'variables':variables,'collection':collection,'filecount':len(files),'varcount':len(variables)})
+    if len(files)>10:
+        displayfiles=files[0:10]
+    else:
+        displayfiles=files
+    return render(request,"collections_view.html",{'variables':variables,'collection':collection,'filecount':len(files),'varcount':len(variables),'files':displayfiles, 'displayed':len(displayfiles)})
 
 
 def lsvar(request,var="all"):

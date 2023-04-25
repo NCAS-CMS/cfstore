@@ -619,6 +619,19 @@ def delete_col(ctx, collection,force):
 
 @cli.command()
 @click.pass_context
+@click.argument('location')
+def delete_loc(ctx, location):
+    """
+    Delete an <collection> that contains no files
+    Raises an error if the collection is not empty
+    Usage: cfsdb delete-col <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    db.delete_location(location)
+    view_state.save()
+
+@cli.command()
+@click.pass_context
 @click.argument('collection')
 def pr(ctx, collection):
     """
