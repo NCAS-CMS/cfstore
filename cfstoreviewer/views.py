@@ -10,7 +10,7 @@ from pathlib import Path
 from cfstore import interface, cfdb
 from cfstore.config import CFSconfig
 
-from .forms import VariableSearchForm, SaveAsCollectionForm
+from .forms import VariableSearchForm, SaveAsCollectionForm, CollectionSearchForm
 
 def outputvar(var):
     """ Can't use the django built in coz not everything is a float.
@@ -42,65 +42,84 @@ def ls(request):
     db = CFSconfig().db
     collections = db.retrieve_collections()
     variable_search_form = VariableSearchForm()
-    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form})
+    collection_search_form = CollectionSearchForm()
+    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_search_form":collection_search_form})
 
 def lsbrowse(request):
     db = CFSconfig().db
     search=""
-    search_method="fsdgs"
+    search_method=""
     collection_save_name=""
+    varsearch=[]
+    colsearch=[]
     if request.method == "POST":
         variable_search_form = VariableSearchForm(request.POST)
+        collection_search_form = CollectionSearchForm(request.POST)
         collection_save_form = SaveAsCollectionForm(request.POST)
+
         if "variablename" in request.POST:
-            search = request.POST["variablename"]
+            varsearch.append(request.POST["variablename"])
         else:
             variable_search_form = VariableSearchForm()
+        if "collection_searchname" in request.POST:
+            colsearch.append( request.POST["collection_searchname"])
+        else:
+            collection_search_form = CollectionSearchForm()
         if "collectionname" in request.POST:
             collection_save_name = request.POST["collectionname"]
         else:
             collection_save_form = SaveAsCollectionForm
     else:
         variable_search_form = VariableSearchForm()
+        collection_search_form = CollectionSearchForm()
         collection_save_form = SaveAsCollectionForm()
        
 
     collections = db.retrieve_collections()
-
-    if search:
-        search = search.split(":")
-        for s in search:
-            try:
-                try:
-                    try:
-                        var = db.retrieve_variable("standard_name",s)
-                        collections = collections.filter(files__in=var.in_files.all())
-                    except:
-                        var = db.retrieve_variable("long_name",s)
-                        collections = collections.filter(files__in=var.in_files.all())
-
+    
+    if varsearch:
+        for s in varsearch:
+            if collections:
+                var = db.retrieve_variable("standard_name",s)
+                if var.exists():
+                    collections = collections.filter(files__in=var.in_files.all())
+                else:
+                    var = db.retrieve_variable("long_name",s)
+                if var.exists():
+                    collections = collections.filter(files__in=var.in_files.all())
                     search_method = "Exact match found"
-                except:
-                    try:
-                        var = db.search_variable("standard_name",s)
+                else:
+                    var = db.search_variable("standard_name",s)
+                    if var.exists():
                         collections = collections.filter(files__in=var.in_files.all())
-                    except:
+                    else:
                         var = db.search_variable("long_name",s)
+                    if var.exists():
                         collections = collections.filter(files__in=var.in_files.all())
+                        search_method = "Partial match found"
+                    else:
+                        return render(request, "no_result_view.html") 
+            else: 
+                return render(request, "no_result_view.html")            
 
-                    search_method = "Partial match found"
-            except:
-                return render(request, "no_result_view.html")
-            
+    if colsearch:
+        for s in colsearch:
+            if collections:
+                collections = collections.filter(name__contains=s)            
+            else: 
+                return render(request, "no_result_view.html")     
+        if not collections:
+            return render(request, "no_result_view.html")
+
+
     collections = collections.distinct()
     if collection_save_name:
         db.save_as_collection(collections,collection_save_name)
 
-    print("search",search_method)
     if search_method:
-        return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_save_form":collection_save_form,"search_method":search_method})
+        return render(request, "browse_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_search_form":collection_search_form,"collection_save_form":collection_save_form,"search_method":search_method})
 
-    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_save_form":collection_save_form})
+    return render(request, "index_view.html",{"collections":collections,"variable_search_form":variable_search_form,"collection_search_form":collection_search_form,"collection_save_form":collection_save_form})
 
 
 def lscol(request,page="all"):

@@ -144,6 +144,10 @@ class Variable(models.Model):
 
     def __delitem__(self, key):
         del self._proxied[key]
+    
+    def exists(self):
+        return True
+
     _proxied = {}
     cfdm_size = models.BigIntegerField()
     long_name = models.CharField(max_length=1024)

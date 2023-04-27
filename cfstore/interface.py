@@ -148,13 +148,16 @@ class CollectionDB(CoreDB):
                     self.add_file_to_collection(name,file)
         else:
             for col in grouping:
+
                 files = self.retrieve_files_in_collection(col.name)
                 variables = self.retrieve_variables_in_collection(col.name)
+                for var in variables:
+                    self.add_variable_to_collection(name,var)
+                    var.save()
                 for file in files.distinct():
                     try:
-                        self.add_file_to_collection(name,file)
-                        for var in file.variable_set():
-                            self.add_variable_to_collection(var,name)
+                        self.add_file_to_collection(name,file,skipvar=True)
+                        
                     except:
                         pass
                     file.save()
@@ -485,8 +488,6 @@ class CollectionDB(CoreDB):
             print(f"Attempt to delete file {file} from {c} - but it's already not there")
         c.files.remove(f)      
         c.volume -= f.size
-        print("collections")
-        print("collections",f.collection_set.all())
         if not f.collection_set.all():
             try:
                 uc = Collection.objects.get(name="_unlisted")
@@ -496,8 +497,10 @@ class CollectionDB(CoreDB):
     
             uc.files.add(f)
             uc.volume += f.size
-        f.save()
-        uc.save()
+            uc.save()
+        f.save() 
+        c.save()
+
     def retrieve_variable(self, key, value):
         """Retrieve variable by arbitrary property"""
         queries = []
@@ -601,7 +604,7 @@ class CollectionDB(CoreDB):
 
     def retrieve_variables_in_collection(self, collection_name):
         collection = Collection.objects.get(name=collection_name)
-        return collection.variable_set.all()
+        return collection.variable_set.distinct()
 
     def delete_collection(self, collection_name, force):
         """
@@ -610,7 +613,6 @@ class CollectionDB(CoreDB):
         files = self.retrieve_files_in_collection(collection_name)
         if files and force:
             for f in files:
-                print(collection_name,f.path+"/"+f.name)
                 self.delete_file_from_collection(collection_name, f.path+"/"+f.name)
             c = self.retrieve_collection(collection_name)
             c.save()
@@ -640,7 +642,7 @@ class CollectionDB(CoreDB):
         self.session.delete(t)
         self.session.commit()
 
-    def add_file_to_collection(self, collection, file):
+    def add_file_to_collection(self, collection, file, skipvar=False):
         """
         Add file to a collection
         """
@@ -651,9 +653,9 @@ class CollectionDB(CoreDB):
             )
         c.files.add(file)
         c.volume += file.size 
-
-        for variable in file.variable_set.all():
-            self.add_variable_to_collection(collection,variable)  
+        if not skipvar:
+            for variable in file.variable_set.all():
+                self.add_variable_to_collection(collection,variable)  
         c.save()
 
     def add_variable_to_collection(self, collection, variable):
@@ -661,8 +663,8 @@ class CollectionDB(CoreDB):
         Add file to a collection
         """
         c = Collection.objects.get(name=collection)
-        if c.variable_set.filter(Q(long_name=variable.long_name)|Q(standard_name=variable.standard_name)).exists():
-            print(f"Attempt to add file {variable} to {c.variable_set.all()} - but it's already there")
+        if variable in c.variable_set.all():
+            print(f"Attempt to add variable {variable.long_name}/{variable.standard_name} to {c.name} - but it's already there")
         else:
             variable.in_collection.add(c)
             variable.save()

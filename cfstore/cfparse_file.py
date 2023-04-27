@@ -58,7 +58,7 @@ def cfparse_file(db, filename):
 
         for file in v.get_filenames():
             for f in db.retrieve_files_which_match(os.path.basename(file)):
-                var.in_files.append(f)
+                var.in_files.add(f)
 
         #there is a more pythonic way of doing this
         #if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
