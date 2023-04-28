@@ -1,0 +1,26 @@
+---
+- hosts: all
+  gather_facts: yes
+  tasks:
+    - name: configure django app
+      ansible.builtin.lineinfile:
+         path: "{{repo_dir}}/cfstore_django/settings.py"
+         regexp: "^ALLOWED_HOSTS"
+         line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
+         backup: yes
+    - name: Make a static file directory
+      ansible.builtin.file:
+        path: "{{repo_dir}}/static"
+        state: directory
+    - name: Make Django migrations 
+      community.general.django_manage:
+         virtualenv: "/home/{{user}}/django"
+         project_path: "{{repo_dir}}"
+         command: makemigrations
+    - name: Do migrations 
+      community.general.django_manage:
+         virtualenv: "/home/{{user}}/django"
+         project_path: "{{repo_dir}}"
+         command: migrate
+
+        

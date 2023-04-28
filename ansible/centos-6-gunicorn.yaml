@@ -1,0 +1,13 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: change SELinux restrictions for httpd_t context to permissive
+      community.general.selinux_permissive:
+        name: httpd_t
+        permissive: true
+    - name: setup gunicorn app config
+      ansible.builtin.template:
+        src: centos-gunicorn.template
+        dest: "/etc/systemd/system/gunicorn.service"

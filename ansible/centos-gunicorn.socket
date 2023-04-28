@@ -1,0 +1,8 @@
+[Unit]
+Description=gunicorn socket
+
+[Socket]
+ListenStream={{repo_dir}}/gunicorn.sock
+
+[Install]
+WantedBy=sockets.target

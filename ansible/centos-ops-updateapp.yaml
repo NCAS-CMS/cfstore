@@ -1,0 +1,60 @@
+---
+- hosts: all
+  gather_facts: yes
+  tasks:
+
+    - name: overwrite django app  
+      ansible.builtin.git:
+        key_file: "/home/{{user}}/.ssh/{{keyname}}"
+        repo: "{{ repo_url }}/{{ repo }}.git"
+        dest: "{{ repo_dir }}"
+        accept_hostkey: yes
+        clone: no
+        update: yes
+        force: yes
+
+    - name: configure hosts in django app
+      ansible.builtin.lineinfile:
+         path: "{{repo_dir}}/{{repo}}/settings.py"
+         regexp: "^ALLOWED_HOSTS"
+         line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
+         backup: yes
+
+    - name: sort out static root for django
+      ansible.builtin.lineinfile:
+         path: "{{repo_dir}}/{{repo}}/settings.py"
+         insertafter: "^STATICFILES_DIRS"
+         line: "STATIC_ROOT=os.path.join(os.path.expanduser('~'),'static/')"
+
+    - name: fix CSRF for https 
+      ansible.builtin.blockinfile:
+         path: "{{repo_dir}}/{{repo}}/settings.py"
+         insertafter: "^ALLOWED_HOSTS"
+         block: |
+            # 
+            # While we're on https, we may need this:
+            CSRF_COOKIE_SECURE=False
+            CSRF_TRUSTED_ORIGINS = ['http://{{ansible_host}}']
+            # 
+
+    - name: collect the static files
+      community.general.django_manage:
+        command: collectstatic
+        project_path: "{{repo_dir}}"
+        virtualenv: "/home/{{user}}/django"
+
+    - name: Make Django migrations 
+      community.general.django_manage:
+         virtualenv: "/home/{{user}}/django"
+         project_path: "{{repo_dir}}"
+         command: makemigrations
+  
+    - name: Do migrations 
+      community.general.django_manage:
+         virtualenv: "/home/{{user}}/django"
+         project_path: "{{repo_dir}}"
+         command: migrate
+
+    - name: restart gunicorn service
+      become: true
+      command: systemctl restart gunicorn

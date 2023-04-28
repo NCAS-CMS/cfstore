@@ -1,0 +1,12 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: start gunicorn services
+      ansible.builtin.systemd:
+        state: started
+        name: gunicorn
+    # for some reason enabled: yes doesn't work
+    - name: enable gunicorn service
+      command: systemctl enable gunicorn
