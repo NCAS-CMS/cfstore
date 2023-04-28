@@ -36,7 +36,7 @@ made in November 2021, this documentation needs to be updated!*
 3. To add local or remote posix files below a specfic directory:
     -  add a particular directory tree with ::
 
-          cfin rp add location_name collection_name_for_path path_to_add
+          cfin rp add location_name path_to_add collection_name_for_path
           cfin p|local add collection_name_for_path path_to_add
 
        (where you use ``rp`` or ``local`` in that first argument depending on whether it is

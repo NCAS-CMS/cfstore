@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+ a:link {
+  color: #030303;
+}
+
+/* visited link */
+a:visited {
+  color: #030303;
+}
+
+/* mouse over link */
+a:hover {
+  color: #186f4d;
+}
+
+/* selected link */
+a:active {
+  color: #030303;
+} 
+    .dropbtn {
+      background-color: #030303;
+      color: white;
+      padding: 16px;
+      font-size: 16px;
+      border: none;
+    }
+    
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f1f1f1;
+      min-width: 40px;
+      font-size: 16px;
+      height: 150px;
+      overflow: auto;
+      box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    
+    .dropdown-content a {
+      color: black;
+      padding: 6px 8px;
+      text-decoration: none;
+      display: block;
+    }
+    
+    .dropdown-content a:hover {background-color: #ddd;}
+    
+    .dropdown:hover .dropdown-content {display: block;}
+    
+    .dropdown:hover .dropbtn {background-color: #030303;}
+    </style>
+</head>
+<html>
+<h1><a href="http://127.0.0.1:8000/cfstoreviewer/viewcollections">Collections</a><h1>
+  <form action="" method="post">
+    {% csrf_token %}
+    {{form}}
+    <input type="text" placeholder="search here...">
+    <input type="submit" value="Browse!">
+  </form>
+
+  <form action="confirmdelete">
+    <input type="submit" value="Delete Collection" />
+  </form>
+
+<table border="1"><tr><td>
+    <table border="1">
+        <tr><h3><a href="">{{collection.name}}</a><h3></tr>
+        <tr><th>Description</th><td>{{collection.description}}</td></tr>
+        <tr><th>Volume</th><td>{{collection.volume|sizeoffmt}}</td></tr>
+        <tr><th>Filecount</th><td>{{filecount}}</td></tr> 
+        <tr><th>Variables</th>
+            <td><div class="dropdown">
+                <button class="dropbtn">{{varcount}} Variables</button>
+                <div class="dropdown-content">
+                    {% for var in variables %}
+                        <a href="http://127.0.0.1:8000/cfstoreviewer/viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
+                    {% endfor %}
+                </div>
+              </div> </td>
+        </tr>
+        <tr><th>Files</th>
+          <td><div class="dropdown">
+              <button class="dropbtn">{{filecount}} Files ({{displayed}} displayed)</button>
+              <div class="dropdown-content">
+                  {% for file in files %}
+                      {{file.name}}
+                  {% endfor %}
+              </div>
+            </div> </td>
+      </tr>
+    </table>
+
+    </tr></td></table>
+
+</body>
+</html>

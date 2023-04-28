@@ -204,6 +204,12 @@ def browsevariable(ctx,key,value,verbosity):
             k,v=user_input.split(",")
             variables,query = db.retrieve_variable_query(k,v,query)
 
+def sizeof_fmt(num, suffix="B"):
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, "Yi", suffix)
 
 @cli.command()
 @click.pass_context
@@ -218,7 +224,6 @@ def ls(ctx, collection, output):
     """
     view_state, db = _set_context(ctx, collection)
     output= output.lower()
-    print(output)
     
     if view_state.collection:
         if output=="files":
@@ -261,19 +266,28 @@ def ls(ctx, collection, output):
         if output=="variables" or output=="var":
             try:
                 for r in return_list:
-                    print(r.get_properties(1))
+                    print("Variable:")
+                    if r.standard_name:
+                        print(r.standard_name)
+                    elif r.long_name:
+                        print(r.long_name)
+                    else:
+                        print("id "+str(r.id)+"(which has no name for some reason)")
+                    print("         is in")
+                    for f in r.in_collection.all():
+                        print("         "+f.name)
             except:
-                if output not in ["files","tags","facets","relationships","collections","locations"]:
-                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
                 else:
                     print("Return list cannot be printed")
         else:
             try:
                 for r in return_list:
-                    print(r)
+                    print(r.name, sizeof_fmt(r.size))
             except:
-                if output not in ["files","tags","facets","relationships","collections","locations"]:
-                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
                 else:
                     print("Return list cannot be printed")
     else:
@@ -283,10 +297,10 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_locations()
         try:
             for r in return_list:
-                print(r)
+                print(r.name)
         except:
-            if output not in ["files","tags","facets","relationships","collections","locations"]:
-                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections or locations instead")
+            if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections,variables or locations instead")
             else:
                 print("Return list failed to print")
     view_state.save()
@@ -605,6 +619,19 @@ def delete_col(ctx, collection,force):
 
 @cli.command()
 @click.pass_context
+@click.argument('location')
+def delete_loc(ctx, location):
+    """
+    Delete an <collection> that contains no files
+    Raises an error if the collection is not empty
+    Usage: cfsdb delete-col <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    db.delete_location(location)
+    view_state.save()
+
+@cli.command()
+@click.pass_context
 @click.argument('collection')
 def pr(ctx, collection):
     """
@@ -635,7 +662,7 @@ def edit(ctx, collection):
     new_description = click.edit(description)
     active_collection.description = new_description
     print("New description saved for",collection)
-    db.save()
+    view_state.save()
 
 @cli.command()
 @click.pass_context
