@@ -1,0 +1,19 @@
+- hosts: all
+  gather_facts: no
+  tasks:
+  - name: Validate wheel group exists
+    group:
+      name: wheel
+      state: present
+  - name: Allow passwordless sudo in wheel group
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      regexp: '^wheel'
+      line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+      validate: 'visudo -cf %s'
+  - name: Add user to wheel group
+    user:
+      name: "{{ user }}"
+      append: yes
+      groups: wheel

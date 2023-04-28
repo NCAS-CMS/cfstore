@@ -1,0 +1,10 @@
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+    - name: get django app  
+      ansible.builtin.git:
+        key_file: "/home/{{user}}/.ssh/cfstore_key"
+        repo: https://github.com/NCAS-CMS/cfstore
+        dest: "{{ repo_dir }}"
+        accept_hostkey: yes

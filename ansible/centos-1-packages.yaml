@@ -1,0 +1,52 @@
+#
+# note that this script disables SSL chcckign on the conda installation.
+# that's got to be a bad thing, but I don't currently have a better work around.
+---
+- hosts: all
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Get extra packages
+      yum: 
+         name: epel-release
+         state: latest
+    - name: Running yum update
+      yum:
+         name: "{{packages}}"
+      vars:
+         packages:
+          - fail2ban
+          - git       
+          - rdiff-backup
+          - uwsgi
+          - uwsgi-plugin-python
+          - nginx
+          - ca-certificates
+    - name: Now get certificates in play (but this doesn't seem to work)
+      command: update-ca-trust
+    - name: Download miniconda 
+      get_url:
+         url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+         dest: /tmp/install-miniconda.sh
+         force: no
+         mode: 0550
+         validate_certs: no
+    - name: Create Conda Dir
+      file: 
+         path: /opt/miniconda3
+         state: directory
+         mode: 0755
+         recurse: yes
+    - name: Install Conda
+      shell: /tmp/install-miniconda.sh -b -u -p /opt/miniconda3
+    - name: Remove installer
+      file:
+          state: absent
+          path: /tmp/install-miniconda.sh
+    - name: Add miniconda bin to path
+      shell: echo 'export PATH=/opt/miniconda3/bin:$PATH' >> /etc/profile
+    - name: permissions
+      file: 
+         path: /opt/miniconda3/bin
+         mode: +x
+         recurse: yes

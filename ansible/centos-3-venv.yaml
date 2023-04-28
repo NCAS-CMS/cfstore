@@ -1,0 +1,35 @@
+---
+
+- hosts: all
+  gather_facts: no
+  vars:
+     venv: "/home/{{user}}/django"
+  tasks:
+    - name: python2 setuptools
+      # Make sure python2 (running ansible) has setuptools 
+      # so it can parse the (python3) executable requirement that follows
+      # https://github.com/ansible/ansible/issues/47361#issuecomment-431705748
+      become: yes
+      package:
+        name: python-setuptools
+        state: present
+    - name: Make sure we have virtualenv
+      become: yes
+      pip:
+         executable: /opt/miniconda3/bin/pip3
+         name: virtualenv
+    - name: now setup our django virtual env
+      pip:
+         name: django
+         virtualenv_command:  /opt/miniconda3/bin/virtualenv
+         virtualenv: "{{venv}}"
+    - name: and add gunicorn to it
+      pip:
+         name: gunicorn
+         virtualenv_command:  /opt/miniconda3/bin/virtualenv
+         virtualenv: "{{venv}}"
+    - name: add application requirements
+      pip:
+         requirements: "{{repo_dir}}/requirements.txt"
+         virtualenv: "{{venv}}"
+         virtualenv_command:  /opt/miniconda3/bin/virtualenv

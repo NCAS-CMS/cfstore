@@ -1,0 +1,27 @@
+---
+#
+# We assume we are the only app running on this host.
+- hosts: all
+  gather_facts: yes
+  become: yes
+  tasks:
+    - name: Blow away old nginx configuration and replace it with ours
+      ansible.builtin.template:
+        backup: yes
+        src: centos-nginx.template
+        dest: "/etc/nginx/nginx.conf"
+    - name: Restart nginx
+      ansible.builtin.systemd:
+        state: restarted
+        name: nginx
+    - name: Add user to nginx group
+      user:
+        name: "{{ user }}"
+        append: yes
+        groups: nginx
+    - name: Add nginx to user group
+      user:
+        name: "nginx"
+        append: yes
+        groups: "{{ user }}"
+

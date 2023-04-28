@@ -1,0 +1,17 @@
+all:
+    hosts:
+        192.171.169.43
+    vars:
+        ansible_user: root
+        ansible_port: 22
+        user: george
+        keyname: cfstore_key
+        repo_url: git@github.com:NCAS-CMS
+        repo: cfstore
+        home_dir: /home/{{ user }}/Documents/cfs
+        repo_dir: "{{ home_dir }}/{{ repo }}"
+        django_dir: "{{ repo_dir }}"
+        static_dir: "{{ home_dir }}/static"
+        django_project: cfstoreviewer
+        
+        

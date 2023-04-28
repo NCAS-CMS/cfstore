@@ -33,15 +33,11 @@ setup(
         "Operating System :: MacOS"
     ],
     install_requires=[
-        'SQLAlchemy',
-#        'pygraphviz',
-#        'eralchemy',
         'click',
         'BeautifulSoup4',
         'paramiko',
         'rich',
         'sphinx-click',
-        'sqlalchemy',
         'cfdm',
         'python-dateutil'
     ],
