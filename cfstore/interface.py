@@ -895,7 +895,11 @@ class CollectionDB(CoreDB):
             loc.holds_files.append(f)
             c.volume += f.size
             loc.volume += f.size
-        self.session.commit()
+            loc.holds_files.add(f)
+            print(loc.holds_files)
+            loc.save()
+            c.save()
+            f.save()
 
     def upload_files_to_collection(
         self, location, collection, files, lazy=0, update=True
@@ -924,7 +928,7 @@ class CollectionDB(CoreDB):
             if "checksum" not in f:
                 f["checksum"] = "None"
             name, path, size, checksum = f["name"], f["path"], f["size"], f["checksum"]
-            c.volume += f["size"]
+            
             try:
                 if lazy == 0:
                     check = self.retrieve_file(path, name)
@@ -943,8 +947,14 @@ class CollectionDB(CoreDB):
                         f"Cannot upload file {os.path.join(path, name)} as it already exists"
                     )
                 else:
-                    #check.replicas.add(loc)
-                    c.files.add(check)
+                    try:
+                        fmt = f["format"]
+                    except KeyError:
+                        fmt = os.path.splitext(name)[1]
+                    check.replicas.add(loc)
+                    loc.holds_files.add(check)
+                    loc.volume += check.size
+                
             else:
                 try:
                     fmt = f["format"]
@@ -956,16 +966,20 @@ class CollectionDB(CoreDB):
                     checksum=checksum,
                     size=size,
                     format=fmt,
-                    initial_collection=c.id,
                 )
-                #f.replicas.add(loc)
-                c.files.add(f)
-                #loc.holds_files.add(f)
                 c.volume += f.size
+                f.replicas.add(loc)
+                c.files.add(f)
+                f.replicas.add(loc)
+                c.files.add(f)
+                loc.holds_files.add(f)
                 loc.volume += f.size
-                c.save()
-                loc.save()
-                f.save()
+                            
+
+
+        c.save()
+        loc.save()
+        f.save()
 
     def remove_file_from_collection(
         self, collection, file_path, file_name, checksum=None

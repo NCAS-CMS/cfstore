@@ -229,41 +229,56 @@ def ls(ctx, collection, output):
         if output=="files":
             return_list = db.retrieve_files_in_collection(view_state.collection)
         
-        if output=="tags":
+        elif output=="tags":
             return_list = db.retrieve_collection(view_state.collection).tags
         
-        if output=="facets":
+        elif output=="facets":
             return_list = db.retrieve_collection(view_state.collection).properties
         
-        if output=="relationships":
+        elif output=="relationships":
             return_list = db.retrieve_relationships(view_state.collection)
  
-        if output=="collections":
+        elif output=="collections":
             return_list = db.retrieve_collections()
             print(view_state.name)
 
-        if output=="variables":
+        elif output=="variables":
             return_list = db.retrieve_variable("all","")
             print(view_state.name)
 
-        if output=="locations":
+        elif output=="locations":
             state = _load()
             return_list = []
             loc_list = db.retrieve_locations()
             print(view_state.name)
             for c in loc_list:
-                locationName = str(c)
+                locationName = str(c.name)
                 if locationName == collection:
                     return_list.append("Location details:")
                     return_list.append("Name:"+locationName)
                     return_list.append("Host:"+state.get_location(locationName)['host'])
                     return_list.append("User:"+state.get_location(locationName)['user'])
+
+                    return_list.append("Files:")
+                    for f in c.holds_files.all():
+                        return_list.append("        "+f.name)
+                    
+                    return_list.append("Holds "+str(len(c.holds_files.all()))+" files")
+                    
             if return_list==[]:
                 if collection!=None:
                     print(f"Location {collection} not found, showing all locations")
-                return_list = loc_list
+                for c in loc_list:
+                    locationName = str(c.name)
+                    return_list.append("Location details:")
+                    return_list.append("Name:"+locationName)
+                    return_list.append("Host:"+state.get_location(locationName)['host'])
+                    return_list.append("User:"+state.get_location(locationName)['user'])
+                    return_list.append("Files:"+str(len(c.holds_files.all())))
 
-        if output=="variables" or output=="var":
+            for r in return_list:
+                print(r)
+        elif output=="variables" or output=="var":
             try:
                 for r in return_list:
                     print("Variable:")
@@ -294,7 +309,14 @@ def ls(ctx, collection, output):
         return_list = db.retrieve_collections()
         print(view_state.name)
         if output=="locations":
-            return_list = db.retrieve_locations()
+            return_list = []
+            loc_list=db.retrieve_locations()
+            for c in loc_list:
+                return_list.append("Location details:")
+                return_list.append("Name:"+locationName)
+                return_list.append("Host:"+state.get_location(locationName)['host'])
+                return_list.append("User:"+state.get_location(locationName)['user'])
+
         try:
             for r in return_list:
                 print(r.name)
