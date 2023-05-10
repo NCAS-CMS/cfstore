@@ -4,7 +4,7 @@
   tasks:
     - name: configure django app
       ansible.builtin.lineinfile:
-         path: "{{repo_dir}}/cfstore_django/settings.py"
+         path: "/home/george/Documents/cfs/cfstore/cfstore_django/settings.py"
          regexp: "^ALLOWED_HOSTS"
          line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
          backup: yes

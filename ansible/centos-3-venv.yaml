@@ -30,6 +30,6 @@
          virtualenv: "{{venv}}"
     - name: add application requirements
       pip:
-         requirements: "{{repo_dir}}/requirements.txt"
+         requirements: "/home/cfstore/Documents/cfs/cfstore/requirements.txt"
          virtualenv: "{{venv}}"
          virtualenv_command:  /opt/miniconda3/bin/virtualenv

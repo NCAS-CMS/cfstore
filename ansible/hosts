@@ -4,11 +4,11 @@ all:
     vars:
         ansible_user: root
         ansible_port: 22
-        user: george
+        user: cfstore
         keyname: cfstore_key
         repo_url: git@github.com:NCAS-CMS
         repo: cfstore
-        home_dir: /home/{{ user }}/Documents/cfs
+        home_dir: /home/{{ user }}
         repo_dir: "{{ home_dir }}/{{ repo }}"
         django_dir: "{{ repo_dir }}"
         static_dir: "{{ home_dir }}/static"

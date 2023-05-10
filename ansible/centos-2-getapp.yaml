@@ -8,3 +8,5 @@
         repo: https://github.com/NCAS-CMS/cfstore
         dest: "{{ repo_dir }}"
         accept_hostkey: yes
+        force         : yes
+
