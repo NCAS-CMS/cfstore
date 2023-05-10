@@ -57,7 +57,6 @@ class File(models.Model):
     format = models.CharField(max_length=256,default="Unknown format")
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=256)
-    initial_collection = models.IntegerField()
     locations = models.ManyToManyField(Location,related_name="filelocations")
     replicas = models.ManyToManyField(Location)
 
@@ -156,6 +155,8 @@ class Variable(models.Model):
     standard_name = models.CharField(max_length=1024)
     in_collection = models.ManyToManyField(Collection)
     in_files = models.ManyToManyField(File)
+    identity = models.CharField(max_length=1024)
+
 class Var_Metadata(models.Model):
     class Meta:
         app_label = 'cfstoreviewer'

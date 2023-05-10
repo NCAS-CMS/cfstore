@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, FileResponse
 from django.shortcuts import render
 
 import os
@@ -127,12 +127,26 @@ def lscol(request,page="all"):
     variables = db.retrieve_variables_in_collection(page)
     collection = db.retrieve_collection(page)
     files = db.retrieve_files_in_collection(page)
+    locations={}
+    for f in files:
+        for l in f.location_set.distinct():
+            if l.name not in locations:
+                locations[l.name]=1
+            else:
+                locations[l.name]+=1
     if len(files)>10:
         displayfiles=files[0:10]
     else:
         displayfiles=files
-    return render(request,"collections_view.html",{'variables':variables,'collection':collection,'filecount':len(files),'varcount':len(variables),'files':displayfiles, 'displayed':len(displayfiles)})
+    return render(request,"collections_view.html",{'variables':variables,'collection':collection,'filecount':len(files),'varcount':len(variables),'files':displayfiles, 'displayed':len(displayfiles), 'locations':locations})
 
+def downloadcol(request,page="all"):
+    db = CFSconfig().db
+    variables = db.retrieve_variables_in_collection(page)
+    collection = db.retrieve_collection(page)
+    files = db.retrieve_files_in_collection(page)
+    filenames = (f.path + "/" + f.name +"\n" for f in files if f.name.endswith(".nc") )
+    return FileResponse(filenames, as_attachment=True, filename="Export.txt")
 
 def lsvar(request,var="all"):
     db = CFSconfig().db
