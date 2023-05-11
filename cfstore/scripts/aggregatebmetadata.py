@@ -31,7 +31,7 @@ def manage_types(value):
 if __name__ == '__main__':
     outputdicts=[]
 
-    for filename in os.listdir(os.curdir):
+    for filename in os.listdir("{{fileinput}}"):
         variable_output_list = []
         #If should probably be a glob of some kind?
         if filename.endswith(".nca"):
@@ -44,8 +44,7 @@ if __name__ == '__main__':
             #Reads the fields from the file with cf
             #Alternatively cfdm can be used as such:
             #   cff = cfdm.read(filename)
-            cff=(cf.read(filename))   
-            x = cf.read(filename)
+            cff=cf.read(filename)  
             # loop over fields in file (not the same as netcdf variables)
             variables=[]
     #cff = cf.aggregate(cff, verbose=0)
@@ -57,22 +56,16 @@ if __name__ == '__main__':
                 if ('standard_name' not in properties and 'long_name' not in properties):
                     properties['long_name'] = v.identity
                 name, long_name = v.get_property('standard_name', None), v.get_property('long_name', None)
-
+                identity = v.identity()
                 domain = v.domain._one_line_description()
                 size = v.size
-
-                var = Variable(standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain)
+                files = v.get_filenames()
+                var = Variable(identity=identity,standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, in_files=files)
                 for k,p in properties.items():
                     if k not in ['standard_name','long_name']:
                         var[k] = manage_types(p) 
                 var_dict = as_dict(var)
-                print("Variable:")
-                print(v)
-                print("Properties:")
-                print(v.data.dumpd())
-                print("Filenames")
-                print(v.get_filenames())
-                print("____________________________________________")
+                
                 variable_output_list.append(var_dict)
             with open(filename.split(".")[0]+"bmetadata.json","a") as writepath:
                 print(filename.split(".")[0]+"bmetadata.json")
