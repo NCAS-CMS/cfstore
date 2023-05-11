@@ -3,7 +3,7 @@ cf_python==3.11.0
 cfdm==1.9.0.1
 click==7.1.2
 deepdiff==6.2.1
-Django==4.1.7
+Django==4.1.9
 eralchemy==1.2.10
 Flask==1.1.2
 lorem==0.1.1
