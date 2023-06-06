@@ -15,13 +15,16 @@
          name: "{{packages}}"
       vars:
          packages:
-          - fail2ban
-          - git       
-          - rdiff-backup
-          - uwsgi
-          - uwsgi-plugin-python
-          - nginx
-          - ca-certificates
+          - Django
+          - numpy
+          - pyodbc
+    - name: Running yum update for pygraphvizstuff
+      yum:
+         name: "{{packages}}"
+      vars:
+         packages:
+          - graphviz
+          - graphviz-dev
     - name: Now get certificates in play (but this doesn't seem to work)
       command: update-ca-trust
     - name: Download miniconda 

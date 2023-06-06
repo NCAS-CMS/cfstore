@@ -23,6 +23,11 @@
          name: django
          virtualenv_command:  /opt/miniconda3/bin/virtualenv
          virtualenv: "{{venv}}"
+    - name: and add matplotlib to it
+      pip:
+         name: matplotlib
+         virtualenv_command:  /opt/miniconda3/bin/virtualenv
+         virtualenv: "{{venv}}"
     - name: and add gunicorn to it
       pip:
          name: gunicorn
@@ -30,6 +35,6 @@
          virtualenv: "{{venv}}"
     - name: add application requirements
       pip:
-         requirements: "/home/cfstore/Documents/cfs/cfstore/requirements.txt"
+         requirements: "/home/cfstore/cfstore/requirements.txt"
          virtualenv: "{{venv}}"
          virtualenv_command:  /opt/miniconda3/bin/virtualenv
