@@ -23,6 +23,7 @@
           - fail2ban
           - rdiff-backup
           - graphviz
+          - gcc-c++
           - udunits2-devel
     - name: Now get certificates in play (but this doesn't seem to work)
       command: update-ca-trust
