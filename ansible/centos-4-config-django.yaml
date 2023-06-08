@@ -2,13 +2,13 @@
 - hosts: all
   gather_facts: yes
   tasks:
-    - name: configure django app
+    - name: configure django app hosts
       ansible.builtin.lineinfile:
-         path: "/home/cfstore/cfstore/cfstore_django/settings.py"
+         path: "/home/{{user}}/cfstore/cfstore_django/settings.py"
          regexp: "^ALLOWED_HOSTS"
          line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
          backup: yes
-    - name: Make a static file directory
+    - name:  Make a static file directory
       ansible.builtin.file:
         path: "{{repo_dir}}/static"
         state: directory

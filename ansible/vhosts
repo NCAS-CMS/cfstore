@@ -1,0 +1,17 @@
+all:
+    hosts:
+        127.0.0.1
+    vars:
+        ansible_user: vagrant
+        ansible_port: 2222
+        user: vagrant
+        keyname: bnl_vdeploy
+        repo_url: git@github.com:NCAS-CMS
+        repo: cfstore
+        home_dir: /home/{{ user }}
+        repo_dir: "{{ home_dir }}/{{ repo }}"
+        django_dir: "{{ repo_dir }}"
+        static_dir: "{{ home_dir }}/static"
+        django_project: cfstoreviewer
+        
+        

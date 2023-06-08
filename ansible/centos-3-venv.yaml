@@ -18,23 +18,33 @@
       pip:
          executable: /opt/miniconda3/bin/pip3
          name: virtualenv
+    - name: stick a few things in our parent conda 
+      become: yes 
+      shell: "/opt/miniconda3/bin/conda install -y -c conda-forge udunits2 pygraphviz"
     - name: now setup our django virtual env
       pip:
          name: django
          virtualenv_command:  /opt/miniconda3/bin/virtualenv
          virtualenv: "{{venv}}"
-    - name: and add matplotlib to it
-      pip:
-         name: matplotlib
-         virtualenv_command:  /opt/miniconda3/bin/virtualenv
-         virtualenv: "{{venv}}"
-    - name: and add gunicorn to it
-      pip:
-         name: gunicorn
-         virtualenv_command:  /opt/miniconda3/bin/virtualenv
-         virtualenv: "{{venv}}"
     - name: add application requirements
       pip:
-         requirements: "/home/cfstore/cfstore/requirements.txt"
+         requirements: "/home/{{user}}/cfstore/requirements.txt"
          virtualenv: "{{venv}}"
          virtualenv_command:  /opt/miniconda3/bin/virtualenv
+    - name: fix up udunits2
+      ansible.builtin.blockinfile:
+         path: "{{venv}}/bin/activate"
+         insertafter: EOF
+         block: |
+            # because we need to join our pip installed cf-python to system installed udunits2
+            UDUNITS2_XML_PATH='/opt/miniconda3/share/udunits/udunits2.xml'
+            export UDUNITS2_XML_PATH
+            #
+    - name: crude hack to get django to see the udunits xml variable
+      ansible.builtin.blockinfile:        
+         path: "{{repodir}}/manage.py"
+         insertbefore: "^try"
+         block: |
+            # because we need to join our pip installed cf-python to system installed udunits2
+            os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+            # FIXME: we really need to work out why this is happening

@@ -1,0 +1,15 @@
+---
+
+- hosts: all
+  gather_facts: no
+  vars:
+     venv: "/home/{{user}}/django"
+  tasks:
+    - name: crude hack to get django to see the udunits xml variable
+      ansible.builtin.blockinfile:        
+         path: "{{repo_dir}}/manage.py"
+         insertbefore: "try:"
+         block: |
+            #   because we need to join our pip installed cf-python to system installed udunits2
+                os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+            #   FIXME: we really need to work out why this is happening
