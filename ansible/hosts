@@ -10,8 +10,10 @@ all:
         repo: cfstore
         home_dir: /home/{{ user }}
         repo_dir: "{{ home_dir }}/{{ repo }}"
+        application: "cfstore_django"
         django_dir: "{{ repo_dir }}"
         static_dir: "{{ home_dir }}/static"
         django_project: cfstoreviewer
+
         
         
