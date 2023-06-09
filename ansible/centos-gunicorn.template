@@ -8,9 +8,10 @@ Group=nginx
 WorkingDirectory={{repo_dir}}
 ExecStart=/home/{{user}}/django/bin/gunicorn \
           --access-logfile - \
+		  --error-logfile {{repo_dir}}/gunicorn-error.log \
           --workers 3 \
           --bind unix:{{repo_dir}}/gunicorn.sock \
-          {{repo}}.wsgi:application
+          {{application}}.wsgi:application 
 Restart=always
 RestartSec=3
 
