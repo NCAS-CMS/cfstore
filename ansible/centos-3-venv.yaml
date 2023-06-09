@@ -27,10 +27,10 @@
          virtualenv_command:  /opt/miniconda3/bin/virtualenv
          virtualenv: "{{venv}}"
     - name: add gunicorn here (since it's strictly not an application requirement)
-	  pip: 
-		 name: gunicorn
-		 virtualenv_command:  /opt/miniconda3/bin/virtualenv
-		 virtualenv: "{{venv}}"
+      pip: 
+         name: gunicorn
+         virtualenv_command:  /opt/miniconda3/bin/virtualenv
+         virtualenv: "{{venv}}"
     - name: add application requirements
       pip:
          requirements: "/home/{{user}}/cfstore/requirements.txt"
