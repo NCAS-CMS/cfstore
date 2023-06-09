@@ -47,7 +47,7 @@
             #
     - name: crude hack to get django to see the udunits xml variable
       ansible.builtin.blockinfile:        
-         path: "{{repodir}}/manage.py"
+         path: "{{repo_dir}}/manage.py"
          insertbefore: "^try"
          block: |
             # because we need to join our pip installed cf-python to system installed udunits2
