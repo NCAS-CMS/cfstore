@@ -27,10 +27,10 @@
          virtualenv_command:  /opt/miniconda3/bin/virtualenv
          virtualenv: "{{venv}}"
     - name: add gunicorn here (since it's strictly not an application requirement)
-	  pip: 
-		 name: gunicorn
-		 virtualenv_command:  /opt/miniconda3/bin/virtualenv
-		 virtualenv: "{{venv}}"
+      pip: 
+        name: gunicorn
+        virtualenv_command:  /opt/miniconda3/bin/virtualenv
+        virtualenv: "{{venv}}"
     - name: add application requirements
       pip:
          requirements: "/home/{{user}}/cfstore/requirements.txt"
@@ -47,7 +47,7 @@
             #
     - name: crude hack to get django to see the udunits xml variable
       ansible.builtin.blockinfile:        
-         path: "{{repodir}}/manage.py"
+         path: "{{repo_dir}}/manage.py"
          insertbefore: "^try"
          block: |
             # because we need to join our pip installed cf-python to system installed udunits2
