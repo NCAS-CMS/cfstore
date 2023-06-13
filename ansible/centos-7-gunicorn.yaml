@@ -3,6 +3,16 @@
   gather_facts: yes
   become: yes
   tasks:
+    - name: Add user to nginx group
+      user:
+        name: "{{ user }}"
+        append: yes
+        groups: nginx
+    - name: Add nginx to user group
+      user:
+        name: "nginx"
+        append: yes
+        groups: "{{ user }}"
     - name: start gunicorn services
       ansible.builtin.systemd:
         state: started

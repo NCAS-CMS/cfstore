@@ -14,14 +14,5 @@
       ansible.builtin.systemd:
         state: restarted
         name: nginx
-    - name: Add user to nginx group
-      user:
-        name: "{{ user }}"
-        append: yes
-        groups: nginx
-    - name: Add nginx to user group
-      user:
-        name: "nginx"
-        append: yes
-        groups: "{{ user }}"
+    
 

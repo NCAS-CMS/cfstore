@@ -19,5 +19,5 @@
          insertafter: "^os.environ"
          block: |
             #   because we need to join our pip installed cf-python to system installed udunits2
-                os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+            os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
             #   FIXME: we really need to work out why this is happening
