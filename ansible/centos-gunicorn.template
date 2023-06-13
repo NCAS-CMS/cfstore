@@ -1,14 +1,13 @@
 [Unit]
 Description=gunicorn daemon
+requires=socket
 After=network.target
 
 [Service]
 User={{user}}
 Group=nginx
 WorkingDirectory={{repo_dir}}
-ExecStart=/home/{{user}}/django/bin/gunicorn \
-          --access-logfile - \
-		  --error-logfile {{repo_dir}}/gunicorn-error.log \
+ExecStart=/home/{{user}}/django/bin/gunicorn 
           --workers 3 \
           --bind unix:{{repo_dir}}/gunicorn.sock \
           {{application}}.wsgi:application 
