@@ -60,12 +60,12 @@ a:active {
     </style>
 </head>
 <html>
-<h1><a href="./viewcollections">Collections</a><h1>
-    <form action="./viewcollections/search/" method="post">
+<h1><a href="/cfstoreviewer/viewcollections">Collections</a><h1>
+    <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
       {{variable_search_form}}
     </form>
-    <form action="./viewcollections/search/" method="post">
+    <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
       {{collection_search_form}}
     </form>
@@ -87,7 +87,7 @@ a:active {
                 <div class="dropdown-content">
 
                 {% for var in collection|getvariables %}
-                    <a href="./viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
+                    <a href="cfstoreviewer/viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
                 {% endfor %}
                 </div>
 
