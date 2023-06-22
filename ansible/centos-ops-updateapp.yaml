@@ -1,6 +1,8 @@
 ---
 - hosts: all
   gather_facts: yes
+  vars:
+    venv: "/home/{{user}}/django"
   tasks:
 
     - name: overwrite django app  
@@ -15,20 +17,20 @@
 
     - name: configure hosts in django app
       ansible.builtin.lineinfile:
-         path: "{{repo_dir}}/{{repo}}/settings.py"
+         path: "{{repo_dir}}/{{application}}/settings.py"
          regexp: "^ALLOWED_HOSTS"
          line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
          backup: yes
 
     - name: sort out static root for django
       ansible.builtin.lineinfile:
-         path: "{{repo_dir}}/{{repo}}/settings.py"
+         path: "{{repo_dir}}//{{application}}/settings.py"
          insertafter: "^STATICFILES_DIRS"
          line: "STATIC_ROOT=os.path.join(os.path.expanduser('~'),'static/')"
 
     - name: fix CSRF for https 
       ansible.builtin.blockinfile:
-         path: "{{repo_dir}}/{{repo}}/settings.py"
+         path: "{{repo_dir}}/{{application}}/settings.py"
          insertafter: "^ALLOWED_HOSTS"
          block: |
             # 
@@ -54,6 +56,31 @@
          virtualenv: "/home/{{user}}/django"
          project_path: "{{repo_dir}}"
          command: migrate
+
+    - name: crude hack to get django interactive to see the udunits xml variable
+      ansible.builtin.blockinfile:        
+        path: "{{repo_dir}}/manage.py"
+        insertbefore: "try:"
+        block: |
+            #   because we need to join our pip installed cf-python to system installed udunits2
+                os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+            #   FIXME: we really need to work out why this is happening
+    - name: crude hack to get django wsgi to see the udunits xml variable
+      ansible.builtin.blockinfile:        
+        path: "{{repo_dir}}/{{application}}/wsgi.py"
+        insertafter: "^os.environ"
+        block: |
+            #   because we need to join our pip installed cf-python to system installed udunits2
+            os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+            #   FIXME: we really need to work out why this is happening
+
+    - name: restart nginx service
+      become: true
+      command: systemctl restart nginx
+
+    - name: reload daemon
+      become: true
+      command: systemctl daemon-reload
 
     - name: restart gunicorn service
       become: true
