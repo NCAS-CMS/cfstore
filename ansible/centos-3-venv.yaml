@@ -21,6 +21,11 @@
     - name: stick a few things in our parent conda 
       become: yes 
       shell: "/opt/miniconda3/bin/conda install -y -c conda-forge udunits2 pygraphviz"
+    - name: add dateutil here (since it causes problems everywhere else?)
+      pip: 
+        name: python-dateutil
+        virtualenv_command:  /opt/miniconda3/bin/virtualenv
+        virtualenv: "{{venv}}"
     - name: now setup our django virtual env
       pip:
          name: django
