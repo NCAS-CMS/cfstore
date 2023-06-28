@@ -1,0 +1,11 @@
+---
+- hosts: all
+  gather_facts: yes
+  tasks:
+    - name: add super user NEEDS EDITING
+      environment:
+        DJANGO_SUPERUSER_PASSWORD: YOUR_PASSWORD2
+      community.general.django_manage:
+         virtualenv: "/home/{{user}}/django"
+         project_path: "{{repo_dir}}"
+         command: createsuperuser --username=cfstore --email="george.o'brien@ncas.ac.uk" --noinput

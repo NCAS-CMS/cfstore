@@ -164,7 +164,7 @@ class SSHlite(SSHcore):
         print("Running script:",scriptname)
         print("Putting script")
         print("Putting script ",scriptname,"from", script ,"to", remotepath)
-        remotescript = remotepath +scriptname
+        remotescript = remotepath+"/"+scriptname
         try:
             self._sftp.put(script,remotescript)
         except:
@@ -183,13 +183,26 @@ class SSHlite(SSHcore):
         for line in stdout:
             print("lsout:",line)
 
+    def configureScript(self,file,settings):
+        # Read in the file
+        print("Reading ",file)
+        with open(file, 'r') as file :
+            filedata = file.read()
+
+        # Replace the target string
+        filedata = filedata.replace('{{settings}}', settings)
+
+        # Write the file out again
+        with open("cfstore/scripts/aggscript.py", 'w') as file:
+            file.write(filedata)
+
     def executeScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
         remotescript = remotepath +scriptname
         print("Executing script")
         print('Executing \"python '+scriptname+"\"")
         try:
-            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+scriptname)
+            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+"/"+scriptname)
             print("Script executed")
         except:
             print("Could not successfully execute script")
@@ -200,7 +213,7 @@ class SSHlite(SSHcore):
             print("err:",line)
         for line in stdout:
             print("out:",line)
-        self._sftp.remove(remotepath+scriptname)
+        self._sftp.remove(remotepath+"/"+scriptname)
 
     def aggregateFiles(self, remotepath):
         print("Aggregating files")

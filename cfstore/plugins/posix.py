@@ -106,7 +106,7 @@ class Posix:
         """
         raise NotImplementedError
 
-    def aggregation_files_to_collection(self, aggfile):
+    def aggregation_files_to_collection(self, aggfile,collection):
         """
         Uses a cf python aggregation file to add metadata variables to the appropriate files
         """
@@ -117,16 +117,17 @@ class Posix:
         variables = json.load(aggfileobject)
         dbfiles=[]
         #for each variable
-        print(variables)
+        c = self.db.retrieve_collection(collection)
+
         for variable in variables:
-            files = variables['files']
-            var = db.Variable(variables)
+            files = variable['files']
+            var = db.Variable(variable)
             var.in_files(files)
             dbfiles.append(var)
+            self.db.add_variable_to_collection(var)
         print(dbfiles)
 
-        #store a variable in collection
-
+        
 
 class RemotePosix(Posix):
     """

@@ -179,11 +179,12 @@ def getBMetadata(ctx, arg1, argm):
 @click.option('--remotetempfilelocation', default='', help='(Optional) Sets where to put the remote temp file')
 @click.option('--scriptlocation', default='', help='(Optional) Sets where to find the script')
 @click.option('--outputfilename',default='tempfile.json', help='the name of the output file')
-def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, scriptlocation,outputfilename):
+@click.option('--outputfilelocation',default='~/cfstore/scripts/newfilebmetadata.json', help='Where to put the output file')
+def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, scriptlocation,outputfilename,outputfilelocation):
     """
     Runs a remote script to aggregate metadata and store it in the database
     Format is:
-        cfin rp getbmetadataclean sshlocation remotedirectory collection
+        cfin rp getbmetadataclean sshlocation wheretopushscript remotedirectory collection
     Other scripts from /scripts/ folder can be used by setting --aggscript=scriptname (only name is needed, .py is optional)
     Other locations for scripts can be used by setting --scriptlocation=afolder 
     """
@@ -191,7 +192,7 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     print(arg1)
     print(argm)
     location = arg1
-    remotepath, collection = argm
+    pushdirectory, metadatadirectory, collection = argm
     if not aggscriptname.endswith(".py"):
         aggscriptname = aggscriptname + ".py"
     aggscriptpath = scriptlocation+aggscriptname
@@ -202,16 +203,21 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     x = RemotePosix(state.db, location)
     host, user = state.get_location(location)['host'], state.get_location(location)['user']
     x.configure(host, user)
-    
+
+    #Add settings to script
+    x.ssh.configureScript(aggscriptpath,metadatadirectory)
+    aggscriptpath = scriptlocation+"aggscript.py"
+    aggscriptname = "aggscript.py"
+
     #Push Script(s)
     #x.ssh.pushScript(remotepath,collection, scriptname)
-    x.ssh.pushScript(remotepath,collection, aggscriptpath)
+    x.ssh.pushScript(pushdirectory,collection, aggscriptpath)
 
     #Generate Aggregation File
-    x.ssh.aggregateFiles(remotepath)
+    x.ssh.aggregateFiles(pushdirectory)
     
     #Generate JSON from Aggregation File
-    x.ssh.executeScript(remotepath,collection, aggscriptname)
+    x.ssh.executeScript(pushdirectory,collection, aggscriptname)
 
     #Retrieve JSON file
     x.ssh.get(remotetempfilelocation+"tempfile.json", scriptlocation+outputfilename,delete=True)
@@ -220,7 +226,7 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     #This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
 
     #Update database with JSON
-    x.aggregation_files_to_collection("/home/george/Documents/cfs/cfstore/cfstore/scripts/newfilebmetadata.json",collection)
+    x.aggregation_files_to_collection(outputfilelocation,collection)
     state.save()
 
 @cli.command()
