@@ -185,30 +185,51 @@ class SSHlite(SSHcore):
 
     def configureScript(self,file,settings):
         # Read in the file
+        fileinput,homedir = settings
         print("Reading ",file)
         with open(file, 'r') as file :
             filedata = file.read()
 
         # Replace the target string
-        filedata = filedata.replace('{{settings}}', settings)
+        filedata = filedata.replace('{{fileinput}}', fileinput)
+        filedata = filedata.replace('{{homedir}}', homedir)
 
         # Write the file out again
         with open("cfstore/scripts/aggscript.py", 'w') as file:
             file.write(filedata)
 
+    def configureRemoteEnvironment(self):
+        print("Activating conda environment")
+        stdin, stdout, stderr = self._client.exec_command('conda activate cfstore')
+        for line in stderr:
+            print("err:",line)
+        for line in stdout:
+            print("out:",line)
+
     def executeScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
-        remotescript = remotepath +scriptname
+        remotescript = remotepath+"/"+scriptname
         print("Executing script")
         print('Executing \"python '+scriptname+"\"")
+#        self.configureRemoteEnvironment()
+        stdin, stdout, stderr = self._client.exec_command('source activate cfstore')
+        print("ACTIVATE")
+        for line in stderr:
+            print("err:",line)
+        for line in stdout:
+            print("out:",line)
+        stdin, stdout, stderr = self._client.exec_command('source activate cfstore;conda info --env')
+        for line in stderr:
+            print("err:",line)
+        for line in stdout:
+            print("out:",line)
         try:
-            stdin, stdout, stderr = self._client.exec_command('python '+remotepath+"/"+scriptname)
+            stdin, stdout, stderr = self._client.exec_command('source activate cfstore; python '+remotepath+"/"+scriptname)
             print("Script executed")
         except:
             print("Could not successfully execute script")
             print("Removing script from remote server")
             self._sftp.remove(remotescript)
-        print(stderr)
         for line in stderr:
             print("err:",line)
         for line in stdout:
@@ -217,9 +238,9 @@ class SSHlite(SSHcore):
 
     def aggregateFiles(self, remotepath):
         print("Aggregating files")
-        print('Executing \"python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc\"')
+        print('Executing \"python -i -f CFA4 --overwrite ' + remotepath +'.nc *.nc\"')
         try:
-            stdin, stdout, stderr = self._client.exec_command('python i -f CFA4 --overwrite ' + remotepath +'.nc *.nc')
+            stdin, stdout, stderr = self._client.exec_command('python -i -f CFA4 --overwrite ' + remotepath +'.nc *.nc')
             print("Aggregation file built")
         except:
             print("Could not successfully execute script")
