@@ -120,7 +120,7 @@ class Posix:
         c = self.db.retrieve_collection(collection)
 
         for variable in variables:
-            files = variable['files']
+            files = variable['in_files']
             var = db.Variable(variable)
             var.in_files(files)
             dbfiles.append(var)
