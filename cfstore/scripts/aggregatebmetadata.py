@@ -56,7 +56,7 @@ if __name__ == '__main__':
             for k,p in properties.items():
                 if k not in ['standard_name','long_name']:
                     var[k] = manage_types(p) 
-            
-            variables.append(var)
+            if var:
+                variables.append(var)
         with open("{{homedir}}/"+"tempfile.json","w") as writepath:
             json.dump(variables,writepath)
