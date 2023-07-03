@@ -170,6 +170,12 @@ class CollectionDB(CoreDB):
         "location" means. Other layers of software care about that.
         However, it may have one or more protocols associated with it.
         """
+
+    
+        loc, created = Location.objects.get_or_create(name=location,volume=0)
+        if overwrite and not created:
+            loc.delete()
+            loc = Location.objects.create(name=location,volume=0)    
         if protocols:
             existing_protocols = self.retrieve_protocols()
             for p in protocols:
@@ -177,13 +183,9 @@ class CollectionDB(CoreDB):
                     pdb = Protocol.objects.create(name=p)
                 loc.protocols.append(pdb)
         else:
-            protocols = [Protocol.objects.get_or_create(name="none")[0]]
-        loc, created = Location.objects.get_or_create(name=location,volume=0)
-        for p in protocols:
-            loc.protocols.add(p)
+            protocols = [Protocol.objects.get_or_create(name="none")[0]]        
         loc.save()
 
-        #FIXME add protocols to location
         
     def create_tag(self, tagname):
         """
