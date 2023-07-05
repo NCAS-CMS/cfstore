@@ -560,8 +560,6 @@ class CollectionDB(CoreDB):
             results = Variable.objects.filter(*queries)
         if results:
             results=results[0]
-        else:
-            raise FileNotFoundError
         return results
 
     def retrieve_variable_query(self, key, value, query):
