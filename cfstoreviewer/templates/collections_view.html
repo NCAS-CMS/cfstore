@@ -61,7 +61,7 @@ a:active {
     </style>
 </head>
 <html>
-<h1><a href="../cfstoreviewer/viewcollections">Collections</a><h1>
+<h1><a href="../">Collections</a><h1>
   <form action="" method="post">
     {% csrf_token %}
     {{form}}
@@ -88,7 +88,7 @@ a:active {
                 <button class="dropbtn">{{varcount}} Variables</button>
                 <div class="dropdown-content">
                     {% for var in variables %}
-                        <a href="../cfstoreviewer/viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
+                        <a href="../variables/{{var|outputvar}}">{{var|outputvar}}</a>
                     {% endfor %}
                 </div>
               </div> </td>
