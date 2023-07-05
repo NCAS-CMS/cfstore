@@ -115,19 +115,25 @@ class Posix:
         print("Adding variables from",aggfile)
         aggfileobject = open(aggfile,'r')
         variables = json.load(aggfileobject)
-        dbfiles=[]
         #for each variable
         c = self.db.retrieve_collection(collection)
 
         for variable in variables:
             files = variable['in_files']
-            var = db.Variable(variable)
-            var.in_files(files)
-            dbfiles.append(var)
-            self.db.add_variable_to_collection(var)
-        print(dbfiles)
-
-        
+            var = db.Variable.objects.filter(cfdm_size=int(variable['cfdm_size'],),cfdm_domain=variable['cfdm_domain'],standard_name=variable['standard_name'],identity=variable['identity'])
+            if not var:
+                var = db.Variable.objects.create(cfdm_size=int(variable['cfdm_size'],),cfdm_domain=variable['cfdm_domain'],standard_name=variable['standard_name'],identity=variable['identity'])
+            else:
+                var = var[0]
+            for property in variable:
+                var[property] = variable[property]
+            self.db.add_variable_to_collection(collection,var)
+            for file in files:
+                f = self.db.retrieve_file_if_present(file)
+                if not f in var.in_files.all():
+                    var.in_files.add(f)
+                
+            var.save()
 
 class RemotePosix(Posix):
     """

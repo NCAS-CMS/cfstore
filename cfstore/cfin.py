@@ -202,27 +202,27 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     #Setup Remote Posix as normal
     x = RemotePosix(state.db, location)
     host, user = state.get_location(location)['host'], state.get_location(location)['user']
-    x.configure(host, user)
+    #x.configure(host, user)
 
     #Add settings to script
-    x.ssh.configureScript(aggscriptpath,(metadatadirectory,pushdirectory))
+    #x.ssh.configureScript(aggscriptpath,(metadatadirectory,pushdirectory))
     aggscriptpath = scriptlocation+"aggscript.py"
     aggscriptname = "aggscript.py"
 
     #Push Script(s)
     #x.ssh.pushScript(remotepath,collection, scriptname)
-    x.ssh.pushScript(pushdirectory,collection, aggscriptpath)
+    #x.ssh.pushScript(pushdirectory,collection, aggscriptpath)
 
-    x.ssh.configureRemoteEnvironment()
+    #x.ssh.configureRemoteEnvironment()
 
     #Generate Aggregation File
-    x.ssh.aggregateFiles(pushdirectory)
+    #x.ssh.aggregateFiles(pushdirectory)
 
     #Generate JSON from Aggregation File
-    x.ssh.executeScript(pushdirectory,collection, aggscriptname)
+    #x.ssh.executeScript(pushdirectory,collection, aggscriptname)
 
     #Retrieve JSON file
-    x.ssh.get(pushdirectory+"/tempfile.json", "cfstore/json/"+outputfilename,delete=True)
+    #x.ssh.get(pushdirectory+"/tempfile.json", "cfstore/json/"+outputfilename,delete=True)
 
     #Clean-up remote files (At present clean-up means remove them)
     #This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
@@ -252,7 +252,6 @@ def setup(ctx, location, host, user,overwrite):
     if target == 'rp':
         # check we don't already have one in config or database (we can worry about mismatches later)
         if location in state.interfaces and overwrite == False:
-            print(state.interfaces)
             raise ValueError(f'Location {location} already exists in config file')
         
         state.db.create_location(location,overwrite=overwrite)

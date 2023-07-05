@@ -172,8 +172,12 @@ class CollectionDB(CoreDB):
         """
 
     
-        loc, created = Location.objects.get_or_create(name=location,volume=0)
-        if overwrite and not created:
+        loc = Location.objects.filter(name=location)
+        if loc:
+            loc = loc[0]
+        if not loc:
+            loc = Location.objects.create(name=location,volume=0)
+        if overwrite and loc:
             loc.delete()
             loc = Location.objects.create(name=location,volume=0)    
         if protocols:
@@ -382,6 +386,30 @@ class CollectionDB(CoreDB):
         else:
             raise FileNotFoundError  # (f'File "{path}/{name}" not found')
 
+    def retrieve_file_if_present(self, fullpath, size=None, checksum=None):
+        """
+        Retrieve a file with <path> and <name>.
+
+        If one of <size> or <checksum> are provided (both is an error), make sure
+        it has the correct size or checksum.
+
+        (The use case for extra detail is to look for specific files amongst duplicates.)
+        """
+        pathname,filename = os.path.split(fullpath)
+        if size and checksum:
+            raise ValueError("Can only retrieve files by size OR checksum, not both!")
+        if size:
+            x = File.objects.filter(name=filename,path=pathname,size=size).all()
+        elif checksum:
+            x = File.objects.filter(name=filename,path=pathname,checksum=checksum).all()
+        else:
+            x = File.objects.filter(name=filename).all()
+        if x:
+            assert len(x) > 0
+            return x[0]
+        else:
+            x = None
+
     def retrieve_location(self, location_name):
         """
         Retrieve information about a specific location
@@ -434,8 +462,8 @@ class CollectionDB(CoreDB):
         """
         m = f'%{match}%'
         #FIXME make this an OR
-        return File.objects.filter(name_contains=m,path_contains=m)
-#        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
+        #return File.objects.filter(name_contains=m,path_contains=m)
+        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
 
     def retrieve_files_in_collection(self, collection, match=None, replicants=False):
         """
@@ -528,12 +556,12 @@ class CollectionDB(CoreDB):
                 results = Variable.objects.filter(standard_name=value).all()
             else:
                 results = Variable.objects.filter(long_name=value).all()
-
-
         else:
             results = Variable.objects.filter(*queries)
         if results:
             results=results[0]
+        else:
+            raise FileNotFoundError
         return results
 
     def retrieve_variable_query(self, key, value, query):
@@ -596,7 +624,9 @@ class CollectionDB(CoreDB):
     def show_collections_with_variable(self, variable):
         """Find all collections with a given variable"""
         coldict = {}
+        print(variable.in_files)
         for file in variable.in_files.all():
+            
             for collection in Collection.objects.filter(files=file).all():
                 if collection not in coldict:
                     coldict[collection] = 1
@@ -662,7 +692,7 @@ class CollectionDB(CoreDB):
 
     def add_variable_to_collection(self, collection, variable):
         """
-        Add file to a collection
+        Add variable to a collection
         """
         c = Collection.objects.get(name=collection)
         if variable in c.variable_set.all():
@@ -930,7 +960,7 @@ class CollectionDB(CoreDB):
             if "checksum" not in f:
                 f["checksum"] = "None"
             name, path, size, checksum = f["name"], f["path"], f["size"], f["checksum"]
-            
+            check = False
             try:
                 if lazy == 0:
                     check = self.retrieve_file(path, name)
@@ -941,7 +971,7 @@ class CollectionDB(CoreDB):
                 else:
                     raise ValueError(f"Unexpected value of lazy {lazy}")
             except FileNotFoundError:
-                check = False
+                pass
 
             if check:
                 if not update:
@@ -953,16 +983,25 @@ class CollectionDB(CoreDB):
                         fmt = f["format"]
                     except KeyError:
                         fmt = os.path.splitext(name)[1]
-                    check.replicas.add(loc)
-                    loc.holds_files.add(check)
-                    loc.volume += check.size
+                    f,created = File.objects.get_or_create(
+                        name=name,
+                        path=path,
+                        checksum=checksum,
+                        size=size,
+                        format=fmt,
+                    )
+                    f.replicas.add(loc)
+                    c.files.add(f)
+                    c.volume += f.size
+                    loc.holds_files.add(f)
+                    loc.volume += f.size
                 
             else:
                 try:
                     fmt = f["format"]
                 except KeyError:
                     fmt = os.path.splitext(name)[1]
-                f = File.objects.create(
+                f,created = File.objects.get_or_create(
                     name=name,
                     path=path,
                     checksum=checksum,
@@ -973,15 +1012,14 @@ class CollectionDB(CoreDB):
                 f.replicas.add(loc)
                 c.files.add(f)
                 f.replicas.add(loc)
-                c.files.add(f)
                 loc.holds_files.add(f)
                 loc.volume += f.size
-                            
+                f.save()                    
 
 
         c.save()
         loc.save()
-        f.save()
+        
 
     def remove_file_from_collection(
         self, collection, file_path, file_name, checksum=None
