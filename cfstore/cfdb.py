@@ -224,7 +224,7 @@ def ls(ctx, collection, output):
     """
     view_state, db = _set_context(ctx, collection)
     output= output.lower()
-    
+    return_list = None
     if view_state.collection:
         if output=="files":
             return_list = db.retrieve_files_in_collection(view_state.collection)
@@ -240,11 +240,9 @@ def ls(ctx, collection, output):
  
         elif output=="collections":
             return_list = db.retrieve_collections()
-            print(view_state.name)
 
-        elif output=="variables":
+        elif output=="variables" or output=="var":
             return_list = db.retrieve_variable("all","")
-            print(view_state.name)
 
         elif output=="locations":
             state = _load()
@@ -275,33 +273,35 @@ def ls(ctx, collection, output):
                     return_list.append("Host:"+state.get_location(locationName)['host'])
                     return_list.append("User:"+state.get_location(locationName)['user'])
                     return_list.append("Files:"+str(len(c.holds_files.all())))
-
             for r in return_list:
                 print(r)
-        elif output=="variables" or output=="var":
-            try:
-                for r in return_list:
-                    print("Variable:")
-                    if r.standard_name:
-                        print(r.standard_name)
-                    elif r.long_name:
-                        print(r.long_name)
+        if output=="variables" or output=="var":
+            if return_list:
+                try:
+                    for r in return_list:
+                        print("Variable:")
+                        if r.standard_name:
+                            print(r.standard_name)
+                        elif r.long_name:
+                            print(r.long_name)
+                        else:
+                            print("id "+str(r.id)+"(which has no name for some reason)")
+                        print("         is in")
+                        for f in r.in_collection.all():
+                            print("         "+f.name)
+                except:
+                    if output not in ["files","tags","facets","relationships","collections","locations","variables", "var"]:
+                        print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
                     else:
-                        print("id "+str(r.id)+"(which has no name for some reason)")
-                    print("         is in")
-                    for f in r.in_collection.all():
-                        print("         "+f.name)
-            except:
-                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
-                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
-                else:
-                    print("Return list cannot be printed")
-        else:
+                        print("Return list cannot be printed")
+            else:
+                print("No Variables found")            
+        if return_list:
             try:
                 for r in return_list:
                     print(r.name, sizeof_fmt(r.size))
             except:
-                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                if output not in ["files","tags","facets","relationships","collections","locations","variables", "var"]:
                     print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
                 else:
                     print("Return list cannot be printed")
