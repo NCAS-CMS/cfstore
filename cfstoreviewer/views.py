@@ -151,7 +151,9 @@ def downloadcol(request,page="all"):
 def lsvar(request,var="all"):
     db = CFSconfig().db
     variable = db.retrieve_variable("standard_name",var)
-    if not variable:
+    print(variable)
+    if not variable.standard_name:
         variable = db.retrieve_variable("long_name",var)
     collections = db.show_collections_with_variable(variable)
+    print(collections)
     return render(request, "variables_view.html",{'variable':variable,'collections':collections,'colcount':len(collections)})

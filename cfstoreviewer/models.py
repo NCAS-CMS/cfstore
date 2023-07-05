@@ -149,10 +149,10 @@ class Variable(models.Model):
 
     _proxied = {}
     cfdm_size = models.BigIntegerField()
-    long_name = models.CharField(max_length=1024)
+    long_name = models.CharField(max_length=1024,null=True)
     id = models.AutoField(primary_key=True)
     cfdm_domain = models.CharField(max_length=1024)
-    standard_name = models.CharField(max_length=1024)
+    standard_name = models.CharField(max_length=1024,null=True)
     in_collection = models.ManyToManyField(Collection)
     in_files = models.ManyToManyField(File)
     identity = models.CharField(max_length=1024)
