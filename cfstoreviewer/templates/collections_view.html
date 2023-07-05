@@ -88,7 +88,7 @@ a:active {
                 <button class="dropbtn">{{varcount}} Variables</button>
                 <div class="dropdown-content">
                     {% for var in variables %}
-                        <a href="http://127.0.0.1:8000/cfstoreviewer/viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
+                        <a href="../cfstoreviewer/viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
                     {% endfor %}
                 </div>
               </div> </td>

@@ -77,7 +77,7 @@ a:active {
                         <button class="dropbtn">{{colcount}} Collections</button>
                         <div class="dropdown-content">
                             {% for col in collections %}
-                                <a href="../cfstoreviewer/viewcollections/{{col.name}}">{{col.name}}</a>
+                                <a href="../{{col.name}}">{{col.name}}</a>
                             {% endfor %}
                         </div>
                       </div> </td>
