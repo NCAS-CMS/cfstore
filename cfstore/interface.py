@@ -534,13 +534,13 @@ class CollectionDB(CoreDB):
     def retrieve_variable(self, key, value):
         """Retrieve variable by arbitrary property"""
         if key == "identity":
-            results = Variable.objects.get(identity=value)
+            results = Variable.objects.filter(identity=value)
         if key == "id":
-            results = Variable.objects.get(id=value)
+            results = Variable.objects.filter(id=value)
         if key == "long_name":
-            results = Variable.objects.get(long_name=value)
+            results = Variable.objects.filter(long_name=value)
         if key == "standard_name":
-            results = Variable.objects.get(standard_name=value)
+            results = Variable.objects.filter(standard_name=value)
         if key == "cfdm_size":
             results = Variable.objects.filter(cfdm_size=value)
         if key == "cfdm_domain":
@@ -553,8 +553,8 @@ class CollectionDB(CoreDB):
             return Variable.objects.all()
         
         if not results.exists():
-            raise ValueError("No results found for retrieve variable")
-        return results
+            return results
+        return results[0]
 
     def retrieve_variable_query(self, key, value, query):
         """Retrieve variable by arbitrary property"""
@@ -583,36 +583,29 @@ class CollectionDB(CoreDB):
     
     def search_variable(self, key, value):
         """Retrieve variable by arbitrary property"""
-        queries = []
-        if key in [
-            "long_name",
-            "standard_name",
-            "cfdm_size",
-            "cfdm_domain",
-            "cell_methods",
-        ]:
-            queries.append(getattr(Variable, key) == value)
-        else:
-            pass
-            #queries.append(Variable.with_other_attributes(key, value))
+        if key == "identity":
+            results = Variable.objects.filter(identity__contains=value)
+        if key == "id":
+            results = Variable.objects.filter(id__contains=value)
+        if key == "long_name":
+            results = Variable.objects.filter(long_name__contains=value)
+        if key == "standard_name":
+            results = Variable.objects.filter(standard_name__contains=value)
+        if key == "cfdm_size":
+            results = Variable.objects.filter(cfdm_size__contains=value)
+        if key == "cfdm_domain":
+            results = Variable.objects.filter(cfdm_domain__contains=value)
+        if key == "cell_methods":
+            results = Variable.objects.filter(cell_methods__in=value)
         if key == "in_files":
-            queries.append([value == k for k in Variable.in_files])
+            results = Variable.objects.filter(in_files__in=value)
         if key == "all":
             return Variable.objects.all()
-        elif len(queries) == 0:
-            raise ValueError("No query received for retrieve variable")
-        elif len(queries) == 1:
-            if key == "standard_name":
-                results = Variable.objects.filter(standard_name__contains=value).all()
-            else:
-                results = Variable.objects.filter(long_name__contains=value).all()
+        
+        if not results.exists():
+            return results
+        return results[0]
 
-
-        else:
-            results = Variable.objects.filter(*queries)
-        if results:
-            results=results[0]
-        return results
 
     def show_collections_with_variable(self, variable):
         """Find all collections with a given variable"""
