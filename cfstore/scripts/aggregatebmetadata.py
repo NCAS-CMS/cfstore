@@ -39,7 +39,7 @@ if __name__ == '__main__':
             #Reads the fields from the file with cf
             #Alternatively cfdm can be used as such:
             #   cff = cfdm.read(filename)
-        cff=cf.read("{{fileinput}}cn134o_1_mon__grid_T_195003-195003.nc",ignore_read_error=True,fmt="NETCDF",aggregate={"relaxed_units":True,"relaxed_identities":True})  
+        cff=cf.read("{{fileinput}}",ignore_read_error=True,fmt="NETCDF",aggregate={"relaxed_units":True,"relaxed_identities":True, "exclude":True},recursive=True)  
         # loop over fields in file (not the same as netcdf variables)
         variables=[]
         for v in cff:
