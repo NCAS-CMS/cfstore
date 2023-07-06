@@ -16,13 +16,7 @@ def outputvar(var):
     """ Can't use the django built in coz not everything is a float.
     But we can use this to suppress 0.0 in a nice way."""
 
-    if var.standard_name:
-        return_string = var.standard_name
-    elif var.long_name:
-        return_string = var.long_name
-    else:
-        return_string = "id "+str(var.id)+"(which has no name for some reason)"+"<br>"
-    return return_string
+    return var.identity
 
 def index(request):
     return HttpResponse("Welcome to CFstore. You're at the polls index.")
@@ -150,10 +144,7 @@ def downloadcol(request,page="all"):
 
 def lsvar(request,var="all"):
     db = CFSconfig().db
-    variable = db.retrieve_variable("standard_name",var)
-    print(variable)
-    if not variable.standard_name:
-        variable = db.retrieve_variable("long_name",var)
+    variable = db.retrieve_variable("identity",var)
     collections = db.show_collections_with_variable(variable)
     print(collections)
     return render(request, "variables_view.html",{'variable':variable,'collections':collections,'colcount':len(collections)})
