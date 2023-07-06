@@ -533,39 +533,34 @@ class CollectionDB(CoreDB):
 
     def retrieve_variable(self, key, value):
         """Retrieve variable by arbitrary property"""
-        queries = []
-        if key in [
-            "long_name",
-            "standard_name",
-            "cfdm_size",
-            "cfdm_domain",
-            "cell_methods",
-        ]:
-            queries.append(getattr(Variable, key) == value)
-        else:
-            pass
-            #queries.append(Variable.with_other_attributes(key, value))
+        if key == "identity":
+            results = Variable.objects.get(identity=value)
+        if key == "id":
+            results = Variable.objects.get(id=value)
+        if key == "long_name":
+            results = Variable.objects.get(long_name=value)
+        if key == "standard_name":
+            results = Variable.objects.get(standard_name=value)
+        if key == "cfdm_size":
+            results = Variable.objects.filter(cfdm_size=value)
+        if key == "cfdm_domain":
+            results = Variable.objects.filter(cfdm_domain=value)
+        if key == "cell_methods":
+            results = Variable.objects.filter(cell_methods__in=value)
         if key == "in_files":
-            queries.append([value == k for k in Variable.in_files])
+            results = Variable.objects.filter(in_files__in=value)
         if key == "all":
             return Variable.objects.all()
-        elif len(queries) == 0:
-            raise ValueError("No query received for retrieve variable")
-        elif len(queries) == 1:
-            if key == "standard_name":
-                results = Variable.objects.filter(standard_name=value).all()
-            else:
-                results = Variable.objects.filter(long_name=value).all()
-        else:
-            results = Variable.objects.filter(*queries)
-        if results:
-            results=results[0]
+        
+        if not results.exists():
+            raise ValueError("No results found for retrieve variable")
         return results
 
     def retrieve_variable_query(self, key, value, query):
         """Retrieve variable by arbitrary property"""
         queries = query
         if key in [
+            "id"
             "long_name",
             "standard_name",
             "cfdm_size",
