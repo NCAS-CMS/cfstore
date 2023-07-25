@@ -1,102 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style>
- a:link {
-  color: #030303;
-}
+  {% load static %}
 
-/* visited link */
-a:visited {
-  color: #030303;
-}
-
-/* mouse over link */
-a:hover {
-  color: #186f4d;
-}
-
-/* selected link */
-a:active {
-  color: #030303;
-} 
-    .dropbtn {
-      background-color: #030303;
-      color: white;
-      padding: 16px;
-      font-size: 16px;
-      border: none;
-    }
-    
-    .dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #f1f1f1;
-      min-width: 40px;
-      font-size: 16px;
-      height: 150px;
-      overflow: auto;
-      box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.2);
-      z-index: 1;
-    }
-    
-    .dropdown-content a {
-      color: black;
-      padding: 6px 8px;
-      text-decoration: none;
-      display: block;
-    }
-    
-    .dropdown-content a:hover {background-color: #ddd;}
-    
-    .dropdown:hover .dropdown-content {display: block;}
-    
-    .dropdown:hover .dropbtn {background-color: #030303;}
-    </style>
+  <link rel="stylesheet" href="{% static '/cfstore.css' %}">
 </head>
 <html>
-<h1><a href="/cfstoreviewer/viewcollections">Collections</a><h1>
-    <form action="/cfstoreviewer/viewcollections/search/" method="post">
-      {% csrf_token %}
-      {{variable_search_form}}
-    </form>
-    <form action="/cfstoreviewer/viewcollections/search/" method="post">
-      {% csrf_token %}
-      {{collection_search_form}}
-    </form>
-    <form action="" method="post">
-      {% csrf_token %}
-      {{ collection_save_form }}
-    </form>
-    <h4>{{search_method}}</h4>
-    <table border="1"><tr><td>
-    {% for collection in collections %}
-    <table border="1">
-        <tr><h3><a href="{{collection.name}}">{{collection.name}}</a><h3></tr>
-        <tr><th>Description</th><td>{{collection.description}}</td></tr>
-        <tr><th>Volume</th><td>{{collection.volume|sizeoffmt}}</td></tr>
-        <tr><th>Filecount</th><td>{{collection.files.all|length}}</td></tr> 
-        <tr><th>Variables</th>
-            <td><div class="dropdown">
-                <button class="dropbtn">Variables</button>
-                <div class="dropdown-content">
 
-                {% for var in collection|getvariables %}
-                    <a href="/cfstoreviewer/viewcollections/variables/{{var|outputvar}}">{{var|outputvar}}</a>
-                {% endfor %}
-                </div>
 
-            </div> </td>
-        </tr>
+
+  <h2>Collections</h2>
+
+  {%for collection in collections %}
+  <button type="button" class="collapsible">{{collection.name}}</button>
+  <div class="collection-block">
+  
+<p>
+  <button type="button" class="collapsible">Variables     <form action="/cfstoreviewer/viewcollections/search/" method="post">
+    {% csrf_token %}
+    {{variable_search_form}}
+  </form>  
+</button>
+  <button type="button" class="collapsible-content">
+    <form>
+      <input type="checkbox" id="standardname" onclick="checkboxfunction()">
+      <label for="standardname">Standard Name</label>
+      <input type="checkbox" id="longname" onclick="checkboxfunction()">
+      <label for="longname">Long Name</label>
+      <br>
+    
+    </form>
+    <table id="collabsibletable">
+
+    {% for var in collection|getvariables %}
+
+      <tr>
+        <td><p class="variable" href="../variables/{{var|outputvar}}">{{var|outputvar}}</p></td>
+      </tr>
+      {% endfor %}
     </table>
-    {% endfor %}
+  </button>
+</p>
+<p>
+</p>
+  <button type="button" class="collapsible">Model</button>
+  <button type="button" class="collapsible-content">
+<p>
+  <div >
+    <p>Model 1</p>
+    <p>Model 2</p>
+  </div>
+</p>
+</button>
+<p>
+  <button type="button" class="collapsible">Tags</button>
+  <button type="button" class="collapsible-content">
+    <p>Tag 1</p>
+    <p>Tag 2</p>
+</button>
+</p>
 
-    </tr></td></table>
+
+</div>
+{% endfor %}
+
+
+<script>
+  function checkboxfunction() {
+    var longname = document.getElementById("longname");
+    var standardname = document.getElementById("standardname");
+    var text = document.getElementsByClassName("variable");
+    for (i = 0; i < text.length; i++) {
+      if (standardname.checked === false && text[i].innerHTML.includes("Long Name") === false){
+        text[i].style.display = "none";
+      }
+      else if (longname.checked === false && text[i].innerHTML.includes("Long Name") === true){
+        text[i].style.display = "none"; 
+      } else {
+        text[i].style.display = "block";
+      }
+    }
+  }
+  </script>
+  
+<script>
+  var coll = document.getElementsByClassName("collapsible");
+  var i;
+  
+  for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var content = this.nextElementSibling;
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+  }
+  </script>
+
+<script>
+  var coll = document.getElementsByClassName("collapsible-content");
+  var i;
+  
+  for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var content = this.nextElementSibling;
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+  }
+  </script>
 
 </body>
 </html>
