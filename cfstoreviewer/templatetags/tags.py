@@ -16,8 +16,10 @@ def active(request, pattern):
 def outputvar(var):
     """ Can't use the django built in coz not everything is a float.
     But we can use this to suppress 0.0 in a nice way."""
-
-    return var.identity
+    iden = var.identity
+    iden = iden.replace("_"," ")
+    iden = iden.replace("long name=","(Long Name) ")
+    return iden
 
 @template.defaulttags.register.filter
 def sizeoffmt(num):
