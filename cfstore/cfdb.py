@@ -242,7 +242,7 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_collections()
 
         elif output=="variables" or output=="var":
-            return_list = db.retrieve_variable("all","")
+            return_list = db.retrieve_variables_in_collection(collection_name=collection)
 
         elif output=="locations":
             state = _load()
@@ -289,6 +289,7 @@ def ls(ctx, collection, output):
                         print("         is in")
                         for f in r.in_collection.all():
                             print("         "+f.name)
+                        print(r.id,r.keys())
                 except:
                     if output not in ["files","tags","facets","relationships","collections","locations","variables", "var"]:
                         print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
