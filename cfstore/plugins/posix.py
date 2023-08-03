@@ -66,7 +66,8 @@ class Posix:
         keys=["_path_to_collection_head", "_collection_head_name", "_collection_head_description","_subcollections", "_checksum","_regex"]
         
         for n in range(len(args)):
-            c[keys[n]] = str(args[n])
+            print(c._proxied,type(c._proxied))
+            c[keys[n]] = (args[n])
         self._walk(path_to_collection_head, collection_head_name, subcollections, checksum,regex)
 
     def _walk(self, path_to_collection_head, collection_head_name, subcollections, checksum,regex):
@@ -148,10 +149,18 @@ class Posix:
             domain = v.domain._one_line_description()
             size = v.size
             #Maybe use shape?
+            
             var = db.Variable(identity=identity,standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, _proxied={})
             for k,p in properties.items():
                 if k not in ['standard_name','long_name']:
                     var[k] = manage_types(p)
+            if var['frequency'] == cf.D:
+                var['frequency']= "Daily"
+            if var['frequency'] == cf.M:
+                var['frequency']= "Monthly"
+            if var['frequency'] == cf.Y:
+                var['frequency']= "Yearly"
+            
             var.save()
             var.in_collection.add(c)
             files = list(v.get_filenames())
@@ -161,6 +170,7 @@ class Posix:
                     file = self.db.retrieve_file(path,file)
                     if file not in var.in_files.all():
                         var.in_files.add(file)
+                    file.save()
                 except(FileNotFoundError):
                     try:
                         uc = self.session.query(db.Collection).filter_by(name="unlisted").one()
@@ -169,7 +179,6 @@ class Posix:
                     uf = db.File(name=file, path=path, checksum=0, size=0, format="unknown")
                     uf.save()
                     var.in_files.add(uf)
-                file.save()
             
             print(var.id)
             print(var.keys())
