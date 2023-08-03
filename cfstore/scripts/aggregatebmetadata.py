@@ -23,5 +23,5 @@ if __name__ == '__main__':
     print("Test",len(cff),[v.data.cfa_get_write() for v in cff])
     writepath="{{homedir}}/"+"tempfile.cfa"
     
-    cf.write(cff,cfa={'strict',False},filename=writepath)
+    cf.write(cff,cfa=True,filename=writepath)
     
