@@ -18,7 +18,7 @@ def outputvar(var):
     But we can use this to suppress 0.0 in a nice way."""
     iden = var.identity
     iden = iden.replace("_"," ")
-    iden = iden.replace("long name=","(Long Name) ")
+    iden = iden.replace("long name=","(Long Name) ", 1)
     return iden
 
 @template.defaulttags.register.filter
