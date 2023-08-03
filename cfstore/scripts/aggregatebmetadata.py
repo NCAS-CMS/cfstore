@@ -12,7 +12,7 @@ if __name__ == '__main__':
             #Opens and empties matching files
             with open("{{homedir}}"+filename+"bmetadata.json","w") as writepath:
                 print("")
-            with open("{{homedir}}"+filename+"_variables_bmetadata.json","w") as writepath:
+            with open(f"{{{{homedir}}}}{filename}_variables_bmetadata.json","w") as writepath:
                 print("")
             
     #Reads the fields from the file with cf
