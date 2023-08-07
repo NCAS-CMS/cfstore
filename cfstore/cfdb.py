@@ -278,18 +278,19 @@ def ls(ctx, collection, output):
         if output=="variables" or output=="var":
             if return_list:
                 try:
-                    for r in return_list:
+                    for variable in return_list:
                         print("Variable:")
-                        if r.standard_name:
-                            print(r.standard_name)
+                        if variable.standard_name:
+                            print(variable.standard_name)
                         elif r.long_name:
-                            print(r.long_name)
+                            print(variable.long_name)
                         else:
-                            print("id "+str(r.id)+"(which has no name for some reason)")
+                            print("id "+str(variable.id)+"(which has no name for some reason)")
                         print("         is in")
-                        for f in r.in_collection.all():
+                        for f in variable.in_collection.all():
                             print("         "+f.name)
-                        print(r.id,r.keys())
+                        for v in variable._proxied:
+                            print(v,":",variable[v])
                 except:
                     if output not in ["files","tags","facets","relationships","collections","locations","variables", "var"]:
                         print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections, variables or locations instead")
@@ -317,15 +318,25 @@ def ls(ctx, collection, output):
                 return_list.append("Name:"+locationName)
                 return_list.append("Host:"+state.get_location(locationName)['host'])
                 return_list.append("User:"+state.get_location(locationName)['user'])
-
-        try:
-            for r in return_list:
-                print(r.name)
-        except:
-            if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
-                print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections,variables or locations instead")
-            else:
-                print("Return list failed to print")
+        elif output=="variables" or output=="var":
+            var_list = db.retrieve_variable("all","")
+            for variable in var_list:
+                if variable.standard_name:
+                    print(variable.standard_name)
+                elif variable.long_name:
+                    print(variable.long_name)
+                else:
+                    print("id "+str(variable.id)+"(which has no name for some reason)")
+                print("         is in")
+        else:
+            try:
+                for r in return_list:
+                    print(r.name)
+            except:
+                if output not in ["files","tags","facets","relationships","collections","locations","variables"]:
+                    print(f"Invalid output \"{output}\" selected - try files, tags, facets, relationships, collections,variables or locations instead")
+                else:
+                    print("Return list failed to print")
     view_state.save()
 
 
@@ -651,6 +662,19 @@ def delete_loc(ctx, location):
     """
     view_state, db = _set_context(ctx, None)
     db.delete_location(location)
+    view_state.save()
+
+@cli.command()
+@click.pass_context
+@click.argument('variable')
+def delete_var(ctx, variable):
+    """
+    Delete an <collection> that contains no files
+    Raises an error if the collection is not empty
+    Usage: cfsdb delete-col <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    db.delete_var(variable)
     view_state.save()
 
 @cli.command()
