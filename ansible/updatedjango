@@ -1,0 +1,3 @@
+sh ansible.sh centos-6-gunicorn.yaml
+sh ansible.sh centos-7-gunicorn.yaml
+sh ansible.sh centos-8-nginx.yaml

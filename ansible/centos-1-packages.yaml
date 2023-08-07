@@ -3,19 +3,19 @@
 # that's got to be a bad thing, but I don't currently have a better work around.
 ---
 - hosts: all
-  become: yes
-  gather_facts: no
+  become: true
+  gather_facts: false
   tasks:
     - name: Get extra packages
-      yum: 
-         name: epel-release
-         state: latest
+      yum:
+        name: epel-release
+        state: latest
     - name: Running yum update
       yum:
-         name: "{{packages}}"
+        name: "{{packages}}"
       vars:
-         packages:
-          - git 
+        packages:
+          - git
           - nginx
           - ca-certificates
           - uwsgi
@@ -28,29 +28,29 @@
           - policycoreutils-python
     - name: Now get certificates in play (but this doesn't seem to work)
       command: update-ca-trust
-    - name: Download miniconda 
+    - name: Download miniconda
       get_url:
-         url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-         dest: /tmp/install-miniconda.sh
-         force: no
-         mode: 0550
-         validate_certs: no
+        url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        dest: /tmp/install-miniconda.sh
+        force: false
+        mode: 0550
+        validate_certs: false
     - name: Create Conda Dir
-      file: 
-         path: /opt/miniconda3
-         state: directory
-         mode: 0755
-         recurse: yes
+      file:
+        path: /opt/miniconda3
+        state: directory
+        mode: 0755
+        recurse: true
     - name: Install Conda
       shell: /tmp/install-miniconda.sh -b -u -p /opt/miniconda3
     - name: Remove installer
       file:
-          state: absent
-          path: /tmp/install-miniconda.sh
+        state: absent
+        path: /tmp/install-miniconda.sh
     - name: Add miniconda bin to path
       shell: echo 'export PATH=/opt/miniconda3/bin:$PATH' >> /etc/profile
     - name: permissions
-      file: 
-         path: /opt/miniconda3/bin
-         mode: +x
-         recurse: yes
+      file:
+        path: /opt/miniconda3/bin
+        mode: +x
+        recurse: true

@@ -1,23 +1,22 @@
 ---
-
 - hosts: all
-  gather_facts: no
+  gather_facts: false
   vars:
-     venv: "/home/{{user}}/django"
+  venv: "/home/{{user}}/django"
   tasks:
-    - name: crude hack to get django interactive to see the udunits xml variable
+   - name: crude hack to get django interactive to see the udunits xml variable
       ansible.builtin.blockinfile:        
          path: "{{repo_dir}}/manage.py"
-         insertbefore: "try:"
-         block: |
-            #   because we need to join our pip installed cf-python to system installed udunits2
-                os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
-            #   FIXME: we really need to work out why this is happening
-    - name: crude hack to get django wsgi to see the udunits xml variable
-      ansible.builtin.blockinfile:        
+            insertbefore: "try:"
+            block: |
+               #   because we need to join our pip installed cf-python to system installed udunits2
+                  os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+               #   FIXME: we really need to work out why this is happening
+   - name: crude hack to get django wsgi to see the udunits xml variable
+      ansible.builtin.blockinfile:
          path: "{{repo_dir}}/{{application}}/wsgi.py"
-         insertafter: "^os.environ"
-         block: |
-            #   because we need to join our pip installed cf-python to system installed udunits2
-            os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
-            #   FIXME: we really need to work out why this is happening
+            insertafter: "^os.environ"
+            block: |
+               #   because we need to join our pip installed cf-python to system installed udunits2
+               os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
+               #   FIXME: we really need to work out why this is happening

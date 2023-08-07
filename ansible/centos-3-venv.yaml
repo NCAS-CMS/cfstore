@@ -1,51 +1,50 @@
 ---
-
 - hosts: all
-  gather_facts: no
+  gather_facts: false
   vars:
-     venv: "/home/{{user}}/django"
+    venv: "/home/{{user}}/django"
   tasks:
     - name: python2 setuptools
-      # Make sure python2 (running ansible) has setuptools 
+      # Make sure python2 (running ansible) has setuptools
       # so it can parse the (python3) executable requirement that follows
       # https://github.com/ansible/ansible/issues/47361#issuecomment-431705748
-      become: yes
+      become: true
       package:
         name: python-setuptools
         state: present
     - name: Make sure we have virtualenv
-      become: yes
+      become: true
       pip:
-         executable: /opt/miniconda3/bin/pip3
-         name: virtualenv
-    - name: stick a few things in our parent conda 
-      become: yes 
-      shell: "/opt/miniconda3/bin/conda install -y -c conda-forge udunits2 pygraphviz"
+        executable: /opt/miniconda3/bin/pip3
+        name: virtualenv
+    - name: stick a few things in our parent conda
+      become: true
+      shell: "/opt/miniconda3/bin/conda install -y -c conda-forge udunits2 pygraphviz python-dateutil"
     - name: add dateutil here (since it causes problems everywhere else?)
-      pip: 
+      pip:
         name: python-dateutil
-        virtualenv_command:  /opt/miniconda3/bin/virtualenv
+        virtualenv_command: /opt/miniconda3/bin/virtualenv
         virtualenv: "{{venv}}"
     - name: now setup our django virtual env
       pip:
-         name: django
-         virtualenv_command:  /opt/miniconda3/bin/virtualenv
-         virtualenv: "{{venv}}"
+        name: django
+        virtualenv_command: /opt/miniconda3/bin/virtualenv
+        virtualenv: "{{venv}}"
     - name: add gunicorn here (since it's strictly not an application requirement)
-      pip: 
+      pip:
         name: gunicorn
-        virtualenv_command:  /opt/miniconda3/bin/virtualenv
+        virtualenv_command: /opt/miniconda3/bin/virtualenv
         virtualenv: "{{venv}}"
     - name: add application requirements
       pip:
-         requirements: "/home/{{user}}/cfstore/requirements.txt"
-         virtualenv: "{{venv}}"
-         virtualenv_command:  /opt/miniconda3/bin/virtualenv
+        requirements: "/home/{{user}}/cfstore/requirements.txt"
+        virtualenv: "{{venv}}"
+        virtualenv_command: /opt/miniconda3/bin/virtualenv
     - name: fix up udunits2
       ansible.builtin.blockinfile:
-         path: "{{venv}}/bin/activate"
-         insertafter: EOF
-         block: |
-            # because we need to join our pip installed cf-python to system installed udunits2
-            UDUNITS2_XML_PATH='/opt/miniconda3/share/udunits/udunits2.xml'
-            export UDUNITS2_XML_PATH
+        path: "{{venv}}/bin/activate"
+        insertafter: EOF
+        block: |
+          # because we need to join our pip installed cf-python to system installed udunits2
+          UDUNITS2_XML_PATH='/opt/miniconda3/share/udunits/udunits2.xml'
+          export UDUNITS2_XML_PATH

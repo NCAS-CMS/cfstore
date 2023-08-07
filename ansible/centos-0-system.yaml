@@ -1,13 +1,13 @@
 ---
 - hosts: all
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: Create Deployment Key
       ansible.builtin.user:
-         name: "{{user}}"
-         generate_ssh_key: yes
-         ssh_key_bits: 2048
-         ssh_key_file: ".ssh/{{keyname}}"
+        name: "{{user}}"
+        generate_ssh_key: true
+        ssh_key_bits: 2048
+        ssh_key_file: ".ssh/{{keyname}}"
     - name: Read SSH public key
       slurp: src="/home/{{user}}/.ssh/{{keyname}}.pub"
       register: public_key

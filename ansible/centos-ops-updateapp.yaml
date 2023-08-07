@@ -1,43 +1,43 @@
 ---
 - hosts: all
-  gather_facts: yes
+  gather_facts: true
   vars:
     venv: "/home/{{user}}/django"
   tasks:
 
-    - name: overwrite django app  
+    - name: overwrite django app
       ansible.builtin.git:
         key_file: "/home/{{user}}/.ssh/{{keyname}}"
         repo: "{{ repo_url }}/{{ repo }}.git"
         dest: "{{ repo_dir }}"
-        accept_hostkey: yes
-        clone: no
-        update: yes
-        force: yes
+        accept_hostkey: true
+        clone: false
+        update: true
+        force: true
 
     - name: configure hosts in django app
       ansible.builtin.lineinfile:
-         path: "{{repo_dir}}/{{application}}/settings.py"
-         regexp: "^ALLOWED_HOSTS"
-         line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
-         backup: yes
+        path: "{{repo_dir}}/{{application}}/settings.py"
+        regexp: "^ALLOWED_HOSTS"
+        line: "ALLOWED_HOSTS=['{{ansible_host}}','localhost']"
+        backup: true
 
     - name: sort out static root for django
       ansible.builtin.lineinfile:
-         path: "{{repo_dir}}//{{application}}/settings.py"
-         insertafter: "^STATICFILES_DIRS"
-         line: "STATIC_ROOT=os.path.join(os.path.expanduser('~'),'static/')"
+        path: "{{repo_dir}}//{{application}}/settings.py"
+        insertafter: "^STATICFILES_DIRS"
+        line: "STATIC_ROOT=os.path.join(os.path.expanduser('~'),'static/')"
 
-    - name: fix CSRF for https 
+    - name: fix CSRF for https
       ansible.builtin.blockinfile:
-         path: "{{repo_dir}}/{{application}}/settings.py"
-         insertafter: "^ALLOWED_HOSTS"
-         block: |
-            # 
+        path: "{{repo_dir}}/{{application}}/settings.py"
+        insertafter: "^ALLOWED_HOSTS"
+        block: |
+            #
             # While we're on https, we may need this:
             CSRF_COOKIE_SECURE=False
             CSRF_TRUSTED_ORIGINS = ['http://{{ansible_host}}']
-            # 
+            #
 
     - name: collect the static files
       community.general.django_manage:
@@ -45,20 +45,20 @@
         project_path: "{{repo_dir}}"
         virtualenv: "/home/{{user}}/django"
 
-    - name: Make Django migrations 
+    - name: Make Django migrations
       community.general.django_manage:
-         virtualenv: "/home/{{user}}/django"
-         project_path: "{{repo_dir}}"
-         command: makemigrations
-  
-    - name: Do migrations 
+        virtualenv: "/home/{{user}}/django"
+        project_path: "{{repo_dir}}"
+        command: makemigrations
+
+    - name: Do migrations
       community.general.django_manage:
-         virtualenv: "/home/{{user}}/django"
-         project_path: "{{repo_dir}}"
-         command: migrate
+        virtualenv: "/home/{{user}}/django"
+        project_path: "{{repo_dir}}"
+        command: migrate
 
     - name: crude hack to get django interactive to see the udunits xml variable
-      ansible.builtin.blockinfile:        
+      ansible.builtin.blockinfile:
         path: "{{repo_dir}}/manage.py"
         insertbefore: "try:"
         block: |
@@ -66,7 +66,7 @@
                 os.environ['UDUNITS2_XML_PATH'] ='/opt/miniconda3/share/udunits/udunits2.xml'
             #   FIXME: we really need to work out why this is happening
     - name: crude hack to get django wsgi to see the udunits xml variable
-      ansible.builtin.blockinfile:        
+      ansible.builtin.blockinfile:
         path: "{{repo_dir}}/{{application}}/wsgi.py"
         insertafter: "^os.environ"
         block: |
