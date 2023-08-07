@@ -39,5 +39,38 @@ def getvariables(collection):
     return variables
 
 @template.defaulttags.register.filter
+def getvariableproperties(collection):
+    db = CFSconfig().db
+    print(collection)
+    variables = db.retrieve_variable("all","")
+    properties={}
+    for var in variables:
+        for prop,value in var._proxied.items():
+            if prop not in properties:
+                properties[prop]=[value]
+            elif value not in properties[prop]:
+                properties[prop].append(value)
+    for p in properties:
+        properties[p] = len(properties[p])
+    return properties.items()
+
+@template.defaulttags.register.filter
+def getpropertyvalues(propname):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all","")
+    output=[]
+    for var in variables:
+        if propname[0] in var._proxied and var[propname[0]] not in output:
+            output.append(var[propname[0]])
+    print(output)
+    return output
+
+@template.defaulttags.register.filter
+def displayproperty(prop):
+    output = prop[0]+" (" + str(prop[1])+")"
+    return output
+
+
+@template.defaulttags.register.filter
 def length(list):
     return len(list)

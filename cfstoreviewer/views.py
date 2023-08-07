@@ -144,6 +144,7 @@ def downloadcol(request,page="all"):
 
 def lsvar(request,var="all"):
     db = CFSconfig().db
+    var = var.replace(" ","_")
     variable = db.retrieve_variable("identity",var)
     collections = db.show_collections_with_variable(variable)
     print(collections)
