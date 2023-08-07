@@ -124,9 +124,9 @@ class CollectionDB(CoreDB):
             description="No Description"
        # c = Collection.objects.get(name=collection_name)[0]
         try:
-            c = Collection.objects.create(name=collection_name, volume=0, description=description, batch=1)
+            c = Collection.objects.create(name=collection_name, volume=0, description=description, batch=1, _proxied={})
         except IntegrityError:
-            print('ERROR: Collection with that name already exists ')   
+            print('ERROR: Integrity Error! Most likely, a collection with that name already exists ')   
             sys.exit()
 
         
@@ -648,9 +648,25 @@ class CollectionDB(CoreDB):
     def delete_location(self, location_name):
         """
         Remove a location from the database, ensuring all collections have already been removed first.
+        #FIXME check collections have been removed first
         """
         loc = Location.objects.filter(name=location_name)
         loc.delete()
+
+    def delete_var(self, var_name):
+        """
+        Remove a variable
+        """
+        var = Variable.objects.filter(identitity=var_name)
+        var.delete()
+
+    def delete_all_var(self):
+        """
+        Remove a variable
+        """
+        vars = Variable.objects.all()
+        for var in vars:
+            var.delete()
 
     def delete_tag(self, tagname):
         """
