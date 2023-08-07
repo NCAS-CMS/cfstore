@@ -1,66 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style>
- a:link {
-  color: #030303;
-}
-
-/* visited link */
-a:visited {
-  color: #030303;
-}
-
-/* mouse over link */
-a:hover {
-  color: #186f4d;
-}
-
-/* selected link */
-a:active {
-  color: #030303;
-} 
-    .dropbtn {
-      background-color: #030303;
-      color: white;
-      padding: 16px;
-      font-size: 16px;
-      border: none;
-    }
-    
-    .dropdown {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #f1f1f1;
-      min-width: 40px;
-      font-size: 16px;
-      height: 150px;
-      overflow: auto;
-      box-shadow: 0px 4px 8px 0px rgba(0,0,0,0.2);
-      z-index: 1;
-    }
-    
-    .dropdown-content a {
-      color: black;
-      padding: 6px 8px;
-      text-decoration: none;
-      display: block;
-    }
-    
-    .dropdown-content a:hover {background-color: #ddd;}
-    
-    .dropdown:hover .dropdown-content {display: block;}
-    
-    .dropdown:hover .dropbtn {background-color: #030303;}
-    </style>
+  <link rel="stylesheet" href="cfstore.css">
 </head>
 <html>
-<h1><a href="../">Collections</a><h1>
+<-- <h1><a href="../">Collections</a><h1>
     <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
       {{variable_search_form}}
@@ -96,7 +40,32 @@ a:active {
     </table>
     {% endfor %}
 
-    </tr></td></table>
+    </tr></td></table> -->
+
+
+    <h2>Collapsibles</h2>
+
+    <button type="button" class="collapsible">Canari</button>
+    <div class="content">
+      <p> </p>
+    
+    
+    <p>Collapsible Set:</p>
+    <button type="button" class="collapsible">Variables</button>
+    <div class="content">
+      <p> </p>
+    </div>
+    <button type="button" class="collapsible">Model</button>
+    <div class="content">
+      <p> </p>
+    </div>
+    <button type="button" class="collapsible">Tags</button>
+    <div class="content">
+      <p> </p>
+    </div>
+  </div>
+
+
 
 </body>
 </html>

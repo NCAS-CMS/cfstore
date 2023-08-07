@@ -1,4 +1,5 @@
 from django.db import models
+from jsonfield import JSONField
 
 def sizeof_fmt(num, suffix="B"):
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
@@ -104,7 +105,7 @@ class Collection(models.Model):
     def __repr__(self):
         return (self.name + ":" +str(self.volume))
 
-    _proxied = {}
+    _proxied = JSONField()
     name = models.CharField(max_length=256, unique=True)
     volume = models.IntegerField()
     description = models.TextField()
@@ -144,10 +145,13 @@ class Variable(models.Model):
     def __delitem__(self, key):
         del self._proxied[key]
     
+    def keys(self):
+        return self._proxied.keys()
+
     def exists(self):
         return True
 
-    _proxied = {}
+    _proxied = JSONField()
     cfdm_size = models.BigIntegerField()
     long_name = models.CharField(max_length=1024,null=True)
     id = models.AutoField(primary_key=True)

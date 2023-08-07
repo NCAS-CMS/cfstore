@@ -1,10 +1,28 @@
 import os
 import cf
-import json
+import numpy as np
 from cfstore import db
 from cfstore.plugins.ssh import SSHlite
 from cfstore.cfparse_file import cfparse_file
 import re
+
+def manage_types(value):
+    """ 
+    The database only supports variable values which are boolean, int, string, and float. 
+    """
+    if isinstance(value, str):
+        return value
+    elif isinstance(value,bool):
+        return value
+    elif isinstance(value, np.int32):
+        return int(value)
+    elif isinstance(value, int):
+        return value
+    elif isinstance(value, np.floating):
+        return float(value)
+    else:
+        raise ValueError('Unrecognised type for database ',type(value))
+
 
 class Posix:
     """
@@ -106,6 +124,7 @@ class Posix:
         """
         raise NotImplementedError
 
+
     def aggregation_files_to_collection(self, aggfile,collection):
         """
         Uses a cf python aggregation file to add metadata variables to the appropriate files
@@ -113,26 +132,47 @@ class Posix:
         #open file
         #read file into list of variables
         print("Adding variables from",aggfile)
-        aggfileobject = open(aggfile,'r')
-        variables = json.load(aggfileobject)
+        #aggfileobject = open(aggfile,'r')
+        cff = cf.read(aggfile)
         #for each variable
         c = self.db.retrieve_collection(collection)
 
-        for variable in variables:
-            files = variable['in_files']
-            var = db.Variable.objects.filter(cfdm_size=int(variable['cfdm_size'],),cfdm_domain=variable['cfdm_domain'],standard_name=variable['standard_name'],identity=variable['identity'])
-            if not var:
-                var = db.Variable.objects.create(cfdm_size=int(variable['cfdm_size'],),cfdm_domain=variable['cfdm_domain'],standard_name=variable['standard_name'],identity=variable['identity'])
-            else:
-                var = var[0]
-            for property in variable:
-                var[property] = variable[property]
-            self.db.add_variable_to_collection(collection,var)
+        # loop over fields in file (not the same as netcdf variables)
+        for v in cff:
+            properties = v.properties()
+            print("Starting")
+            if ('standard_name' not in properties and 'long_name' not in properties):
+                properties['long_name'] = v.identity()
+            name, long_name = v.get_property('standard_name', None), v.get_property('long_name', None)
+            identity = v.identity()
+            domain = v.domain._one_line_description()
+            size = v.size
+            #Maybe use shape?
+            var = db.Variable(identity=identity,standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, _proxied={})
+            for k,p in properties.items():
+                if k not in ['standard_name','long_name']:
+                    var[k] = manage_types(p)
+            var.save()
+            var.in_collection.add(c)
+            files = list(v.get_filenames())
             for file in files:
-                f = self.db.retrieve_file_if_present(file)
-                if not f in var.in_files.all():
-                    var.in_files.add(f)
-                
+                (path, file)  = os.path.split(file)
+                try:
+                    file = self.db.retrieve_file(path,file)
+                    if file not in var.in_files.all():
+                        var.in_files.add(file)
+                except(FileNotFoundError):
+                    try:
+                        uc = self.session.query(db.Collection).filter_by(name="unlisted").one()
+                    except:
+                        uc = db.Collection(name="unlisted", volume=0, description="Holds unlisted files")
+                    uf = db.File(name=file, path=path, checksum=0, size=0, format="unknown")
+                    uf.save()
+                    var.in_files.add(uf)
+                file.save()
+            
+            print(var.id)
+            print(var.keys())
             var.save()
 
 class RemotePosix(Posix):

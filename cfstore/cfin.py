@@ -178,7 +178,7 @@ def getBMetadata(ctx, arg1, argm):
 @click.option('--aggscriptname', default='aggregatebmetadata', help='(Optional) Lets you run a different script to the default')
 @click.option('--remotetempfilelocation', default='', help='(Optional) Sets where to put the remote temp file')
 @click.option('--scriptlocation', default='', help='(Optional) Sets where to find the script')
-@click.option('--outputfilename',default='tempfile.json', help='the name of the output file')
+@click.option('--outputfilename',default='tempfile.cfa', help='the name of the output file')
 @click.option('--outputfilelocation',default='~/cfstore/scripts/newfilebmetadata.json', help='Where to put the output file')
 def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, scriptlocation,outputfilename,outputfilelocation):
     """
@@ -203,7 +203,7 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     x = RemotePosix(state.db, location)
     host, user = state.get_location(location)['host'], state.get_location(location)['user']
     x.configure(host, user)
-
+        
     #Add settings to script
     x.ssh.configureScript(aggscriptpath,(metadatadirectory,pushdirectory))
     aggscriptpath = scriptlocation+"aggscript.py"
@@ -222,11 +222,11 @@ def getBMetadataClean(ctx, arg1, argm, aggscriptname, remotetempfilelocation, sc
     x.ssh.executeScript(pushdirectory,collection, aggscriptname)
 
     #Retrieve JSON file
-    x.ssh.get(pushdirectory+"/tempfile.json", "cfstore/json/"+outputfilename,delete=True)
-
+    x.ssh.get(pushdirectory+"/tempfile.cfa", "cfstore/json/"+outputfilename,delete=True)
+    
     #Clean-up remote files (At present clean-up means remove them)
     #This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
-
+    
     #Update database with JSON
     x.aggregation_files_to_collection("cfstore/json/"+outputfilename,collection)
     state.save()
