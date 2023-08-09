@@ -316,7 +316,7 @@ def setup(ctx, location, host, user, overwrite):
     print(f"Atempting to setup:\n host:{host} \n location:{location}")
     if target == "rp":
         # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces and overwrite == False:
+        if location in state.interfaces and not overwrite:
             raise ValueError(f"Location {location} already exists in config file")
 
         state.db.create_location(location, overwrite=overwrite)
@@ -324,7 +324,7 @@ def setup(ctx, location, host, user, overwrite):
 
     elif target == "local" or target == "p":
         # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces and overwrite == False:
+        if location in state.interfaces and not overwrite:
             raise ValueError(f"Location {location} already exists in config file")
         state.db.create_location(location, overwrite=overwrite)
         state.add_location(target, location, user=user, host=host)
