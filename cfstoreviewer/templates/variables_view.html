@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        {% load tags %}
+        {% load static %}
         <meta charset="UTF-8">
     <style>
  /* unvisited link */
@@ -70,18 +70,33 @@ a:active {
                 <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
                     <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
                     <tr><th>Size</th><td>{{variable.cfdm_size}}</td></tr>
-                    <tr>
-                        
+                    <tr><th>ID</th><td>{{variable.id}}</td></tr>
+                    <tr>   
                         <th>Collections</th>
-                    <td><div class="dropdown">
-                        <button class="dropbtn">{{colcount}} Collections</button>
-                        <div class="dropdown-content">
-                            {% for col in collections %}
-                                <a href="../{{col.name}}">{{col.name}}</a>
-                            {% endfor %}
-                        </div>
-                      </div> </td>
-                </tr>
+                        <td>
+                          <div class="dropdown">
+                            <button class="dropbtn">{{colcount}} Collections</button>
+                            <div class="dropdown-content">
+                                {% for col in collections %}
+                                    <a href="../{{col.name}}">{{col.name}}</a>
+                                {% endfor %}
+                            </div>
+                          </div> 
+                        </td>
+                    </tr>
+                    <tr>   
+                      <th>Properties</th>
+                      <td>
+                        <div class="dropdown">
+                          <button class="dropbtn">Properties</button>
+                          <div class="dropdown-content">
+                              {% for prop in variable|getvariableproperties %}
+                                  <a>{{prop}}</a>
+                              {% endfor %}
+                          </div>
+                        </div> 
+                      </td>
+                  </tr>
             </table>
         
             </tr></td></table>
