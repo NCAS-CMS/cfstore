@@ -88,7 +88,7 @@
         width: 10%;
       }
 
-      .collapsible-browser {
+      .collapsiblebrowser {
         background-color: #777;
         position: relative;
         color: white;
@@ -104,7 +104,7 @@
       }
 
 
-      .active, .collapsible, .collapsible-browser:hover {
+      .active, .collapsible, .collapsiblebrowser:hover {
         background-color: #186f4d;
       }
   
@@ -186,7 +186,7 @@
         z-index: 1;
       }
 
-      .collapsible-browser-content {
+      .collapsiblebrowser-content {
         padding: 0 -1px;
         display: none;
         font-size: 8pt;
@@ -247,7 +247,7 @@
         padding: 0%;
         width: 200px;
         word-wrap: break-word;
-        max-lines: 1;
+        line-clamp: 2;
         text-overflow: ellipsis;
         z-index: 2;
       }
@@ -256,7 +256,7 @@
         padding: 0%;
         width: 200px;
         word-wrap: break-word;
-        max-lines: 1;
+        line-clamp: 2;
         text-overflow: ellipsis;
         z-index: 2;
       }

@@ -32,7 +32,7 @@
 
       {% for var in collection|getvariables %}
       <tr>
-        <td><a href="variables/{{var|outputvar}}"> <p class="variable">{{var|outputvar}}</p></a></td>
+        <td><a href="viewcollections/variables/{{var|outputvar}}"> <p class="variable">{{var|outputvar}}</p></a></td>
       </tr>
       {% endfor %}
     </table>
@@ -45,13 +45,17 @@
 
   <div class="browser">
   {% for collection in collections %}
-    {% for propkey in collection|getvariableproperties %}
-      <button type="button" id="{{prop}}" class="collapsible-browser">{{propkey|displayproperty}} </button>
-      <div class="collapsible-browser-content"> 
-        <table id="collapsiblebrowsertable">
+    {% for propkey in collection|getallvariableproperties %}
+      <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
+      <div class="collapsiblebrowser-content"> 
+        <table id="collapsibletable">
           {% for property in propkey|getpropertyvalues %}
               <tr>
-                <td> <p class="property">{{property}}</p></a></td>
+                <td> 
+                  <p class="property">
+                    <input type="checkbox" id="{{property}}"> {{property}} 
+                  </p>
+                </td>
               </tr>
           {% endfor %}
         </table>
@@ -116,7 +120,7 @@
   </script>
 
 <script>
-  var coll = document.getElementsByClassName("collapsible-browser");
+  var coll = document.getElementsByClassName("collapsiblebrowser");
   var i;
   
   for (i = 0; i < coll.length; i++) {
