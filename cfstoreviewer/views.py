@@ -3,8 +3,7 @@ from django.shortcuts import render
 
 from cfstore.config import CFSconfig
 
-from .forms import (CollectionSearchForm, SaveAsCollectionForm,
-                    VariableSearchForm)
+from .forms import CollectionSearchForm, SaveAsCollectionForm, VariableSearchForm
 
 
 def outputvar(var):
@@ -187,7 +186,6 @@ def lsvar(request, var="all"):
     var = var.replace(" ", "_")
     variable = db.retrieve_variable("identity", var)
     collections = db.show_collections_with_variable(variable)
-    print(collections)
     return render(
         request,
         "variables_view.html",
