@@ -10,7 +10,6 @@ def active(request, pattern):
     """to help with navigation CSS"""
     import re
 
-    print(pattern, request.path)
     if re.search(pattern, request.path):
         return "active"
     return ""
@@ -29,7 +28,6 @@ def outputvar(var):
 @template.defaulttags.register.filter
 def sizeoffmt(num):
     suffix = "B"
-    print(num)
     num = int(num)
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
@@ -46,9 +44,8 @@ def getvariables(collection):
 
 
 @template.defaulttags.register.filter
-def getvariableproperties(collection):
+def getallvariableproperties(collection):
     db = CFSconfig().db
-    print(collection)
     variables = db.retrieve_variable("all", "")
     properties = {}
     for var in variables:
@@ -63,6 +60,12 @@ def getvariableproperties(collection):
 
 
 @template.defaulttags.register.filter
+def getvariableproperties(variable):
+    properties = variable._proxied.keys()
+    return properties
+
+
+@template.defaulttags.register.filter
 def getpropertyvalues(propname):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
@@ -70,7 +73,6 @@ def getpropertyvalues(propname):
     for var in variables:
         if propname[0] in var._proxied and var[propname[0]] not in output:
             output.append(var[propname[0]])
-    print(output)
     return output
 
 
