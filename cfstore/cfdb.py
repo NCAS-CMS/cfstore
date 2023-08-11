@@ -400,6 +400,9 @@ def ls(ctx, collection, output):
                         "id " + str(variable.id) + "(which has no name for some reason)"
                     )
                 print("         is in")
+                for f in variable.in_collection.all():
+                    print("         " + f.name)
+
         else:
             try:
                 for r in return_list:
@@ -420,7 +423,6 @@ def ls(ctx, collection, output):
                 else:
                     print("Return list failed to print")
     view_state.save()
-
 
 @cli.command()
 @click.pass_context
@@ -812,17 +814,35 @@ def delete_loc(ctx, location):
 
 @cli.command()
 @click.pass_context
-@click.argument("variable")
-def delete_var(ctx, variable):
+@click.option(
+    "--variable", default=None, help="Variable to delete")
+@click.option(    
+    "--col", default=None, help="Optional collection"
+)
+def delete_var(ctx, variable, col):
     """
-    Delete an <collection> that contains no files
-    Raises an error if the collection is not empty
-    Usage: cfsdb delete-col <collection>
+    Deletes a variable. 
+    If given a collection will delete remove all variable from that collection and delete any variables only in that collection.
+    If given "all" will delete all variables
+    Usage: cfsdb delete-var variable <collection>
     """
     view_state, db = _set_context(ctx, None)
-    db.delete_var(variable)
-    view_state.save()
 
+    if not variable and not col:
+        print("Needs a variable or collection to delete")
+    elif not col:
+        db.delete_var(variable)
+    elif col=="all":
+        click.confirm('Are you sure? This deletes all variables.', abort=True)
+        db.delete_all_var()
+    else:
+        col = db.retrieve_collection(col)
+        for var in col.variable_set.all():
+            var.in_collection.remove(col)
+            if not var.in_collection:
+                db.delete_var(variable)
+        
+    view_state.save()
 
 @cli.command()
 @click.pass_context
