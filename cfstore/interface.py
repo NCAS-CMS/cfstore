@@ -556,6 +556,31 @@ class CollectionDB(CoreDB):
             return results
         return results[0]
 
+    def retrieve_all_variables(self, key, value):
+        """Retrieve variable by arbitrary property"""
+        if key == "identity":
+            results = Variable.objects.filter(identity=value)
+        if key == "id":
+            results = Variable.objects.filter(id=value)
+        if key == "long_name":
+            results = Variable.objects.filter(long_name=value)
+        if key == "standard_name":
+            results = Variable.objects.filter(standard_name=value)
+        if key == "cfdm_size":
+            results = Variable.objects.filter(cfdm_size=value)
+        if key == "cfdm_domain":
+            results = Variable.objects.filter(cfdm_domain=value)
+        if key == "cell_methods":
+            results = Variable.objects.filter(cell_methods__in=value)
+        if key == "in_files":
+            results = Variable.objects.filter(in_files__in=value)
+        if key == "all":
+            return Variable.objects.all()
+        
+        if not results.exists():
+            return results
+        return results
+
     def retrieve_variable_query(self, key, value, query):
         """Retrieve variable by arbitrary property"""
         queries = query
