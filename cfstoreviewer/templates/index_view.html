@@ -15,28 +15,20 @@
 
   <button type="button" class="collapsible">Variables
 </button>
-  <button class="collapsible-content">
-    <form>
-      <input type="checkbox" id="standardname" onclick="checkboxfunction()" onload="checkboxfunction()" checked="True">
-      <label for="standardname">Standard Name</label>
-      <input type="checkbox" id="longname" onclick="checkboxfunction()" onload="checkboxfunction()">
-      <label for="longname">Long Name</label>
-      <br>
-    
-    </form>
+  <div class="collapsible-content">
     <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
       {{variable_search_form}}
     </form>  
     <table id="collapsibletable">
 
-      {% for var in collection|getvariables %}
+      {% for var,count in collection|getuniquevariables %}
       <tr>
-        <td><a href="viewcollections/variables/{{var|outputvar}}"> <p class="variable">{{var|outputvar}}</p></a></td>
+        <td><a href="/cfstoreviewer/viewcollections/variables/{{var}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
       </tr>
       {% endfor %}
     </table>
-  </button>
+  </div>
 
 
 
@@ -44,46 +36,24 @@
   {% endfor %}
 
   <div class="browser">
-  {% for collection in collections %}
-    {% for propkey in collection|getallvariableproperties %}
-      <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
-      <div class="collapsiblebrowser-content"> 
-        <table id="collapsibletable">
-          {% for property in propkey|getpropertyvalues %}
-              <tr>
-                <td> 
-                  <p class="property">
-                    <input type="checkbox" id="{{property}}"> {{property}} 
-                  </p>
-                </td>
-              </tr>
-          {% endfor %}
-        </table>
-      </div>
-    {% endfor %}
+  {% for propkey in collection|getallvariableproperties %}
+    <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
+    <div class="collapsiblebrowser-content"> 
+      <table id="collapsibletable">
+        {% for property in propkey|getpropertyvalues %}
+            <tr>
+              <td> 
+                <p class="property">
+                  <input type="checkbox" id="{{property}}"> {{property}} 
+                </p>
+              </td>
+            </tr>
+        {% endfor %}
+      </table>
+    </div>
   {% endfor %}
   </div>
 
-
-
-
-<script>
-  function checkboxfunction() {
-    var longname = document.getElementById("longname");
-    var standardname = document.getElementById("standardname");
-    var text = document.getElementsByClassName("variable");
-    for (i = 0; i < text.length; i++) {
-      if (standardname.checked === false && text[i].innerHTML.includes("Long Name") === false){
-        text[i].style.display = "none";
-      }
-      else if (longname.checked === false && text[i].innerHTML.includes("Long Name") === true){
-        text[i].style.display = "none"; 
-      } else {
-        text[i].style.display = "block";
-      }
-    }
-  }
-  </script>
 
 <script>
   var coll = document.getElementsByClassName("collapsible");
