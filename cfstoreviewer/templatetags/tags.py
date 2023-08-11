@@ -42,6 +42,24 @@ def getvariables(collection):
     variables = db.retrieve_variables_in_collection(collection.name)
     return variables
 
+@template.defaulttags.register.filter
+def getcollectionsfromvariable(variable):
+    db = CFSconfig().db
+    collection = variable.in_collection.all()
+    return collection
+
+@template.defaulttags.register.filter
+def getuniquevariables(collection):
+    db = CFSconfig().db
+    variables = db.retrieve_variables_in_collection(collection.name)
+    variablenames = [v.identity for v in variables]
+    uniquevariables = {}
+    for v in variablenames:
+        if v not in uniquevariables:
+            uniquevariables[v] = 1
+        else:
+            uniquevariables[v] += 1
+    return uniquevariables.items()
 
 @template.defaulttags.register.filter
 def getallvariableproperties(collection):
@@ -55,13 +73,14 @@ def getallvariableproperties(collection):
             elif value not in properties[prop]:
                 properties[prop].append(value)
     for p in properties:
-        properties[p] = len(properties[p])
+        properties[p] = len(properties[p])  
+    properties = {k: v for k, v in sorted(properties.items(), key=lambda item: item[1], reverse=True)}
     return properties.items()
 
 
 @template.defaulttags.register.filter
 def getvariableproperties(variable):
-    properties = variable._proxied.keys()
+    properties = variable._proxied.items()
     return properties
 
 
