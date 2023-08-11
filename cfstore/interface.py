@@ -738,7 +738,7 @@ class CollectionDB(CoreDB):
             c = Collection.objects.get(name=name)
         except Collection.DoesNotExist:
             raise ValueError(f'No such collection {name}')
-        return c.md
+        return c.id
 
     def byte_format(self, num, suffix='B'):
         for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
