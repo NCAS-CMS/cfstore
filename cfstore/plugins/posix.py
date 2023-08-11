@@ -150,18 +150,21 @@ class Posix:
             size = v.size
             #Maybe use shape?
             
-            var = db.Variable(identity=identity,standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, _proxied={})
+            managed_properties={}
             for k,p in properties.items():
                 if k not in ['standard_name','long_name']:
-                    var[k] = manage_types(p)
-            if var['frequency'] == cf.D:
-                var['frequency']= "Daily"
-            if var['frequency'] == cf.M:
-                var['frequency']= "Monthly"
-            if var['frequency'] == cf.Y:
-                var['frequency']= "Yearly"
-            
-            var.save()
+                    managed_properties[k] = manage_types(p)
+            if 'frequency' in managed_properties.keys():
+                if managed_properties['frequency'] == cf.D:
+                    managed_properties['frequency']= "Daily"
+                if managed_properties['frequency'] == cf.M:
+                    managed_properties['frequency']= "Monthly"
+                if managed_properties['frequency'] == cf.Y:
+                    managed_properties['frequency']= "Yearly"
+
+            var, created = db.Variable.objects.get_or_create(identity=identity,standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, _proxied=managed_properties)
+            if created:
+                print("Variable already exists! Updating files" )
             var.in_collection.add(c)
             files = list(v.get_filenames())
             for file in files:
