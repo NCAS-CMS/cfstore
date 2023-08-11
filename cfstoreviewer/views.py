@@ -3,7 +3,8 @@ from django.shortcuts import render
 
 from cfstore.config import CFSconfig
 
-from .forms import CollectionSearchForm, SaveAsCollectionForm, VariableSearchForm
+from .forms import (CollectionSearchForm, SaveAsCollectionForm,
+                    VariableSearchForm)
 
 
 def outputvar(var):
@@ -184,14 +185,12 @@ def downloadcol(request, page="all"):
 def lsvar(request, var="all"):
     db = CFSconfig().db
     var = var.replace(" ", "_")
-    variable = db.retrieve_variable("identity", var)
-    collections = db.show_collections_with_variable(variable)
+    variables = db.retrieve_all_variables("identity", var)
+    print(variables)
     return render(
         request,
         "variables_view.html",
         {
-            "variable": variable,
-            "collections": collections,
-            "colcount": len(collections),
+            "variables": variables
         },
     )
