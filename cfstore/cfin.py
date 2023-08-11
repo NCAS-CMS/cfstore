@@ -266,7 +266,7 @@ def getBMetadataClean(
     x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
     aggscriptpath = scriptlocation + "aggscript.py"
     aggscriptname = "aggscript.py"
-
+    
     # Push Script(s)
     # x.ssh.pushScript(remotepath,collection, scriptname)
     x.ssh.pushScript(pushdirectory, collection, aggscriptpath)
