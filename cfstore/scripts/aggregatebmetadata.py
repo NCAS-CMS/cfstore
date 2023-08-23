@@ -12,7 +12,7 @@ if __name__ == '__main__':
             #Opens and empties matching files
             with open("{{homedir}}"+filename+"bmetadata.json","w") as writepath:
                 print("")
-            with open("{{homedir}}"+filename+"_variables_bmetadata.json","w") as writepath:
+            with open(f"{{{{homedir}}}}{filename}_variables_bmetadata.json","w") as writepath:
                 print("")
             
     #Reads the fields from the file with cf
@@ -23,5 +23,5 @@ if __name__ == '__main__':
     print("Test",len(cff),[v.data.cfa_get_write() for v in cff])
     writepath="{{homedir}}/"+"tempfile.cfa"
     
-    cf.write(cff,cfa={'strict',False},filename=writepath)
+    cf.write(cff,cfa=True,filename=writepath)
     
