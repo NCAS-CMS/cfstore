@@ -532,7 +532,7 @@ class CollectionDB(CoreDB):
         c.save()
 
     def retrieve_variable(self, key, value):
-        """Retrieve variable by arbitrary property"""
+        """Retrieve single variable by arbitrary property"""
         if key == "identity":
             results = Variable.objects.filter(identity=value)
         if key == "id":
@@ -557,7 +557,7 @@ class CollectionDB(CoreDB):
         return results[0]
 
     def retrieve_all_variables(self, key, value):
-        """Retrieve variable by arbitrary property"""
+        """Retrieve all variables that matches arbitrary property"""
         if key == "identity":
             results = Variable.objects.filter(identity=value)
         if key == "id":
