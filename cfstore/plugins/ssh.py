@@ -1,17 +1,18 @@
-from distutils.log import error
-from inspect import walktree
-import paramiko
-import posixpath, os, glob, fnmatch
-from itertools import product
-from stat import S_ISREG, S_ISDIR
+import fnmatch
+import glob
+import os
+import posixpath
 import time
-import json
+from itertools import product
+from stat import S_ISDIR, S_ISREG
+
+import paramiko
 
 from cfstore.cfparse_file import cfparse_file
 
 
 class SSHcore:
-    """ Provides a lightweight setup for establishing some SSH
+    """Provides a lightweight setup for establishing some SSH
     tunnelling to a remote host etc.
     """
 
@@ -22,15 +23,15 @@ class SSHcore:
         names for jasmin, so you can use host = xfer1|xfer3.
         """
         jasmin_hosts = {
-            'xfer1': 'xfer1.jasmin.ac.uk',
-            'xfer3': 'xfer3.jasmin.ac.uk',
+            "xfer1": "xfer1.jasmin.ac.uk",
+            "xfer3": "xfer3.jasmin.ac.uk",
         }
         if host in jasmin_hosts:
             host = jasmin_hosts[host]
 
         self.logging = logging
         if self.logging:
-            paramiko.util.log_to_file('paramiko.log')
+            paramiko.util.log_to_file("paramiko.log")
 
         client = paramiko.SSHClient()
         client.load_system_host_keys()
@@ -50,22 +51,22 @@ class SSHlite(SSHcore):
     def isalive(self):
         return self.transport.is_active()
 
-    def get(self, remotepath, localpath,delete=False):
+    def get(self, remotepath, localpath, delete=False):
         """
         Get remote_path and store it in local_path
         """
-        print("Getting file",remotepath,"and storing it in",localpath)
+        print("Getting file", remotepath, "and storing it in", localpath)
         try:
             self._sftp.get(remotepath, localpath)
             if delete:
                 print("Deleting remote file")
                 self._sftp.remove(remotepath)
-        except:
+        except IOError:
             print("Get Failed")
-        
 
-    def walktree(self, remotepath, fcallback, dcallback=None, ucallback=None,
-                 recurse=True):
+    def walktree(
+        self, remotepath, fcallback, dcallback=None, ucallback=None, recurse=True
+    ):
         """
         Recursively descend, depth first, the directory tree rooted at
         remotepath, calling discreet callback functions for each regular file,
@@ -138,121 +139,130 @@ class SSHlite(SSHcore):
         try:
             self.walktree(remotepath, callback)
         except FileNotFoundError:
-            raise FileNotFoundError(f' check {remotepath} exists?')
-
+            raise FileNotFoundError(f" check {remotepath} exists?")
 
         if self.logging:
             etime = time.time()
-            print(f'Walking {remotepath} for {len(files)} files took {etime-stime:.2f}s')
-            print(f'This would take {(1000000/len(files))*(etime-stime):.2f}s ({(1000000/(60*len(files)))*(etime-stime):.2f}m or {(1000000/(60*60*len(files)))*(etime-stime):.2f}h) for 1 million files')
+            print(
+                f"Walking {remotepath} for {len(files)} files took {etime-stime:.2f}s"
+            )
+            print(
+                f"This would take {(1000000/len(files))*(etime-stime):.2f}s "
+                f"({(1000000/(60*len(files)))*(etime-stime):.2f}m or "
+                f"{(1000000/(60*60*len(files)))*(etime-stime):.2f}h) for 1 million files"
+            )
 
         return files
 
-    def get_b_metadata(self, remotepath,db):
-        print(f'SSH is getting B metadata')
-        
-        parselambda = lambda file: self.sshparse(db,file)
-        self.walktree(remotepath, parselambda) 
+    def get_b_metadata(self, remotepath, db):
+        print("SSH is getting B metadata")
 
-    def sshparse(self,db,file):
+        parselambda = lambda file: self.sshparse(db, file)
+        self.walktree(remotepath, parselambda)
+
+    def sshparse(self, db, file):
         remotefile = self._sftp.open(file)
-        cfparse_file(db,remotefile)
-
+        cfparse_file(db, remotefile)
 
     def pushScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
-        print("Running script:",scriptname)
+        print("Running script:", scriptname)
         print("Putting script")
-        print("Putting script ",scriptname,"from", script ,"to", remotepath)
-        remotescript = remotepath+"/"+scriptname
+        print("Putting script ", scriptname, "from", script, "to", remotepath)
+        remotescript = remotepath + "/" + scriptname
         try:
-            self._sftp.put(script,remotescript)
-        except:
+            self._sftp.put(script, remotescript)
+        except IOError:
             print("Failed to put script on remote server")
         print("Moving to filelocation")
-        print("Moving to filelocation",remotepath)
+        print("Moving to filelocation", remotepath)
         try:
-            self._client.exec_command('cd '+remotepath)
-        except:
+            self._client.exec_command("cd " + remotepath)
+        except IOError:
             print("Could not move to remote directory")
             print("Removing script from remote server")
             self._sftp.remove(remotescript)
-        stdin, stdout, stderr=self._client.exec_command('pwd')
+        stdin, stdout, stderr = self._client.exec_command("pwd")
         for line in stderr:
-            print("err:",line)
+            print("err:", line)
         for line in stdout:
-            print("lsout:",line)
+            print("lsout:", line)
 
-    def configureScript(self,file,settings):
+    def configureScript(self, file, settings):
         # Read in the file
-        fileinput,homedir = settings
-        print("Reading ",file)
-        with open(file, 'r') as file :
+        fileinput, homedir = settings
+        print("Reading ", file)
+        with open(file, "r") as file:
             filedata = file.read()
 
         # Replace the target string
-        filedata = filedata.replace('{{fileinput}}', fileinput)
-        filedata = filedata.replace('{{homedir}}', homedir)
+        filedata = filedata.replace("{{fileinput}}", fileinput)
+        filedata = filedata.replace("{{homedir}}", homedir)
 
         # Write the file out again
-        with open("cfstore/scripts/aggscript.py", 'w') as file:
+        with open("cfstore/scripts/aggscript.py", "w") as file:
             file.write(filedata)
 
     def configureRemoteEnvironment(self):
         print("Activating conda environment")
-        stdin, stdout, stderr = self._client.exec_command('conda activate cfstore')
+        stdin, stdout, stderr = self._client.exec_command("conda activate cfstore")
         for line in stderr:
-            print("err:",line)
+            print("err:", line)
         for line in stdout:
-            print("out:",line)
+            print("out:", line)
 
     def executeScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
-        remotescript = remotepath+"/"+scriptname
+        remotescript = remotepath + "/" + scriptname
         print("Executing script")
-        print('Executing \"python '+scriptname+"\"")
-#        self.configureRemoteEnvironment()
-        stdin, stdout, stderr = self._client.exec_command('source activate cfstore')
-        print("ACTIVATE")
+        print('Executing "python ' + scriptname + '"')
+        #        self.configureRemoteEnvironment()
+        stdin, stdout, stderr = self._client.exec_command("source activate cfstore")
         for line in stderr:
-            print("err:",line)
+            print("err:", line)
         for line in stdout:
-            print("out:",line)
-        stdin, stdout, stderr = self._client.exec_command('source activate cfstore;conda info --env')
+            print("out:", line)
+        stdin, stdout, stderr = self._client.exec_command(
+            "source activate cfstore;conda info --env"
+        )
         for line in stderr:
-            print("err:",line)
+            print("err:", line)
         for line in stdout:
-            print("out:",line)
+            print("out:", line)
         try:
-            stdin, stdout, stderr = self._client.exec_command('source activate cfstore; python '+remotepath+"/"+scriptname)
+            stdin, stdout, stderr = self._client.exec_command(
+                "source activate cfstore; python " + remotepath + "/" + scriptname
+            )
             print("Script executed")
-        except:
+        except IOError:
             print("Could not successfully execute script")
             print("Removing script from remote server")
             self._sftp.remove(remotescript)
         for line in stderr:
-            print("err:",line)
+            print("err:", line)
         for line in stdout:
-            print("out:",line)
-        self._sftp.remove(remotepath+"/"+scriptname)
+            print("out:", line)
+        self._sftp.remove(remotepath + "/" + scriptname)
 
     def aggregateFiles(self, remotepath):
         print("Aggregating files")
-        print('Executing \"python -i -f CFA4 --overwrite ' + remotepath +'.nc *.nc\"')
+        print('Executing "python -i -f CFA4 --overwrite ' + remotepath + '.nc *.nc"')
         try:
-            stdin, stdout, stderr = self._client.exec_command('python -i -f CFA4 --overwrite ' + remotepath +'.nc *.nc')
+            stdin, stdout, stderr = self._client.exec_command(
+                "python -i -f CFA4 --overwrite " + remotepath + ".nc *.nc"
+            )
             print("Aggregation file built")
-        except:
+        except IOError:
             print("Could not successfully execute script")
             print("Removing script from remote server")
         print(stderr)
         for line in stderr:
-            print("err:",line)
+            print("err:", line)
         for line in stdout:
-            print("out:",line)
+            print("out:", line)
 
     def runScript(self, remotepath, collection, script):
-        self.pushScript(remotepath,collection,script)
+        self.pushScript(remotepath, collection, script)
         self.executeScript(remotepath, collection, script)
 
     def globish(self, remotepath, expression):
@@ -310,26 +320,29 @@ def find_matching_paths(pathlist, pattern):
             current_level = [d[subpattern] for d in current_level if subpattern in d]
         else:
             # match all next levels in the trie that match the pattern
-            matched_names = fnmatch.filter({k for d in current_level for k in d}, subpattern)
+            matched_names = fnmatch.filter(
+                {k for d in current_level for k in d}, subpattern
+            )
             if not matched_names:
                 # nothing found
                 return []
             matching.append(matched_names)
-            current_level = [d[n] for d in current_level for n in d.keys() & set(matched_names)]
+            current_level = [
+                d[n] for d in current_level for n in d.keys() & set(matched_names)
+            ]
 
-    return [os.sep.join(p) for p in product(*matching)
-            if _in_trie(path_trie, p)]
+    return [os.sep.join(p) for p in product(*matching) if _in_trie(path_trie, p)]
 
 
 class SSHTape(SSHcore):
-
-    def get_html(self, url, option='curl'):
+    def get_html(self, url, option="curl"):
         """
         This is a temporary crufty method of getting html from a webserver via
         a request running on the remote SSH server. Assume curl is available
         otherwise pass wget or whatever else might be available.
         """
-        # note the importance of the single quotes, otherwise curl stops looking at the & sign in the url.
+        # note the importance of the single quotes,
+        # otherwise curl stops looking at the & sign in the url.
         stdin, stdout, stderr = self._client.exec_command(f"{option} '{url}'")
         error = stderr.readlines()
         if error:
@@ -337,27 +350,25 @@ class SSHTape(SSHcore):
             if "Could not resolve host" in error[-1]:
                 err = error[-1].find("curl")
                 raise ValueError(error[-1][err:])
-        # look out, if I do this with google.com I get a unicode error of some sort ...  and I couldn't
-        # work out how to fixit ... just joining on u"" didn't do it ..
+        # look out, if I do this with google.com I get a unicode error of some sort.
+        # and I couldn't work out how to fixit. Just joining on u"" didn't do it.
         lines = stdout.readlines()
         return "".join(lines)
 
 
 if __name__ == "__main__":
+    s = SSHlite("xfer1", "lawrence")
 
-    s = SSHlite('xfer1', 'lawrence')
-
-    dlist = s.globish('hiresgw', 'xj*')
+    dlist = s.globish("hiresgw", "xj*")
     print(dlist)
 
-    dlist = s.globish('hiresgw', 'xj???')
+    dlist = s.globish("hiresgw", "xj???")
     print(dlist)
 
-    flist = s.get_files_and_sizes('hiresgw/xjanp')
+    flist = s.get_files_and_sizes("hiresgw/xjanp")
     print(flist)
 
-    s = SSHTape('xfer1', 'lawrence')
+    s = SSHTape("xfer1", "lawrence")
 
-    html = s.get_html('http://et-monitor.fds.rl.ac.uk/et_user/')
+    html = s.get_html("http://et-monitor.fds.rl.ac.uk/et_user/")
     print(f"**\n{html}\n**")
-

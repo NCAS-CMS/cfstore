@@ -1,7 +1,7 @@
 ---
 - hosts: all
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
   tasks:
     - name: change SELinux restrictions for httpd_t context to permissive
       community.general.selinux_permissive:

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        {% load tags %}
+        {% load static %}
         <meta charset="UTF-8">
     <style>
  /* unvisited link */
@@ -61,34 +61,116 @@ a:active {
     table, th, td {
         border:1px solid black;
       }
+
+      /* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
     </style>
 
     </head>
     <body>
+      <h2>Versions</h2>
+      <div class="tab">
+        {% for variable in variables %}
+        <button class="tablinks" onclick="openVar(event, '{{variable.id}}')">{{variable.id}}</button>
+        {% endfor %}
+      </div>
+
+      {% for variable in variables %}
+         <div id="{{variable.id}}" class="tabcontent">
+
         <table border="1"><tr><td>
             <table border="1">
                 <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
                     <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
                     <tr><th>Size</th><td>{{variable.cfdm_size}}</td></tr>
-                    <tr>
-                        
+                    <tr><th>ID</th><td>{{variable.id}}</td></tr>
+                    <tr>   
                         <th>Collections</th>
-                    <td><div class="dropdown">
-                        <button class="dropbtn">{{colcount}} Collections</button>
-                        <div class="dropdown-content">
-                            {% for col in collections %}
-                                <a href="../{{col.name}}">{{col.name}}</a>
-                            {% endfor %}
-                        </div>
-                      </div> </td>
-                </tr>
+                        <td>
+                          <div class="dropdown">
+                            <button class="dropbtn">{{colcount}} Collections</button>
+                            <div class="dropdown-content">
+                                {% for col in variable|getcollectionsfromvariable %}
+                                    <a href="../{{col.name}}">{{col.name}}</a>
+                                {% endfor %}
+                            </div>
+                          </div> 
+                        </td>
+                    </tr>
+                    <tr>   
+                      <th>Properties</th>
+                      <td>
+                        <div class="dropdown">
+                          <button class="dropbtn">Properties</button>
+                          <div class="dropdown-content">
+                              {% for prop in variable|getvariableproperties %}
+                                  <a>{{prop}}</a>
+                              {% endfor %}
+                          </div>
+                        </div> 
+                      </td>
+                  </tr>
             </table>
         
             </tr></td></table>
-        
+            </div>
+            <script>
+              document.getElementById("{{variable.id}}").click();
+            </script>
+        {% endfor %}
         <!-- Navigation  -->
         <nav>
         </nav>
         <!-- End Navigation-->
+        <script>
+          function openVar(evt, varID) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+              tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+              tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(varID).style.display = "block";
+            evt.currentTarget.className += " active";
+          }
+          </script>
+             
     </body>
 </html>

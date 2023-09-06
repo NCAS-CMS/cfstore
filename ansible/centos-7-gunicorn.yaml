@@ -1,22 +1,22 @@
 ---
 - hosts: all
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
   tasks:
     - name: Add user to nginx group
       user:
         name: "{{ user }}"
-        append: yes
+        append: true
         groups: nginx
     - name: Add nginx to user group
       user:
         name: "nginx"
-        append: yes
+        append: true
         groups: "{{ user }}"
     - name: start gunicorn services
       ansible.builtin.systemd:
         state: started
         name: gunicorn
-    # for some reason enabled: yes doesn't work
+    # for some reason enabled: true doesn't work
     - name: enable gunicorn service
       command: systemctl enable gunicorn

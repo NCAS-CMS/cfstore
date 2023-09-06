@@ -2,17 +2,15 @@
 #
 # We assume we are the only app running on this host.
 - hosts: all
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
   tasks:
     - name: Blow away old nginx configuration and replace it with ours
       ansible.builtin.template:
-        backup: yes
+        backup: true
         src: centos-nginx.template
         dest: "/etc/nginx/nginx.conf"
     - name: Restart nginx
       ansible.builtin.systemd:
         state: restarted
         name: nginx
-
-

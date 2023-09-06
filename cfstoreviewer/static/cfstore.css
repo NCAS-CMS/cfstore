@@ -1,32 +1,46 @@
-a:link {
-    color: #030303;
-  }
-  
-  /* visited link */
-  a:visited {
-    color: #030303;
-  }
-  
-  /* mouse over link */
-  a:hover {
-    color: #186f4d;
-  }
-  
-  /* selected link */
-  a:active {
-    color: #030303;
-  } 
+      a:link {
+        color: #030303;
+      }
+      
+      /* visited link */
+      a:visited {
+        color: #030303;
+      }
+      
+      /* mouse over link */
+      a:hover {
+        color: #030303;
+      }
+      
+      /* selected link */
+      a:active {
+        color: #030303;
+      } 
+
       .dropbtn {
-        background-color: #030303;
+        background-color: #186f4d;
         color: white;
-        padding: 16px;
-        font-size: 16px;
+        cursor: pointer;
+        padding: 18px;
+        width: 100%;
         border: none;
+        text-align: left;
+        outline: none;
+        font-size: 10px;
       }
       
       .dropdown {
         position: relative;
         display: inline-block;
+        background-color: #777;
+        color: white;
+        cursor: pointer;
+        padding: 18px;
+        width: 60%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 10px;
       }
       
       .dropdown-content {
@@ -59,14 +73,38 @@ a:link {
         color: white;
         cursor: pointer;
         padding: 18px;
-        width: 100%;
+        width: 60%;
         border: none;
         text-align: left;
         outline: none;
         font-size: 10px;
+        z-index: 1;
       }
-  
-      .active, .collapsible:hover {
+      
+      .browser {
+        position: absolute;
+        left: 70%;
+        top: 10%;
+        width: 10%;
+      }
+
+      .collapsiblebrowser {
+        background-color: #777;
+        position: relative;
+        color: white;
+        cursor: pointer;
+        padding: 4px;
+        width: 100%;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 14px;
+        z-index: 2;
+        display: block;
+      }
+
+
+      .active, .collapsible, .collapsiblebrowser:hover {
         background-color: #186f4d;
       }
   
@@ -85,32 +123,58 @@ a:link {
         margin-bottom: 1%;
         background-color: #555;
       }
-  
-      #collabsibletable {
+
+      .collapsibletable {
         font-family: Arial, Helvetica, sans-serif;
-        border-collapse: collapse;
-        
+        border-collapse:collapse;
+        position: inherit;
+        z-index: inherit;
       }
   
-      #collabsibletable td, #collabsibletable th {
+      #collapsibletable td, #collapsibletable th {
         padding: 0px;
       }
   
-      #collabsibletable tr:nth-child(even){background-color: rgb(227, 227, 227)}
-      #collabsibletable tr:nth-child(odd){background-color: rgb(180, 179, 179)}
+      #collapsibletable tr:nth-child(even){background-color: rgb(227, 227, 227)}
+      #collapsibletable tr:nth-child(odd){background-color: rgb(180, 179, 179)}
   
-      #collabsibletable tr:hover {background-color: #186f4d;}
+      #collapsibletable tr:hover {background-color: #186f4d;}
   
-      #collabsibletable th {
+      #collapsibletable th {
         padding-top: -5px;
         padding-bottom: -1px;
-        text-align: left;
+        text-align: center;
         background-color: #186f4d;
         color: white;
-        width: 50%
+        width: inherit;
   
       }
+      .collapsiblebrowsertable {
+        font-family: Arial, Helvetica, sans-serif;
+        border-collapse:collapse;
+        position: inherit;
+        z-index: 10;
+      }
   
+      #collapsiblebrowsertable td, #collapsiblebrowsertable th, #collapsiblebrowsertable tr {
+        padding: 0px;
+        z-index: 10;
+      }
+  
+      #collapsiblebrowsertable tr:nth-child(even){background-color: rgb(227, 227, 227)}
+      #collapsiblebrowsertable tr:nth-child(odd){background-color: rgb(180, 179, 179)}
+  
+      #collapsiblebrowsertable tr:hover {background-color: #186f4d;}
+  
+      #collapsiblebrowsertable th {
+        padding-top: -5px;
+        padding-bottom: -1px;
+        text-align: center;
+        background-color: #186f4d;
+        color: white;
+        width: 10%;
+  
+      }
       .collapsible-content {
         padding: 0 -1px;
         display: none;
@@ -118,5 +182,81 @@ a:link {
         overflow: hidden;
         margin-bottom: 0%;
         background-color: #555;
-        width: 30%
+        width: 50%;
+        z-index: 1;
+      }
+
+      .collapsiblebrowser-content {
+        padding: 0 -1px;
+        display: none;
+        font-size: 8pt;
+        overflow: hidden;
+        margin-bottom: 0%;
+        background-color: #555;
+        position:relative;
+        text-align: left;
+        overflow: visible;
+        z-index: 2;
+      }
+
+      .overlay {
+        position: fixed; /* Sit to the right of the page content */
+        width: 15%; /* Full width (cover the whole page) */
+        height: 60%; /* Full height (cover the whole page) */
+        top: 10%;
+        left: 65%;
+        right: 60;
+        bottom: 60;
+        background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+        z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+        font-size: large;
+      }
+
+      .overlay-button{
+        position: relative; /* Sit to the right of the page content */
+        width: 20px;
+        height: 20px;
+        top: 60;
+        left: 65%;
+        right: 60;
+        bottom: 60;
+        background-color: rgba(0,0,0,0.5); /* Black background with opacity */
+        z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+        font-size: large;
+      }
+
+      .overlay-text{
+        position: relative;
+        left: 67%;
+        right: 60;
+        padding:1;
+        z-index: 2; /* Specify a stack order in case you're using a different order for other elements */
+        font-size: large;
+      }
+
+      .variable{
+        padding: 0%;
+        width: 500px;
+      }
+
+      #variable a {
+        text-decoration:none
+      }
+  
+      .property{
+        padding: 0%;
+        width: 200px;
+        word-wrap: break-word;
+        line-clamp: 2;
+        text-overflow: ellipsis;
+        z-index: 2;
+      }
+
+      #property p{
+        padding: 0%;
+        width: 200px;
+        word-wrap: break-word;
+        line-clamp: 2;
+        text-overflow: ellipsis;
+        z-index: 2;
       }

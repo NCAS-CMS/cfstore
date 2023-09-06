@@ -124,9 +124,9 @@ class CollectionDB(CoreDB):
             description="No Description"
        # c = Collection.objects.get(name=collection_name)[0]
         try:
-            c = Collection.objects.create(name=collection_name, volume=0, description=description, batch=1)
+            c = Collection.objects.create(name=collection_name, volume=0, description=description, batch=1, _proxied={})
         except IntegrityError:
-            print('ERROR: Collection with that name already exists ')   
+            print('ERROR: Integrity Error! Most likely, a collection with that name already exists ')   
             sys.exit()
 
         
@@ -556,6 +556,31 @@ class CollectionDB(CoreDB):
             return results
         return results[0]
 
+    def retrieve_all_variables(self, key, value):
+        """Retrieve variable by arbitrary property"""
+        if key == "identity":
+            results = Variable.objects.filter(identity=value)
+        if key == "id":
+            results = Variable.objects.filter(id=value)
+        if key == "long_name":
+            results = Variable.objects.filter(long_name=value)
+        if key == "standard_name":
+            results = Variable.objects.filter(standard_name=value)
+        if key == "cfdm_size":
+            results = Variable.objects.filter(cfdm_size=value)
+        if key == "cfdm_domain":
+            results = Variable.objects.filter(cfdm_domain=value)
+        if key == "cell_methods":
+            results = Variable.objects.filter(cell_methods__in=value)
+        if key == "in_files":
+            results = Variable.objects.filter(in_files__in=value)
+        if key == "all":
+            return Variable.objects.all()
+        
+        if not results.exists():
+            return results
+        return results
+
     def retrieve_variable_query(self, key, value, query):
         """Retrieve variable by arbitrary property"""
         queries = query
@@ -648,9 +673,25 @@ class CollectionDB(CoreDB):
     def delete_location(self, location_name):
         """
         Remove a location from the database, ensuring all collections have already been removed first.
+        #FIXME check collections have been removed first
         """
         loc = Location.objects.filter(name=location_name)
         loc.delete()
+
+    def delete_var(self, var_name):
+        """
+        Remove a variable
+        """
+        var = Variable.objects.filter(identitity=var_name)
+        var.delete()
+
+    def delete_all_var(self):
+        """
+        Remove a variable
+        """
+        vars = Variable.objects.all()
+        for var in vars:
+            var.delete()
 
     def delete_tag(self, tagname):
         """
@@ -697,18 +738,7 @@ class CollectionDB(CoreDB):
             c = Collection.objects.get(name=name)
         except Collection.DoesNotExist:
             raise ValueError(f'No such collection {name}')
-        return c.md
-
-    def collection_json(self, name):
-        """
-        Return information about a collection in a json file
-        """
-        try:
-            c = self.session.query(Collection).filter_by(name=name).first()
-        except Collection.DoesNotExist:
-            raise ValueError(f'No such collection {name}')
-        output = {}
-        return output
+        return c.id
 
     def byte_format(self, num, suffix='B'):
         for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
@@ -716,87 +746,6 @@ class CollectionDB(CoreDB):
                 return "%3.1f%s%s" % (num, unit, suffix)
             num /= 1024.0
         return "%.1f%s%s" % (num, 'Yi', suffix)
-
-    def publish_as_html(self, collection):
-        if collection != "all":
-            active_collection = self.retrieve_collection(collection_name=collection)
-            # Creating an HTML file
-            Func = open(""+collection+".html","w")
-            Func.write("<link rel=\"stylesheet\" href=\"style.css\">")
-            Func.write("<h1><a href=\"http://127.0.0.1:8000/cfstoreviewer/viewcollections/index.html\">Collections</a><h1>\n")
-            Func.write("<input type=\"text\" placeholder=\"Browse\">")
-            Func.write("<button type=\"Browse\">Go!</button>\n")
-            Func.write("\n<input type=\"text\" placeholder=\"Save as Collection\">")
-            Func.write("<button type=\"Save\">Save!</button>\n")
-            Func.write("\n<button type=\"Browse\">A third button, I suppose</button>")
-            count = 1
-            json= {}
-            
-            serialised = active_collection.serialise(target="full_dict")
-            json[count] = serialised
-            count+=1
-            
-            # Adding input data to the HTML file
-            html = "<table border=\"1\"><tr><td><table border=\"1\"><tr>"
-            for j in json:
-                if j:
-                    html = html + "<h3><a href=\"http://127.0.0.1:8000/cfstoreviewer/viewcollections/" + json[j]["name"] + ".html\">" +json[j]["name"]  + "</a><h3></tr>"
-                    html = html + "<tr><th>Description</th><td>"+str(json[j]["description"])+"</td></tr>"
-                    html = html + "<tr><th>Volume</th><td>"+str(self.byte_format(json[j]["volume"]))+"</td></tr>"
-                    html = html + "<tr><th>Filecount</th><td>"+str(json[j]["filecount"])+"</td>"
-                    if json[j]["tags"]:
-                        html = html + "<tr><th>tags</th><td>"+str(json[j]["tags"])+"</td></tr>"
-                    if json[j]["related"]:
-                        html = html + "<tr><th>tags</th><td>"+str(json[j]["related"])+"</td></tr>"
-                    html = html + "<tr><th>Files</th><td><ul>"
-                   # if len(json[j]["holds_files"])<100:
-                    for f in json[j]["holds_files"]:
-                        html = html + ("<li> <div class=\"hover\">"+str(f)+"<div class=\"tooltip\">"+"some metadata"+"</div></div> </li>")
-                   # else:
-                   #     for f in json[j]["holds_files"][0:10000]:
-                   #         html = html + ("<li> <div class=\"hover\">"+str(f)+"<div class=\"tooltip\">"+"some metadata"+"</div></div> </li>")
-
-                    html = html + "</ul></td>"
-                    html = html + "</table></td></tr><tr>"
-                    
-            html = html + "</table></td></tr></table>"
-            Func.write(html)
-
-            # Saving the data into the HTML file
-            Func.close()   
-        else:
-            active_collections = self.retrieve_collections()
-            # Creating an HTML file
-            Func = open("index.html","w")
-            Func.write("<link rel=\"stylesheet\" href=\"style.css\">")
-            Func.write("<h1><a href=\"http://127.0.0.1:8000/cfstoreviewer/viewcollections/index.html\">Collections</a><h1>\n")
-            Func.write("<input type=\"text\" placeholder=\"Browse\">")
-            Func.write("<button type=\"Browse\">Go!</button>\n")
-            Func.write("\n<button type=\"Browse\">A second button, I suppose</button>")
-            count = 1
-            json= {}
-            for collection in active_collections:
-                if collection.holds_files:
-                    serialised = collection.serialise()
-                    
-
-                    json[count] = serialised
-                    self.publish_as_html(json[count]["name"])
-                else:
-                    json[count] = {}
-                count+=1
-                
-            # Adding input data to the HTML file
-            json = {k: v for k, v in json.items() if v}
-            html = json2html.convert(json = json)
-            for c in json:
-                html = html.replace("<th>name</th><td>"+json[c]["name"]+"</td>","<h3><a href=\"http://127.0.0.1:8000/cfstoreviewer/viewcollections/"+json[c]["name"]+".html\">"+json[c]["name"]+"</a><h3>")
-#            html[1]["name"] = "<h1><a href=\"http://127.0.0.1:8000/cfstoreviewer/viewcollections/"+html[1]["name"]+".html\">Collections</a><h1>"
-
-            Func.write(html)
-                            
-            # Saving the data into the HTML file
-            Func.close()
 
     def organise(self, collection, files, description):
         """
