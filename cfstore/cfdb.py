@@ -325,7 +325,7 @@ def ls(ctx, collection, output):
                         print("Variable:")
                         if variable.standard_name:
                             print(variable.standard_name)
-                        elif r.long_name:
+                        elif variable.long_name:
                             print(variable.long_name)
                         else:
                             print(
@@ -336,8 +336,6 @@ def ls(ctx, collection, output):
                         print("         is in")
                         for f in variable.in_collection.all():
                             print("         " + f.name)
-                        for v in variable._proxied:
-                            print(v, ":", variable[v])
                 except Exception as e:
                     print(e)
                     if output not in [
@@ -354,10 +352,10 @@ def ls(ctx, collection, output):
                             f'Invalid output "{output}" selected - try files, tags, facets, relationships, collections, variables or locations instead'
                         )
                     else:
-                        print("Return list cannot be printed")
+                        print("Return list cannot be printed1")
             else:
                 print("No Variables found")
-        if return_list:
+        elif return_list:
             try:
                 for r in return_list:
                     print(r.name, sizeof_fmt(r.size))
@@ -376,7 +374,7 @@ def ls(ctx, collection, output):
                         f'Invalid output "{output}" selected - try files, tags, facets, relationships, collections, variables or locations instead'
                     )
                 else:
-                    print("Return list cannot be printed")
+                    print("Return list cannot be printed2")
     else:
         return_list = db.retrieve_collections()
         print(view_state.name)
@@ -423,6 +421,7 @@ def ls(ctx, collection, output):
                 else:
                     print("Return list failed to print")
     view_state.save()
+
 
 @cli.command()
 @click.pass_context
@@ -814,14 +813,11 @@ def delete_loc(ctx, location):
 
 @cli.command()
 @click.pass_context
-@click.option(
-    "--variable", default=None, help="Variable to delete")
-@click.option(    
-    "--col", default=None, help="Optional collection"
-)
+@click.option("--variable", default=None, help="Variable to delete")
+@click.option("--col", default=None, help="Optional collection")
 def delete_var(ctx, variable, col):
     """
-    Deletes a variable. 
+    Deletes a variable.
     If given a collection will delete remove all variable from that collection and delete any variables only in that collection.
     If given "all" will delete all variables
     Usage: cfsdb delete-var variable <collection>
@@ -832,8 +828,8 @@ def delete_var(ctx, variable, col):
         print("Needs a variable or collection to delete")
     elif not col:
         db.delete_var(variable)
-    elif col=="all":
-        click.confirm('Are you sure? This deletes all variables.', abort=True)
+    elif col == "all":
+        click.confirm("Are you sure? This deletes all variables.", abort=True)
         db.delete_all_var()
     else:
         col = db.retrieve_collection(col)
@@ -841,8 +837,9 @@ def delete_var(ctx, variable, col):
             var.in_collection.remove(col)
             if not var.in_collection:
                 db.delete_var(variable)
-        
+
     view_state.save()
+
 
 @cli.command()
 @click.pass_context
