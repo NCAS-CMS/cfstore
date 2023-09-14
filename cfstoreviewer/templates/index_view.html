@@ -41,6 +41,35 @@
   <div class="browser">
     <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
+      <button type="button" id="{{cellmethod}}" class="collapsiblebrowser">Contains Method</button>
+      <div class="collapsiblebrowser-content"> 
+        <table id="collapsibletable">
+          {% for cellmethod in collection|getallvariablecellmethods %}
+              <tr>
+                <td> 
+                  <p class="property">
+                    <input type="checkbox" id="{{cellmethod}}" name="check{{cellmethod}}" value="{{cellmethod}}"> {{cellmethod}} 
+                  </p>
+                </td>
+              </tr>
+          {% endfor %}
+        </table>
+      </div>
+      <button type="button" id="{{cellmethod}}" class="collapsiblebrowser">Contains Axes</button>
+      <div class="collapsiblebrowser-content"> 
+        <table id="collapsibletable">
+          {% for axes in collection|getallvariablecellaxes %}
+              <tr>
+                <td> 
+                  <p class="property">
+                    <input type="checkbox" id="{{axes}}" name="check{{axes}}" value="{{axes}}"> {{axes}} 
+                  </p>
+                </td>
+              </tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div>
       {% for propkey in collection|getallvariableproperties %}
       <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
       <div class="collapsiblebrowser-content"> 

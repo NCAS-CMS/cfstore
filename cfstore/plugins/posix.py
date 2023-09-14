@@ -189,13 +189,7 @@ class Posix:
             cell_methods = v.cell_methods()
             cell_methods_unpacked = []
             if cell_methods:
-                print("CELL METHODS")
-                print(cell_methods)
-                print(type(cell_methods))
                 for cmethod in cell_methods.values():
-                    print("C", cmethod)
-                    print("axes", cmethod.axes)
-                    print("method", cmethod.method)
                     axes = cmethod.axes
                     methods = cmethod.method
                     cell_method_dict = {"axes": axes, "methods": methods}
