@@ -24,21 +24,23 @@ if __name__ == "__main__":
         ignore_read_error=True,
         fmt="NETCDF",
         aggregate={
-            "relaxed_units": True,
+#            "relaxed_units": True, (not needed if we're only looking at NetCDF files)
             "relaxed_identities": True,
             "exclude": False,
             "concatenate": False,
+            "cells":cf.climatology_cells(), 
+            "contiguous":True
         },
         recursive=True,
         chunks=None,
     )
 
     print(
-        'Ran cf.read("{{fileinput}}",ignore_read_error=True,fmt="NETCDF",recursive=True, chunks=None)  '
+        'Ran cf.read("{{fileinput}}",**{{aggregate}})'
     )
     print("With the following settings for aggregate:")
     print(
-        'aggregate={"relaxed_units":True,"relaxed_identities":True, "exclude":False,"concatenate":False}'
+        'aggregate=**{{aggregate}}'
     )
     print("cff length:", len(cff))
     writepath = "{{homedir}}/" + "tempfile.cfa"
