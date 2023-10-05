@@ -688,15 +688,21 @@ class CollectionDB(CoreDB):
         return collection.variable_set.distinct()
 
     def retrieve_variables_subset_in_collection(self, collection_name, properties):
-        collection = Collection.objects.get(name=collection_name)
-        variables = collection.variable_set.all()
+        if collection_name=="all":
+            variables = Variable.objects.all()
+        else:
+            collection = Collection.objects.get(name=collection_name)
+            variables = collection.variable_set.all()
         for k, value in properties.items():
             for var in variables:
                 if (k, value) not in var._proxied.items():
-                    (variables.exclude(id=var.id))
-
+                    print("AAAAA")
+                    print(len(variables))
+                    variables = (variables.exclude(id=var.id))
+                    print(len(variables))
+        print("1",len(variables))
         variables = variables.distinct()
-
+        print("2",len(variables))
         return variables
 
     def delete_collection(self, collection_name, force):

@@ -1,6 +1,6 @@
 from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
-
+import ast
 from cfstore.config import CFSconfig
 
 from .forms import (CollectionSearchForm, SaveAsCollectionForm,
@@ -195,15 +195,15 @@ def downloadcol(request, page="all"):
     db = CFSconfig().db
     checks = {}
     if request.method == "POST":
-        checks = dict(
-            (k[2:], request.POST[k]) for k in request.POST.keys() if "P_" in k
-        )
+        print("POST",request.POST)
+        checks = ast.literal_eval(request.POST["checks"])
         page = request.POST["collection"]
+    print("PAGE,CHECKS",page,checks)
     variables = db.retrieve_variables_subset_in_collection(page, checks)
-    print(variables)
+    print("SOME",variables)
     files = db.retrieve_files_from_variables(variables)
 
-    filenames = (f.path + "/" + f.name + "\n" for f in files if f.name.endswith(".nc"))
+    filenames = (f.path + "/" + f.name + "<br>" for f in files if f.name.endswith(".nc"))
     return FileResponse(filenames, as_attachment=True, filename="Export.txt")
 
 
