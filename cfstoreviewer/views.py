@@ -4,7 +4,7 @@ from django.shortcuts import render
 from cfstore.config import CFSconfig
 
 from .forms import (CollectionSearchForm, SaveAsCollectionForm,
-                    VariableSearchForm, VariableBrowseForm)
+                    VariableBrowseForm, VariableSearchForm)
 
 
 def outputvar(var):
@@ -49,6 +49,7 @@ def ls(request):
             "variable_search_form": variable_search_form,
             "collection_search_form": collection_search_form,
             "variable_browse_form": variable_browse_form,
+            "checks": {},
         },
     )
 
@@ -62,11 +63,13 @@ def lsbrowse(request):
     checks = {}
 
     if request.method == "POST":
-        print(request.POST.keys())
+        print("POST", request.POST.keys())
         variable_search_form = VariableSearchForm(request.POST)
         collection_search_form = CollectionSearchForm(request.POST)
         collection_save_form = SaveAsCollectionForm(request.POST)
-        checks = [ v for k, v in request.POST.items() if 'check' in k]
+        checks = dict(
+            (k[2:], request.POST[k]) for k in request.POST.keys() if "P_" in k
+        )
 
         if "variablename" in request.POST:
             varsearch.append(request.POST["variablename"])
@@ -135,13 +138,14 @@ def lsbrowse(request):
                 "collection_search_form": collection_search_form,
                 "collection_save_form": collection_save_form,
                 "search_method": search_method,
+                "checks": checks,
             },
         )
 
     if request.method == "POST":
         print(request.POST)
 
-    print(checks)
+    print("AAAAH", checks)
 
     return render(
         request,
@@ -189,7 +193,16 @@ def lscol(request, page="all"):
 
 def downloadcol(request, page="all"):
     db = CFSconfig().db
-    files = db.retrieve_files_in_collection(page)
+    checks = {}
+    if request.method == "POST":
+        checks = dict(
+            (k[2:], request.POST[k]) for k in request.POST.keys() if "P_" in k
+        )
+        page = request.POST["collection"]
+    variables = db.retrieve_variables_subset_in_collection(page, checks)
+    print(variables)
+    files = db.retrieve_files_from_variables(variables)
+
     filenames = (f.path + "/" + f.name + "\n" for f in files if f.name.endswith(".nc"))
     return FileResponse(filenames, as_attachment=True, filename="Export.txt")
 
@@ -198,11 +211,8 @@ def lsvar(request, var="all"):
     db = CFSconfig().db
     var = var.replace(" ", "_")
     variables = db.retrieve_all_variables("identity", var)
-    print(variables)
     return render(
         request,
         "variables_view.html",
-        {
-            "variables": variables
-        },
+        {"variables": variables},
     )
