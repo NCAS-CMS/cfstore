@@ -696,13 +696,8 @@ class CollectionDB(CoreDB):
         for k, value in properties.items():
             for var in variables:
                 if (k, value) not in var._proxied.items():
-                    print("AAAAA")
-                    print(len(variables))
                     variables = (variables.exclude(id=var.id))
-                    print(len(variables))
-        print("1",len(variables))
         variables = variables.distinct()
-        print("2",len(variables))
         return variables
 
     def delete_collection(self, collection_name, force):
