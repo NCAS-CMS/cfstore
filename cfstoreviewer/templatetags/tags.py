@@ -77,6 +77,27 @@ def getallvariableproperties(collection):
     properties = {k: v for k, v in sorted(properties.items(), key=lambda item: item[1], reverse=True)}
     return properties.items()
 
+@template.defaulttags.register.filter
+def checkvar(variable,properties):
+    print(variable)
+    print(properties)
+    db = CFSconfig().db
+    variable = db.retrieve_variable("identity",variable)
+    check = True
+    for p in properties:
+        print(p, properties)
+        if p not in variable._proxied.values():
+            print("NOT FOUND")
+            check = False
+    print(check)
+    return check
+
+@template.defaulttags.register.filter
+def getvariableproperty(variable):
+    db = CFSconfig().db
+    variable = db.retrieve_variable("identity",variable)
+    properties = variable._proxied.values()
+    return properties
 
 @template.defaulttags.register.filter
 def getvariableproperties(variable):

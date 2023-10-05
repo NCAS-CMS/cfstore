@@ -23,9 +23,12 @@
     <table id="collapsibletable">
 
       {% for var,count in collection|getuniquevariables %}
-      <tr>
-        <td><a href="/cfstoreviewer/viewcollections/variables/{{var}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
-      </tr>
+      
+      {% if var|checkvar:checks %}
+        <tr>
+          <td><a href="/cfstoreviewer/viewcollections/variables/{{var}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
+       </tr>
+        {% endif %}
       {% endfor %}
     </table>
   </div>
@@ -36,23 +39,29 @@
   {% endfor %}
 
   <div class="browser">
-  {% for propkey in collection|getallvariableproperties %}
-    <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
-    <div class="collapsiblebrowser-content"> 
-      <table id="collapsibletable">
-        {% for property in propkey|getpropertyvalues %}
-            <tr>
-              <td> 
-                <p class="property">
-                  <input type="checkbox" id="{{property}}"> {{property}} 
-                </p>
-              </td>
-            </tr>
-        {% endfor %}
-      </table>
-    </div>
-  {% endfor %}
+    <form action="/cfstoreviewer/viewcollections/search/" method="post">
+      {% csrf_token %}
+      {% for propkey in collection|getallvariableproperties %}
+      <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
+      <div class="collapsiblebrowser-content"> 
+        <table id="collapsibletable">
+          {% for property in propkey|getpropertyvalues %}
+              <tr>
+                <td> 
+                  <p class="property">
+                    <input type="checkbox" id="{{property}}" name="check{{property}}" value="{{property}}"> {{property}} 
+                  </p>
+                </td>
+              </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endfor %}
+      <button type="submit" name="browse">Browse!</button>
+    </form>
   </div>
+
+
 
 
 <script>
