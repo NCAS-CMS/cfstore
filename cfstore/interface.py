@@ -1,24 +1,19 @@
-import os, sys
+import os
+import sys
+
 import django
 from django.db import IntegrityError
 from django.db.models import Q
 
 django.setup()
 
-from cfstore.db import (
-    Collection,
-    CoreDB,
-    File,
-    Tag,
-    Location,
-    Protocol,
-    Cell_Method,
-    Variable,
-)
+import hashlib
+
+from tqdm import tqdm
 
 from cfstore.cfparse_file import cfparse_file
-from tqdm import tqdm
-import hashlib
+from cfstore.db import (Cell_Method, Collection, CoreDB, File, Location,
+                        Protocol, Tag, Variable)
 
 
 class CollectionError(Exception):
@@ -55,8 +50,8 @@ class CollectionDB(CoreDB):
         """
         Retrieve a specific cell method
         """
-        cm = Cell_Method.get(axis=axis,method=method)
-        
+        cm = Cell_Method.get(axis=axis, method=method)
+
         return cm
 
     def add_protocol(self, protocol_name, locations=[]):
@@ -121,48 +116,54 @@ class CollectionDB(CoreDB):
         Add a collection and any properties, and return instance
         """
         if not description:
-            description="No Description"
-       # c = Collection.objects.get(name=collection_name)[0]
+            description = "No Description"
+        # c = Collection.objects.get(name=collection_name)[0]
         try:
-            c = Collection.objects.create(name=collection_name, volume=0, description=description, batch=1, _proxied={})
+            c = Collection.objects.create(
+                name=collection_name,
+                volume=0,
+                description=description,
+                batch=1,
+                _proxied={},
+            )
         except IntegrityError:
-            print('ERROR: Integrity Error! Most likely, a collection with that name already exists ')   
+            print(
+                "ERROR: Integrity Error! Most likely, a collection with that name already exists "
+            )
             sys.exit()
 
-        
         for k in kw:
             c[k] = kw[k]
             c.volume += k.size
-        #FIXME check for duplicates
+        # FIXME check for duplicates
         c.save()
         return c
 
-    def save_as_collection(self, grouping, name, description="Saved collection", grouping_id="collections"):
+    def save_as_collection(
+        self, grouping, name, description="Saved collection", grouping_id="collections"
+    ):
         """
         Groups already stored collections into new named collection
         """
-        self.create_collection(name,description=description)
-        if grouping_id=="variables":
+        self.create_collection(name, description=description)
+        if grouping_id == "variables":
             for var in grouping:
                 for file in var.in_files:
-                    self.add_file_to_collection(name,file)
+                    self.add_file_to_collection(name, file)
         else:
             for col in grouping:
-
                 files = self.retrieve_files_in_collection(col.name)
                 variables = self.retrieve_variables_in_collection(col.name)
                 for var in variables:
-                    self.add_variable_to_collection(name,var)
+                    self.add_variable_to_collection(name, var)
                     var.save()
                 for file in files.distinct():
                     try:
-                        self.add_file_to_collection(name,file,skipvar=True)
-                        
+                        self.add_file_to_collection(name, file, skipvar=True)
+
                     except:
                         pass
                     file.save()
-            
-
 
     def create_location(self, location, protocols=[], overwrite=False):
         """
@@ -171,15 +172,14 @@ class CollectionDB(CoreDB):
         However, it may have one or more protocols associated with it.
         """
 
-    
         loc = Location.objects.filter(name=location)
         if loc:
             loc = loc[0]
         if not loc:
-            loc = Location.objects.create(name=location,volume=0)
+            loc = Location.objects.create(name=location, volume=0)
         if overwrite and loc:
             loc.delete()
-            loc = Location.objects.create(name=location,volume=0)    
+            loc = Location.objects.create(name=location, volume=0)
         if protocols:
             existing_protocols = self.retrieve_protocols()
             for p in protocols:
@@ -187,10 +187,9 @@ class CollectionDB(CoreDB):
                     pdb = Protocol.objects.create(name=p)
                 loc.protocols.append(pdb)
         else:
-            protocols = [Protocol.objects.get_or_create(name="none")[0]]        
+            protocols = [Protocol.objects.get_or_create(name="none")[0]]
         loc.save()
 
-        
     def create_tag(self, tagname):
         """
         Create a tag and insert into a database
@@ -234,74 +233,88 @@ class CollectionDB(CoreDB):
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        path=f.path,
-                                        size=f.size) for f in candidates]
+                        possibles = [
+                            File.objects.filter(name=f.name, path=f.path, size=f.size)
+                            for f in candidates
+                        ]
                     else:
-                        possibles = [File.objects.filter(
-                            name=f.name,
-                            size=f.size,) for f in candidates
+                        possibles = [
+                            File.objects.filter(
+                                name=f.name,
+                                size=f.size,
+                            )
+                            for f in candidates
                         ]
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        path=f.path,
-                                        size=f.size) for f in candidates]                                    
+                        possibles = [
+                            File.objects.filter(name=f.name, path=f.path, size=f.size)
+                            for f in candidates
+                        ]
                     else:
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        size=f.size) for f in candidates]
+                        possibles = [
+                            File.objects.filter(name=f.name, size=f.size)
+                            for f in candidates
+                        ]
             if check.lower() == "name":
                 if strip_base:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        path=strip(f.path, strip_base),
-                                        size=f.size) for f in candidates]
+                        possibles = [
+                            File.objects.filter(
+                                name=f.name, path=strip(f.path, strip_base), size=f.size
+                            )
+                            for f in candidates
+                        ]
                     else:
-                        possibles = [File.objects.filter(
-                                        name=strip(f.name,strip_base)) for f in candidates]
+                        possibles = [
+                            File.objects.filter(name=strip(f.name, strip_base))
+                            for f in candidates
+                        ]
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        path=(f.path)) for f in candidates]
+                        possibles = [
+                            File.objects.filter(name=f.name, path=(f.path))
+                            for f in candidates
+                        ]
                     else:
-                        possibles = [File.objects.filter(
-                                        name=f.name) for f in candidates]
-           
+                        possibles = [
+                            File.objects.filter(name=f.name) for f in candidates
+                        ]
+
             if check.lower() == "size":
                 if strip_base:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [File.objects.filter(
-                                        size=f.size) for f in candidates]
-                    
+                        possibles = [
+                            File.objects.filter(size=f.size) for f in candidates
+                        ]
+
                     else:
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        size=f.size) for f in candidates]
-                
+                        possibles = [
+                            File.objects.filter(name=f.name, size=f.size)
+                            for f in candidates
+                        ]
+
                 else:
                     if match_full_path:
                         # likely occurs because ingest required same checksum and/or size and these were not
                         # known at ingest time.
-                        possibles = [File.objects.filter(
-                                        name=f.name,
-                                        path=f.path) for f in candidates]
-                        
+                        possibles = [
+                            File.objects.filter(name=f.name, path=f.path)
+                            for f in candidates
+                        ]
+
                     else:
-                        possibles = [File.objects.filter(
-                                        size=f.size) for f in candidates]
+                        possibles = [
+                            File.objects.filter(size=f.size) for f in candidates
+                        ]
         return candidates, possibles
 
     def retrieve_collection(self, collection_name):
@@ -342,23 +355,23 @@ class CollectionDB(CoreDB):
             )
 
         if name_contains:
-            return Collection.objects.filter(name_contains(f'%{name_contains}%'))
+            return Collection.objects.filter(name_contains(f"%{name_contains}%"))
         elif description_contains:
-            return Collection.objects.filter(name_contains(f'%{description_contains}%'))
+            return Collection.objects.filter(name_contains(f"%{description_contains}%"))
         elif contains:
-            contains = f'%{contains}%'
-            #FIXME Should be an OR
-            return Collection.objects.filter(name_contains(contains),description_contains(contains))
+            contains = f"%{contains}%"
+            # FIXME Should be an OR
+            return Collection.objects.filter(
+                name_contains(contains), description_contains(contains)
+            )
         elif tagname:
             tag = Tag.objects.get(name=tagname)
-#            tag = self.session.query(Tag).filter_by(name=tagname).one()
+            #            tag = self.session.query(Tag).filter_by(name=tagname).one()
             return tag.in_collections
             # return self.session.query(Collection).join(Collection.tags).filter_by(name=tagname).all()
         elif facet:
             key, value = facet
-            return (
-                Collection.objects.filter(properties_key=key,properties_value=value)
-            )
+            return Collection.objects.filter(properties_key=key, properties_value=value)
         else:
             return Collection.objects.all()
 
@@ -375,11 +388,11 @@ class CollectionDB(CoreDB):
         if size and checksum:
             raise ValueError("Can only retrieve files by size OR checksum, not both!")
         if size:
-            x = File.objects.filter(name=name,path=path,size=size).all()
+            x = File.objects.filter(name=name, path=path, size=size).all()
         elif checksum:
-            x = File.objects.filter(name=name,path=path,checksum=checksum).all()
+            x = File.objects.filter(name=name, path=path, checksum=checksum).all()
         else:
-            x = File.objects.filter(name=name,path=path).all()
+            x = File.objects.filter(name=name, path=path).all()
         if x:
             assert len(x) == 1
             return x[0]
@@ -395,13 +408,15 @@ class CollectionDB(CoreDB):
 
         (The use case for extra detail is to look for specific files amongst duplicates.)
         """
-        pathname,filename = os.path.split(fullpath)
+        pathname, filename = os.path.split(fullpath)
         if size and checksum:
             raise ValueError("Can only retrieve files by size OR checksum, not both!")
         if size:
-            x = File.objects.filter(name=filename,path=pathname,size=size).all()
+            x = File.objects.filter(name=filename, path=pathname, size=size).all()
         elif checksum:
-            x = File.objects.filter(name=filename,path=pathname,checksum=checksum).all()
+            x = File.objects.filter(
+                name=filename, path=pathname, checksum=checksum
+            ).all()
         else:
             x = File.objects.filter(name=filename).all()
         if x:
@@ -417,7 +432,7 @@ class CollectionDB(CoreDB):
         try:
             x = Location.objects.get(name=location_name)
         except Location.DoesNotExist:
-            raise ValueError(f'No such collection {location_name}')
+            raise ValueError(f"No such collection {location_name}")
         assert x.name == location_name
         return x
 
@@ -460,10 +475,14 @@ class CollectionDB(CoreDB):
         """
         Retrieve files where <match> appears in either the path or the name.
         """
-        m = f'%{match}%'
-        #FIXME make this an OR
-        #return File.objects.filter(name_contains=m,path_contains=m)
-        return self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).all()
+        m = f"%{match}%"
+        # FIXME make this an OR
+        # return File.objects.filter(name_contains=m,path_contains=m)
+        return (
+            self.session.query(File)
+            .filter(or_(File.name.like(m), File.path.like(m)))
+            .all()
+        )
 
     def retrieve_files_in_collection(self, collection, match=None, replicants=False):
         """
@@ -481,28 +500,46 @@ class CollectionDB(CoreDB):
             # However, given we know that the number of files is much greater than the number
             # of collections, it's likely that searching the files that match a collection first
             # could be faster. We can investigate that another day ...
-            #FIXME make this an OR
-            files = File.objects.filter(name_contains=m,path_contains=m).filter(name=collection)
-#            files = self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).join(
-             #   File.in_collections).filter_by(name=collection).all()
+            # FIXME make this an OR
+            files = File.objects.filter(name_contains=m, path_contains=m).filter(
+                name=collection
+            )
+            #            files = self.session.query(File).filter(or_(File.name.like(m), File.path.like(m))).join(
+            #   File.in_collections).filter_by(name=collection).all()
             return files
         elif replicants and match is None:
-            #FIXME this might take a second to DJANGIFY
-            files = self.session.query(File).filter(File.in_collections.any(
-                                Collection.name == collection)).join(
-                                File.replicas).group_by(File).having(
-                                func.count(Location.id) > 1).all()
+            # FIXME this might take a second to DJANGIFY
+            files = (
+                self.session.query(File)
+                .filter(File.in_collections.any(Collection.name == collection))
+                .join(File.replicas)
+                .group_by(File)
+                .having(func.count(Location.id) > 1)
+                .all()
+            )
             return files
         else:
-            m = f'%{match}%'
-            #FIXME this one too
-            files = self.session.query(File).filter(and_(
-                File.in_collections.any(Collection.name == collection),
-                or_(File.name.like(m), File.path.like(m)))).join(
-                File.replicas).group_by(File).having(
-                func.count(Location.id) > 1).all()
-            #TODO add checksum here
+            m = f"%{match}%"
+            # FIXME this one too
+            files = (
+                self.session.query(File)
+                .filter(
+                    and_(
+                        File.in_collections.any(Collection.name == collection),
+                        or_(File.name.like(m), File.path.like(m)),
+                    )
+                )
+                .join(File.replicas)
+                .group_by(File)
+                .having(func.count(Location.id) > 1)
+                .all()
+            )
+            # TODO add checksum here
             return files
+
+    def retrieve_files_from_variables(self, variables):
+        files = File.objects.filter(variable__in=variables)
+        return files
 
     def delete_file_from_collection(self, collection, file):
         """
@@ -513,22 +550,26 @@ class CollectionDB(CoreDB):
         f = self.retrieve_file(path, filename)
 
         c = Collection.objects.get(name=collection)
-        
+
         if file not in c.files.all():
-            print(f"Attempt to delete file {file} from {c} - but it's already not there")
-        c.files.remove(f)      
+            print(
+                f"Attempt to delete file {file} from {c} - but it's already not there"
+            )
+        c.files.remove(f)
         c.volume -= f.size
         if not f.collection_set.all():
             try:
                 uc = Collection.objects.get(name="_unlisted")
             except Collection.DoesNotExist:
-                uc = self.create_collection("_unlisted", description="Holds unlisted files")
-            self.add_file_to_collection(uc.name,f)
-    
+                uc = self.create_collection(
+                    "_unlisted", description="Holds unlisted files"
+                )
+            self.add_file_to_collection(uc.name, f)
+
             uc.files.add(f)
             uc.volume += f.size
             uc.save()
-        f.save() 
+        f.save()
         c.save()
 
     def retrieve_variable(self, key, value):
@@ -551,7 +592,7 @@ class CollectionDB(CoreDB):
             results = Variable.objects.filter(in_files__in=value)
         if key == "all":
             return Variable.objects.all()
-        
+
         if not results.exists():
             return results
         return results[0]
@@ -576,7 +617,7 @@ class CollectionDB(CoreDB):
             results = Variable.objects.filter(in_files__in=value)
         if key == "all":
             return Variable.objects.all()
-        
+
         if not results.exists():
             return results
         return results
@@ -585,8 +626,7 @@ class CollectionDB(CoreDB):
         """Retrieve variable by arbitrary property"""
         queries = query
         if key in [
-            "id"
-            "long_name",
+            "id" "long_name",
             "standard_name",
             "cfdm_size",
             "cfdm_domain",
@@ -602,10 +642,10 @@ class CollectionDB(CoreDB):
         elif len(queries) == 1:
             results = Variable.objects.all()
         else:
-            #FIXME make sure queries format is DJANGOfyed
+            # FIXME make sure queries format is DJANGOfyed
             results = Variable.objects.filter(*queries).all()
         return results, queries
-    
+
     def search_variable(self, key, value):
         """Retrieve variable by arbitrary property"""
         if key == "identity":
@@ -626,18 +666,16 @@ class CollectionDB(CoreDB):
             results = Variable.objects.filter(in_files__in=value)
         if key == "all":
             return Variable.objects.all()
-        
+
         if not results.exists():
             return results
         return results[0]
-
 
     def show_collections_with_variable(self, variable):
         """Find all collections with a given variable"""
         coldict = {}
         print(variable.in_files)
         for file in variable.in_files.all():
-            
             for collection in Collection.objects.filter(files=file).all():
                 if collection not in coldict:
                     coldict[collection] = 1
@@ -649,6 +687,18 @@ class CollectionDB(CoreDB):
         collection = Collection.objects.get(name=collection_name)
         return collection.variable_set.distinct()
 
+    def retrieve_variables_subset_in_collection(self, collection_name, properties):
+        collection = Collection.objects.get(name=collection_name)
+        variables = collection.variable_set.all()
+        for k, value in properties.items():
+            for var in variables:
+                if (k, value) not in var._proxied.items():
+                    (variables.exclude(id=var.id))
+
+        variables = variables.distinct()
+
+        return variables
+
     def delete_collection(self, collection_name, force):
         """
         Remove a collection from the database, ensuring all files have already been removed first.
@@ -656,7 +706,7 @@ class CollectionDB(CoreDB):
         files = self.retrieve_files_in_collection(collection_name)
         if files and force:
             for f in files:
-                self.delete_file_from_collection(collection_name, f.path+"/"+f.name)
+                self.delete_file_from_collection(collection_name, f.path + "/" + f.name)
             c = self.retrieve_collection(collection_name)
             c.save()
             c.delete()
@@ -711,10 +761,10 @@ class CollectionDB(CoreDB):
                 f"Attempt to add file {file} to {c} - but it's already there"
             )
         c.files.add(file)
-        c.volume += file.size 
+        c.volume += file.size
         if not skipvar:
             for variable in file.variable_set.all():
-                self.add_variable_to_collection(collection,variable)  
+                self.add_variable_to_collection(collection, variable)
         c.save()
 
     def add_variable_to_collection(self, collection, variable):
@@ -723,7 +773,9 @@ class CollectionDB(CoreDB):
         """
         c = Collection.objects.get(name=collection)
         if variable in c.variable_set.all():
-            print(f"Attempt to add variable {variable.long_name}/{variable.standard_name} to {c.name} - but it's already there")
+            print(
+                f"Attempt to add variable {variable.long_name}/{variable.standard_name} to {c.name} - but it's already there"
+            )
         else:
             variable.in_collection.add(c)
             variable.save()
@@ -734,18 +786,18 @@ class CollectionDB(CoreDB):
         Return information about a collection
         """
         try:
-#FIXME ask bryan            c = self.session.query(Collection).filter_by(name=name).first()
+            # FIXME ask bryan            c = self.session.query(Collection).filter_by(name=name).first()
             c = Collection.objects.get(name=name)
         except Collection.DoesNotExist:
-            raise ValueError(f'No such collection {name}')
+            raise ValueError(f"No such collection {name}")
         return c.id
 
-    def byte_format(self, num, suffix='B'):
-        for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+    def byte_format(self, num, suffix="B"):
+        for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
             if abs(num) < 1024.0:
                 return "%3.1f%s%s" % (num, unit, suffix)
             num /= 1024.0
-        return "%.1f%s%s" % (num, 'Yi', suffix)
+        return "%.1f%s%s" % (num, "Yi", suffix)
 
     def organise(self, collection, files, description):
         """
@@ -815,10 +867,9 @@ class CollectionDB(CoreDB):
             c = Collection.objects.get(name=collection)
             loc = Location.objects.get(name=location)
         except Collection.DoesNotExist:
-            raise ValueError('Collection not yet available in database')
+            raise ValueError("Collection not yet available in database")
         except Location.DoesNotExist:
-            raise ValueError('Location not yet available in database')
-
+            raise ValueError("Location not yet available in database")
 
         if "checksum" not in f:
             f["checksum"] = "None"
@@ -879,18 +930,14 @@ class CollectionDB(CoreDB):
             {name:..., path: ..., checksum: ..., size: ..., format: ...}
 
         """
-        
+
         try:
             c = Collection.objects.get(name=collection)
             loc = Location.objects.get(name=location)
         except Collection.DoesNotExist:
-            raise ValueError(
-                "Collection not yet available in database"
-            )
+            raise ValueError("Collection not yet available in database")
         except Location.DoesNotExist:
-            raise ValueError(
-                "Location not yet available in database"
-            )
+            raise ValueError("Location not yet available in database")
         for f in tqdm(files):
             if "checksum" not in f:
                 f["checksum"] = "None"
@@ -918,7 +965,7 @@ class CollectionDB(CoreDB):
                         fmt = f["format"]
                     except KeyError:
                         fmt = os.path.splitext(name)[1]
-                    f,created = File.objects.get_or_create(
+                    f, created = File.objects.get_or_create(
                         name=name,
                         path=path,
                         checksum=checksum,
@@ -930,13 +977,13 @@ class CollectionDB(CoreDB):
                     c.volume += f.size
                     loc.holds_files.add(f)
                     loc.volume += f.size
-                
+
             else:
                 try:
                     fmt = f["format"]
                 except KeyError:
                     fmt = os.path.splitext(name)[1]
-                f,created = File.objects.get_or_create(
+                f, created = File.objects.get_or_create(
                     name=name,
                     path=path,
                     checksum=checksum,
@@ -949,12 +996,10 @@ class CollectionDB(CoreDB):
                 f.replicas.add(loc)
                 loc.holds_files.add(f)
                 loc.volume += f.size
-                f.save()                    
-
+                f.save()
 
         c.save()
         loc.save()
-        
 
     def remove_file_from_collection(
         self, collection, file_path, file_name, checksum=None
