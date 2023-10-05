@@ -63,7 +63,6 @@ def lsbrowse(request):
     checks = {}
 
     if request.method == "POST":
-        print("POST", request.POST.keys())
         variable_search_form = VariableSearchForm(request.POST)
         collection_search_form = CollectionSearchForm(request.POST)
         collection_save_form = SaveAsCollectionForm(request.POST)

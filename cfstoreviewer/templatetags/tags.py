@@ -53,9 +53,7 @@ def getcollectionsfromvariable(variable):
 @template.defaulttags.register.filter
 def getuniquevariables(collection, check):
     db = CFSconfig().db
-    print("CH", check.items())
     variables = db.retrieve_variables_subset_in_collection(collection.name, check)
-    print("VA", variables)
     variablenames = [v.identity for v in variables]
     uniquevariables = {}
     for v in variablenames:
