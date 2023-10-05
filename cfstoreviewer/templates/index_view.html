@@ -8,7 +8,7 @@
 <html>
   <h2>Collections</h2>
 
-  {%for collection in collections %}
+  {%for collection in collections|checkcol:checks %}
   <button type="button" class="collapsible">{{collection.name}}</button>
   <div class="collection-block">
   
@@ -22,18 +22,20 @@
     </form>  
     <table id="collapsibletable">
 
-      {% for var,count in collection|getuniquevariables %}
+      {% for var,count in collection|getuniquevariables:checks %}
       
-      {% if var|checkvar:checks %}
         <tr>
           <td><a href="/cfstoreviewer/viewcollections/variables/{{var}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
        </tr>
-        {% endif %}
       {% endfor %}
     </table>
   </div>
 
-
+  <form action="download" method="post">
+      {% csrf_token %}
+      <input type="hidden" id="collection" name="collection" value="{{collection.name}}"> 
+      <input type="submit" value="Download Collection" />
+  </form>
 
   </div>
   {% endfor %}
@@ -49,7 +51,7 @@
               <tr>
                 <td> 
                   <p class="property">
-                    <input type="checkbox" id="{{property}}" name="check{{property}}" value="{{property}}"> {{property}} 
+                    <input type="checkbox" id="{{property}}" name="P_{{propkey|getproperty}}" value="{{property}}"> {{property}} 
                   </p>
                 </td>
               </tr>
