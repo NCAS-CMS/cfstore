@@ -34,12 +34,18 @@
   <form action="download" method="post">
       {% csrf_token %}
       <input type="hidden" id="collection" name="collection" value="{{collection.name}}"> 
+      <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
       <input type="submit" value="Download Collection" />
   </form>
 
   </div>
   {% endfor %}
-
+  <form action="download" method="post">
+    {% csrf_token %}
+    <input type="hidden" id="collection" name="collection" value="all"> 
+    <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
+    <input type="submit" value="Download Collection" />
+</form>
   <div class="browser">
     <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
