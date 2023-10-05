@@ -195,12 +195,9 @@ def downloadcol(request, page="all"):
     db = CFSconfig().db
     checks = {}
     if request.method == "POST":
-        print("POST",request.POST)
         checks = ast.literal_eval(request.POST["checks"])
         page = request.POST["collection"]
-    print("PAGE,CHECKS",page,checks)
     variables = db.retrieve_variables_subset_in_collection(page, checks)
-    print("SOME",variables)
     files = db.retrieve_files_from_variables(variables)
 
     filenames = (f.path + "/" + f.name + "<br>" for f in files if f.name.endswith(".nc"))
