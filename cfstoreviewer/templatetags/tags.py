@@ -42,16 +42,18 @@ def getvariables(collection):
     variables = db.retrieve_variables_in_collection(collection.name)
     return variables
 
+
 @template.defaulttags.register.filter
 def getcollectionsfromvariable(variable):
     db = CFSconfig().db
     collection = variable.in_collection.all()
     return collection
 
+
 @template.defaulttags.register.filter
-def getuniquevariables(collection):
+def getuniquevariables(collection, check):
     db = CFSconfig().db
-    variables = db.retrieve_variables_in_collection(collection.name)
+    variables = db.retrieve_variables_subset_in_collection(collection.name, check)
     variablenames = [v.identity for v in variables]
     uniquevariables = {}
     for v in variablenames:
@@ -60,6 +62,7 @@ def getuniquevariables(collection):
         else:
             uniquevariables[v] += 1
     return uniquevariables.items()
+
 
 @template.defaulttags.register.filter
 def getallvariableproperties(collection):
@@ -73,31 +76,50 @@ def getallvariableproperties(collection):
             elif value not in properties[prop]:
                 properties[prop].append(value)
     for p in properties:
-        properties[p] = len(properties[p])  
-    properties = {k: v for k, v in sorted(properties.items(), key=lambda item: item[1], reverse=True)}
+        properties[p] = len(properties[p])
+    properties = {
+        k: v
+        for k, v in sorted(properties.items(), key=lambda item: item[1], reverse=True)
+    }
     return properties.items()
 
+
 @template.defaulttags.register.filter
-def checkvar(variable,properties):
-    print(variable)
-    print(properties)
+def checkvar(variable, properties):
     db = CFSconfig().db
-    variable = db.retrieve_variable("identity",variable)
+    variable = db.retrieve_variable("identity", variable)
     check = True
     for p in properties:
-        print(p, properties)
         if p not in variable._proxied.values():
-            print("NOT FOUND")
             check = False
-    print(check)
     return check
+
+
+@template.defaulttags.register.filter
+def checkcol(collections, check):
+    db = CFSconfig().db
+    returncollections = []
+    for collection in collections:
+        variables = db.retrieve_variables_subset_in_collection(collection.name, check)
+        variablenames = [v.identity for v in variables]
+        uniquevariables = {}
+        for v in variablenames:
+            if v not in uniquevariables:
+                uniquevariables[v] = 1
+            else:
+                uniquevariables[v] += 1
+        if uniquevariables:
+            returncollections.append(collection)
+    return returncollections
+
 
 @template.defaulttags.register.filter
 def getvariableproperty(variable):
     db = CFSconfig().db
-    variable = db.retrieve_variable("identity",variable)
+    variable = db.retrieve_variable("identity", variable)
     properties = variable._proxied.values()
     return properties
+
 
 @template.defaulttags.register.filter
 def getvariableproperties(variable):
@@ -171,6 +193,12 @@ def getpropertyvalues(propname):
 @template.defaulttags.register.filter
 def displayproperty(prop):
     output = prop[0] + " (" + str(prop[1]) + ")"
+    return output
+
+
+@template.defaulttags.register.filter
+def getproperty(prop):
+    output = prop[0]
     return output
 
 
