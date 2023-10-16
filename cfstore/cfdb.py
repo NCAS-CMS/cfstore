@@ -325,7 +325,7 @@ def ls(ctx, collection, output):
                         print("Variable:")
                         if variable.standard_name:
                             print(variable.standard_name)
-                        elif r.long_name:
+                        elif variable.long_name:
                             print(variable.long_name)
                         else:
                             print(
@@ -336,8 +336,6 @@ def ls(ctx, collection, output):
                         print("         is in")
                         for f in variable.in_collection.all():
                             print("         " + f.name)
-                        for v in variable._proxied:
-                            print(v, ":", variable[v])
                 except Exception as e:
                     print(e)
                     if output not in [
@@ -354,10 +352,10 @@ def ls(ctx, collection, output):
                             f'Invalid output "{output}" selected - try files, tags, facets, relationships, collections, variables or locations instead'
                         )
                     else:
-                        print("Return list cannot be printed")
+                        print("Return list cannot be printed1")
             else:
                 print("No Variables found")
-        if return_list:
+        elif return_list:
             try:
                 for r in return_list:
                     print(r.name, sizeof_fmt(r.size))
@@ -376,7 +374,7 @@ def ls(ctx, collection, output):
                         f'Invalid output "{output}" selected - try files, tags, facets, relationships, collections, variables or locations instead'
                     )
                 else:
-                    print("Return list cannot be printed")
+                    print("Return list cannot be printed2")
     else:
         return_list = db.retrieve_collections()
         print(view_state.name)
