@@ -211,7 +211,8 @@ class Posix:
             for k, p in properties.items():
                 if k not in ["standard_name", "long_name"]:
                     managed_properties[k] = manage_types(p)
-            if "frequency" in managed_properties.keys():
+
+                    if "frequency" in managed_properties.keys():
                 if managed_properties["frequency"] == cf.D:
                     managed_properties["frequency"] = "Daily"
                 if managed_properties["frequency"] == cf.M:
@@ -233,6 +234,7 @@ class Posix:
                 print("Variable already exists! Updating files")
             if c not in var.in_collection.all():
                 var.in_collection.add(c)
+
             files = list(v.get_filenames())
             for file in files:
                 (path, file) = os.path.split(file)
