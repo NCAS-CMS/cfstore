@@ -19,27 +19,29 @@ if __name__ == "__main__":
     # Reads the fields from the file with cf
     # Alternatively cfdm can be used as such:
     #   cff = cfdm.read(filename)
+
+    # If you want to configure the aggregation change this variable
+    aggregate = {
+        # "relaxed_units": True, (not needed if we're only looking at NetCDF files)
+        "relaxed_identities": True,
+        "exclude": False,
+        "concatenate": False,
+        "cells": cf.climatology_cells(),
+        "contiguous": True,
+    }
+
     cff = cf.read(
         "{{fileinput}}",
         ignore_read_error=True,
         fmt="NETCDF",
-        aggregate={
-            "relaxed_units": True,
-            "relaxed_identities": True,
-            "exclude": False,
-            "concatenate": False,
-        },
+        aggregate=aggregate,
         recursive=True,
         chunks=None,
     )
 
-    print(
-        'Ran cf.read("{{fileinput}}",ignore_read_error=True,fmt="NETCDF",recursive=True, chunks=None)  '
-    )
+    print('Ran cf.read("{{fileinput}}",**{{aggregate}})')
     print("With the following settings for aggregate:")
-    print(
-        'aggregate={"relaxed_units":True,"relaxed_identities":True, "exclude":False,"concatenate":False}'
-    )
+    print("aggregate=**{{aggregate}}")
     print("cff length:", len(cff))
     writepath = "{{homedir}}/" + "tempfile.cfa"
 
