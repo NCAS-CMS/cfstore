@@ -212,13 +212,13 @@ class Posix:
                 if k not in ["standard_name", "long_name"]:
                     managed_properties[k] = manage_types(p)
 
-                    if "frequency" in managed_properties.keys():
-                if managed_properties["frequency"] == cf.D:
-                    managed_properties["frequency"] = "Daily"
-                if managed_properties["frequency"] == cf.M:
-                    managed_properties["frequency"] = "Monthly"
-                if managed_properties["frequency"] == cf.Y:
-                    managed_properties["frequency"] = "Yearly"
+                if "frequency" in managed_properties.keys():
+                    if managed_properties["frequency"] == cf.D:
+                        managed_properties["frequency"] = "Daily"
+                    if managed_properties["frequency"] == cf.M:
+                        managed_properties["frequency"] = "Monthly"
+                    if managed_properties["frequency"] == cf.Y:
+                        managed_properties["frequency"] = "Yearly"
 
             var, created = db.Variable.objects.get_or_create(
                 identity=identity,
