@@ -51,7 +51,7 @@ a replicant of data on
 tape!
 end note
 endif 
-: tool <i>copies</I fragments 
+: tool <i>copies</i> fragments 
 corresponding to <color:blue>nquark</color>
 from tape to GWS disk;
 floating note right
