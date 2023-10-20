@@ -1,0 +1,75 @@
+@startuml
+title Data Ingestion (ARCHER2 to JASMIN)
+skinparam DefaultTextAlignment Center
+start
+repeat
+:cycle of data arrives at JASMIN;
+floating note right
+Existing data is defined 
+in aggregation file 
+<color:blue>ThusFar.cfa
+end note 
+:CFA scanning generates \n cycle CFA file\n<color:blue>cycle.cfa;
+:Existing data aggregation file is updated\n<color:blue>Thusfar.cfa = cfa(ThusFar.cfa, cycle.cfa);
+:cycle data moved to tape;
+:Aggregation file updated for new location of cycle data\n<color:blue>Thusfar.cfa=updated(ThusFar.cfa);
+:Update cfstore aggregation files \n <color:blue>UserFacingF1.cfa</color>, <color:blue>UserFacingF2.cfa</color> ...;
+note right
+cfstore aggregation files cover 
+same data as <color:blue>Thusfar.cfa</color>, 
+but are broken into one 
+file per frequency and are <i>also 
+user facing on JASMIN
+end note
+: wait for new data;
+@enduml
+@startuml
+skinparam DefaultTextAlignment Center
+title Managing data on GWS Disk
+start
+:user queries cfstore and needs data
+currently on tape on GS disk 
+(defines new quark <color:blue>nquark</color>);
+if (space on disk) then (yes) 
+
+else (no)
+: new quark to be removed identified 
+(<color:blue>dquark</color>);
+floating note right
+these tasks must be done 
+by a cache manager
+(human or tool)
+(No tool exist or is 
+currently planned)
+end note
+: <color:blue>dquark</color> deleted;
+: Update (remove dquark replicants) in
+<color:blue>UserFacingF1.cfa</color>, <color:blue>UserFacingF2.cfa</color> ...;
+note right
+NB: All data on GWS is
+a replicant of data on
+tape!
+end note
+endif 
+: tool <i>copies</I fragments 
+corresponding to <color:blue>nquark</color>
+from tape to GWS disk;
+floating note right
+this task must be done by 
+a cache manager
+(human or tool)
+(No tool exists or is 
+currently planned)
+end note
+: fragments correspoding to <color:blue>nquark</color> 
+updated with replicant locations in 
+<color:blue>UserFacingF1.cfa</color>, <color:blue>UserFacingF2.cfa</color> ...;
+: user accesses data via cfa file;
+floating note right
+Note the assumption that 
+we do not update <color:blue>ThusFar.cfa</color>
+for the fragment management.
+Needs discussion!
+end note
+end
+@enduml
