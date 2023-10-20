@@ -4,7 +4,7 @@ from django.shortcuts import render
 from cfstore.config import CFSconfig
 
 from .forms import (CollectionSearchForm, SaveAsCollectionForm,
-                    VariableSearchForm)
+                    VariableSearchForm, VariableBrowseForm)
 
 
 def outputvar(var):
@@ -40,6 +40,7 @@ def ls(request):
     collections = db.retrieve_collections()
     variable_search_form = VariableSearchForm()
     collection_search_form = CollectionSearchForm()
+    variable_browse_form = VariableBrowseForm()
     return render(
         request,
         "index_view.html",
@@ -47,6 +48,7 @@ def ls(request):
             "collections": collections,
             "variable_search_form": variable_search_form,
             "collection_search_form": collection_search_form,
+            "variable_browse_form": variable_browse_form,
         },
     )
 
@@ -57,10 +59,14 @@ def lsbrowse(request):
     collection_save_name = ""
     varsearch = []
     colsearch = []
+    checks = {}
+
     if request.method == "POST":
+        print(request.POST.keys())
         variable_search_form = VariableSearchForm(request.POST)
         collection_search_form = CollectionSearchForm(request.POST)
         collection_save_form = SaveAsCollectionForm(request.POST)
+        checks = [ v for k, v in request.POST.items() if 'check' in k]
 
         if "variablename" in request.POST:
             varsearch.append(request.POST["variablename"])
@@ -132,6 +138,11 @@ def lsbrowse(request):
             },
         )
 
+    if request.method == "POST":
+        print(request.POST)
+
+    print(checks)
+
     return render(
         request,
         "index_view.html",
@@ -140,6 +151,7 @@ def lsbrowse(request):
             "variable_search_form": variable_search_form,
             "collection_search_form": collection_search_form,
             "collection_save_form": collection_save_form,
+            "checks": checks,
         },
     )
 
