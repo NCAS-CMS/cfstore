@@ -33,7 +33,7 @@ currently on tape on GS disk
 if (space on disk) then (yes) 
 
 else (no)
-: new quark to be removed identified 
+: identify existing quark to remove 
 (<color:blue>dquark</color>);
 floating note right
 these tasks must be done 
