@@ -99,6 +99,7 @@ class Posix:
             checksum,
             regex,
         )
+        return c
 
     def _walk(
         self,

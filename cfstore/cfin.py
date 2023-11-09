@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import click
+import os
 
 from cfstore.config import CFSconfig
 from cfstore.plugins.et_main import et_main
@@ -207,6 +208,258 @@ def getBMetadata(ctx, arg1, argm):
 @click.argument("arg1", nargs=1)
 @click.argument("argm", nargs=-1)
 @click.option(
+    "--outputfilename", default="tempfile.cfa", help="the name of the output file"
+)
+def PopulateFromWorkspaceDirectoryByDirectory(
+    ctx,
+    arg1,
+    argm,
+    outputfilename,
+):
+    """
+    Runs a remote script to aggregate metadata and store it in the database
+    Format is:
+        cfin rp getbmetadataclean sshlocation wheretopushscript remotedirectory collection
+    Other scripts from /scripts/ folder can be used by setting --aggscript=scriptname (only name is needed, .py is optional)
+    Other locations for scripts can be used by setting --scriptlocation=afolder
+    """
+    state = CFSconfig()
+    print(arg1)
+    print(argm)
+    location = arg1
+    pushdirectory, metadatadirectory, collection = argm
+    scriptlocation = "~/cfstore/scripts/"
+
+    aggscriptpath = "~/cfstore/scripts/aggregatebmetadata.py"
+
+    # SSH
+    # Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = (
+        state.get_location(location)["host"],
+        state.get_location(location)["user"],
+    )
+    x.configure(host, user)
+
+    for root, dirs in os.walk(collection):
+        # Add settings to script
+        x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
+        aggscriptpath = scriptlocation + "aggscript.py"
+        path = root + dirs
+        aggscriptname = "aggscript.py"
+        col = collection+path
+        description = "Path "+path
+        
+        x.add_collection(
+            path,
+            col,
+            description,
+            subcollections=False,
+            regex=None,
+        )
+
+        # Push Script(s)
+        # x.ssh.pushScript(remotepath,col, scriptname)
+        x.ssh.pushScript(pushdirectory, col, aggscriptpath)
+
+        # Activate Remote Environments
+        x.ssh.configureRemoteEnvironment()
+
+        # Execute script to generate Aggregation File
+        x.ssh.executeScript(pushdirectory, col, aggscriptname)
+
+        # Retrieve JSON file
+        x.ssh.get(
+            pushdirectory + "/tempfile.cfa", "cfstore/json/" + outputfilename, delete=True
+        )
+
+        # Clean-up remote files (At present clean-up means remove them)
+        # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
+        
+        # Update database with JSON
+        x.aggregation_files_to_collection("cfstore/json/" + outputfilename, col)
+        state.save()
+
+
+# This with the right arguments can run scripts on Jasmin
+# Most of the work is done in the arguments though
+# So needs fiddling
+@cli.command()
+@click.pass_context
+@click.argument("arg1", nargs=1)
+@click.argument("argm", nargs=-1)
+@click.option(
+    "--subdirectories", default="False", help="If True searches through all subdirectories"
+)
+@click.option(
+    "--outputfilename", default="tempfile.cfa", help="the name of the output file"
+)
+def PopulateFromWorkspaceDirectory(
+    ctx,
+    arg1,
+    argm,
+    subdirectories,
+    outputfilename,
+):
+    """
+    Runs a remote script to aggregate metadata and store it in the database
+    Format is:
+        cfin rp getbmetadataclean sshlocation wheretopushscript remotedirectory collection
+    Other scripts from /scripts/ folder can be used by setting --aggscript=scriptname (only name is needed, .py is optional)
+    Other locations for scripts can be used by setting --scriptlocation=afolder
+    """
+    state = CFSconfig()
+    print(arg1)
+    print(argm)
+    location = arg1
+    pushdirectory, metadatadirectory, collection = argm
+    scriptlocation = "~/cfstore/scripts/"
+
+    aggscriptpath = "~/cfstore/scripts/aggregatebmetadata.py"
+
+    # SSH
+    # Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = (
+        state.get_location(location)["host"],
+        state.get_location(location)["user"],
+    )
+    x.configure(host, user)
+
+    for dirName, directories, files in os.walk(collection):
+        parsefiles(
+            x,
+            state,
+            metadatadirectory,
+            pushdirectory,
+            dirName,
+            collection,
+            scriptlocation,
+            subdirectories,
+            outputfilename,
+            []
+        )
+        
+
+def parsefiles(
+    x,
+    state,
+    metadatadirectory,
+    pushdirectory,
+    path,
+    collection,
+    scriptlocation,
+    subdirectories,
+    outputfilename,
+    higherlevelcollections
+):
+
+    x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
+    aggscriptpath = scriptlocation + "aggscript.py"
+    aggscriptname = "aggscript.py"
+    colname = collection+path
+    description = "Path "+path
+    
+    col = x.add_collection(
+        path,
+        colname,
+        description,
+        subcollections=subdirectories,
+        regex=None,
+    )
+    for relation in higherlevelcollections:
+        col2 = x.retrieve_collection(relation)
+        x.add_relationships(col, col2, "above", "below")
+
+    # Push Script(s)
+    # x.ssh.pushScript(remotepath,col, scriptname)
+    x.ssh.pushScript(pushdirectory, colname, aggscriptpath)
+
+    # Activate Remote Environments
+    x.ssh.configureRemoteEnvironment()
+
+    # Execute script to generate Aggregation File
+    x.ssh.executeScript(pushdirectory, colname, aggscriptname)
+
+    # Retrieve JSON file
+    x.ssh.get(
+        pushdirectory + "/tempfile.cfa", "cfstore/json/" + outputfilename, delete=True
+    )
+
+    # Clean-up remote files (At present clean-up means remove them)
+    # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
+    
+    # Update database with JSON
+    x.aggregation_files_to_collection("cfstore/json/" + outputfilename, colname)
+    state.save()
+    higherlevelcollections = higherlevelcollections.append(colname)
+    for dirName, directories, files in os.walk(collection):
+        parsefiles(
+            x,
+            state,
+            metadatadirectory,
+            pushdirectory,
+            dirName,
+            collection,
+            scriptlocation,
+            subdirectories,
+            outputfilename,
+            higherlevelcollections
+        )
+
+@cli.command()
+@click.pass_context
+@click.argument("location")
+@click.argument("host")
+@click.argument("user")
+@click.option(
+    "--overwrite",
+    default=False,
+    help="(Optional) If true, will overwrites current location",
+)
+def setup(ctx, location, host, user, overwrite):
+    """
+    Add a new posix location
+    """
+    if overwrite == "True":
+        overwrite = True
+    else:
+        overwrite = False
+
+    state = CFSconfig()
+    target = ctx.obj["fstype"]
+    print(f"Atempting to setup:\n host:{host} \n location:{location}")
+    if target == "rp":
+        # check we don't already have one in config or database (we can worry about mismatches later)
+        if location in state.interfaces and not overwrite:
+            raise ValueError(f"Location {location} already exists in config file")
+
+        state.db.create_location(location, overwrite=overwrite)
+        state.add_location(target, location, user=user, host=host)
+
+    elif target == "local" or target == "p":
+        # check we don't already have one in config or database (we can worry about mismatches later)
+        if location in state.interfaces and not overwrite:
+            raise ValueError(f"Location {location} already exists in config file")
+        state.db.create_location(location, overwrite=overwrite)
+        state.add_location(target, location, user=user, host=host)
+    else:
+        raise ValueError(f"Unexpected location type {target}")
+
+    state.save()
+
+
+if __name__ == "__main__":
+    safe_cli()
+
+# This with the right arguments can run scripts on Jasmin
+# Most of the work is done in the arguments though
+# So needs fiddling
+@cli.command()
+@click.pass_context
+@click.argument("arg1", nargs=1)
+@click.argument("argm", nargs=-1)
+@click.option(
     "--aggscriptname",
     default="aggregatebmetadata",
     help="(Optional) Lets you run a different script to the default",
@@ -227,7 +480,7 @@ def getBMetadata(ctx, arg1, argm):
     default="~/cfstore/scripts/newfilebmetadata.json",
     help="Where to put the output file",
 )
-def getBMetadataClean(
+def PopulateFromWorkspace(
     ctx,
     arg1,
     argm,
@@ -291,48 +544,3 @@ def getBMetadataClean(
     x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
     state.save()
 
-
-@cli.command()
-@click.pass_context
-@click.argument("location")
-@click.argument("host")
-@click.argument("user")
-@click.option(
-    "--overwrite",
-    default=False,
-    help="(Optional) If true, will overwrites current location",
-)
-def setup(ctx, location, host, user, overwrite):
-    """
-    Add a new posix location
-    """
-    if overwrite == "True":
-        overwrite = True
-    else:
-        overwrite = False
-
-    state = CFSconfig()
-    target = ctx.obj["fstype"]
-    print(f"Atempting to setup:\n host:{host} \n location:{location}")
-    if target == "rp":
-        # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces and not overwrite:
-            raise ValueError(f"Location {location} already exists in config file")
-
-        state.db.create_location(location, overwrite=overwrite)
-        state.add_location(target, location, user=user, host=host)
-
-    elif target == "local" or target == "p":
-        # check we don't already have one in config or database (we can worry about mismatches later)
-        if location in state.interfaces and not overwrite:
-            raise ValueError(f"Location {location} already exists in config file")
-        state.db.create_location(location, overwrite=overwrite)
-        state.add_location(target, location, user=user, host=host)
-    else:
-        raise ValueError(f"Unexpected location type {target}")
-
-    state.save()
-
-
-if __name__ == "__main__":
-    safe_cli()
