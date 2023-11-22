@@ -123,20 +123,29 @@ class Posix:
                     self.location, collection_head_name, dbfiles
                 )
         else:
-            for dirName, directories, files in os.walk(path_to_collection_head):
-                dbfiles = []
-                for f in files:
-                    if not regex or re.match(regex, f):
-                        if dirName == path_to_collection_head:
-                            fp = path_to_collection_head + "/" + f
-                            dbfiles.append(
-                                self._file2dict(
-                                    fp, os.stat(fp).st_size, checksum=checksum
-                                )
+            dbfiles = []
+            for file in os.walklevel(path_to_collection_head):
+                if not regex or re.match(regex, file):
+                    if dirName == path_to_collection_head:
+                        fp = path_to_collection_head + "/" + file
+                        dbfiles.append(
+                            self._file2dict(
+                                fp, os.stat(fp).st_size, checksum=checksum
                             )
-                    self.db.upload_files_to_collection(
-                        self.location, collection_head_name, dbfiles
-                    )
+                        )
+                self.db.upload_files_to_collection(
+                    self.location, collection_head_name, dbfiles
+                )
+
+    def walklevel(some_dir, level=1):
+        some_dir = some_dir.rstrip(os.path.sep)
+        assert os.path.isdir(some_dir)
+        num_sep = some_dir.count(os.path.sep)
+        for root, dirs, files in os.walk(some_dir):
+            yield root, dirs, files
+            num_sep_this = root.count(os.path.sep)
+            if num_sep + level <= num_sep_this:
+                del dirs[:]
 
     def getBMetadata(
         self, remotepath, collection, localpath, subcollections, checksum, regex
@@ -181,6 +190,7 @@ class Posix:
         print("Adding variables from", aggfile)
         # aggfileobject = open(aggfile,'r')
         cff = cf.read(aggfile)
+        print("Read!")
         # for each variable
         c = self.db.retrieve_collection(collection)
 
@@ -295,15 +305,17 @@ class RemotePosix(Posix):
         # Useful: https://stackoverflow.com/questions/45653213/parallel-downloads-with-multiprocessing-and-pysftp
         if not hasattr(self, "ssh"):
             raise ConnectionError("Posix has not been initialised")
-        if checksum:
+        elif checksum:
             raise ValueError(
                 "Cannot (ok, really we mean, will not) checksum remote files"
             )
-        if subcollections:
-            raise NotImplementedError("No support for sub-collections as yet")
-        if regex:
+        elif subcollections:
+            files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
+            dbfiles = [self._file2dict(f[0], f[1]) for f in files]
+            self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
+        elif regex:
             raise NotImplementedError("No support for remote regex yet")
-
-        files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
-        dbfiles = [self._file2dict(f[0], f[1]) for f in files]
-        self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)
+        else:
+            files = self.ssh.get_files_and_sizes(path_to_collection_head, subcollections)
+            dbfiles = [self._file2dict(f[0], f[1]) for f in files]
+            self.db.upload_files_to_collection(self.location, collection_head_name, dbfiles)

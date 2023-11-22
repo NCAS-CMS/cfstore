@@ -113,6 +113,16 @@ a:active {
             </div>
           </div> </td>
       </tr>
+      <tr><th>Sub-Collections</th>
+        <td><div class="dropdown">
+            <button class="dropbtn">Collections</button>
+            <div class="dropdown-content">
+                {% for name in subcollections %}
+                    {{name}}
+                {% endfor %}
+            </div>
+          </div> </td>
+      </tr>
     </table>
 
     </tr></td></table>

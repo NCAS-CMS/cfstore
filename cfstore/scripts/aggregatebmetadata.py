@@ -5,17 +5,6 @@ import cf
 if __name__ == "__main__":
     outputdicts = []
 
-    for filename in os.listdir("{{fileinput}}"):
-        # If should probably be a glob of some kind?
-        if filename.endswith(".nca"):
-            # Opens and empties matching files
-            with open("{{homedir}}" + filename + "bmetadata.json", "w") as writepath:
-                print("")
-            with open(
-                "{{homedir}}" + filename + "_variables_bmetadata.json", "w"
-            ) as writepath:
-                print("")
-
     # Reads the fields from the file with cf
     # Alternatively cfdm can be used as such:
     #   cff = cfdm.read(filename)
@@ -28,6 +17,8 @@ if __name__ == "__main__":
         "concatenate": False,
         "cells": cf.climatology_cells(),
         "contiguous": True,
+        "dimension": ["variant_label"]
+
     }
 
     cff = cf.read(
@@ -36,6 +27,7 @@ if __name__ == "__main__":
         fmt="NETCDF",
         aggregate=aggregate,
         recursive=True,
+        followlinks=True,
         chunks=None,
     )
 

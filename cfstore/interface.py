@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from cfstore.cfparse_file import cfparse_file
 from cfstore.db import (Cell_Method, Collection, CoreDB, File, Location,
-                        Protocol, Tag, Variable)
+                        Protocol, Tag, Variable, Relationship)
 
 
 class CollectionError(Exception):
@@ -80,15 +80,20 @@ class CollectionDB(CoreDB):
 
     def add_relationship(self, collection_one, collection_two, relationship):
         """
-        Add a symmetrical <relationship> between <collection_one> and <collection_two>.
+        Add a oneway <relationship> between <collection_one> and <collection_two>.
         e.g. add_relationship('romulus','remus','brother')
-        romulus is a brother of remus and vice versa.
+        romulus is a brother of remus but not vice versa.
         """
         c1 = self.retrieve_collection(collection_one)
         c2 = self.retrieve_collection(collection_two)
-        c1.add_relationship(relationship, c2)
-        c2.add_relationship(relationship, c1)
-        self.session.commit()
+        rel = Relationship.objects.create(predicate=relationship)
+        rel.subject_collection.add(c1)
+        rel.related_collection.add(c2)
+        print(rel.subject_collection.all())
+        rel.save()
+        c1.save()
+        c2.save()
+        return rel
 
     def add_relationships(
         self, collection_one, collection_two, relationship_12, relationship_21
@@ -100,12 +105,9 @@ class CollectionDB(CoreDB):
         e.g. add_relationship('father_x','son_y','parent_of','child_of')
         (It is possible to add a one way relationship by passing relationship_21=None)
         """
-        c1 = self.retrieve_collection(collection_one)
-        c2 = self.retrieve_collection(collection_two)
-        c1.add_relationship(relationship_12, c2)
+        rel1 = self.add_relationship(collection_one,collection_two,relationship_12)
         if relationship_21 is not None and collection_one != collection_two:
-            c2.add_relationship(relationship_21, c1)
-        self.session.commit()
+            rel2 = self.add_relationship(collection_two,collection_one,relationship_21)
 
     def add_variables_from_file(self, filename):
         """Add all the variables found in a file to the database"""
@@ -458,7 +460,7 @@ class CollectionDB(CoreDB):
         """
         c = Collection.objects.get(name=collection)
         try:
-            r = c.related[relationship]
+            r = Relationship.objects.filter(predicate=relationship,subject_collection=c).all()
             return r
         except KeyError:
             return []
@@ -550,25 +552,15 @@ class CollectionDB(CoreDB):
         f = self.retrieve_file(path, filename)
 
         c = Collection.objects.get(name=collection)
-
-        if file not in c.files.all():
+        
+        if f not in c.files.all():
             print(
                 f"Attempt to delete file {file} from {c} - but it's already not there"
             )
+        
         c.files.remove(f)
         c.volume -= f.size
-        if not f.collection_set.all():
-            try:
-                uc = Collection.objects.get(name="_unlisted")
-            except Collection.DoesNotExist:
-                uc = self.create_collection(
-                    "_unlisted", description="Holds unlisted files"
-                )
-            self.add_file_to_collection(uc.name, f)
 
-            uc.files.add(f)
-            uc.volume += f.size
-            uc.save()
         f.save()
         c.save()
 
@@ -748,9 +740,13 @@ class CollectionDB(CoreDB):
         """
         Delete a tag, from wherever it is used
         """
-        t = Tag.objects.filter(name=tagname)
-        self.session.delete(t)
-        self.session.commit()
+        t = Tag.objects.filter(name=tagname).delete()
+    
+    def delete_relationship(self, relationshipname):
+        """
+        Delete a tag, from wherever it is used
+        """
+        t = Relationship.objects.filter(name=relationshipname).delete()
 
     def add_file_to_collection(self, collection, file, skipvar=False):
         """

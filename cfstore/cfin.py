@@ -2,8 +2,9 @@ from datetime import datetime
 from pathlib import Path
 
 import click
+import stat
 import os
-
+import time
 from cfstore.config import CFSconfig
 from cfstore.plugins.et_main import et_main
 from cfstore.plugins.posix import Posix, RemotePosix
@@ -310,13 +311,17 @@ def PopulateFromWorkspaceDirectory(
     """
     state = CFSconfig()
     print(arg1)
-    print(argm)
+    for m in argm:
+        print(m)
     location = arg1
     pushdirectory, metadatadirectory, collection = argm
-    scriptlocation = "~/cfstore/scripts/"
+    scriptlocation = "cfstore/scripts/"
 
-    aggscriptpath = "~/cfstore/scripts/aggregatebmetadata.py"
+    aggscriptpath = "cfstore/scripts/aggregatebmetadata.py"
 
+    print("Variables set")
+    
+    print("Setting up remote posix")
     # SSH
     # Setup Remote Posix as normal
     x = RemotePosix(state.db, location)
@@ -325,22 +330,72 @@ def PopulateFromWorkspaceDirectory(
         state.get_location(location)["user"],
     )
     x.configure(host, user)
+    print("Posix set up")
+    """
+    print("Configuring Aggregation Script")
+    x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
+    print("Success!")
 
-    for dirName, directories, files in os.walk(collection):
+    print("Pushing script to",pushdirectory)
+    # Push Script(s)
+    # x.ssh.pushScript(remotepath,col, scriptname)
+    x.ssh.pushScript(pushdirectory, collection, scriptlocation+"aggscript.py")
+    print("Success!")
+
+    print("Adding top level collection")
+    col = x.add_collection(
+    metadatadirectory,
+    collection,
+    "Top level directory",
+    subcollections=False,
+    regex=None,
+    )
+    print("Collection added")
+    
+    print("Configuring Remote Environment")
+    # Activate Remote Environments
+    x.ssh.configureRemoteEnvironment()
+    print("Success!")
+
+    print("Executing script")
+    scriptstarttime = time.time()
+    # Execute script to generate Aggregation File
+    x.ssh.executeScript(pushdirectory, collection, "aggscript.py")
+    print("Success!")
+    scriptendtime = time.time()
+    print(f"Aggregation script took {scriptstarttime-scriptendtime:.2f} seconds")
+    print("Getting CFA")
+    
+    # Retrieve CFA file
+    x.ssh.get(
+        pushdirectory + "/tempfile.cfa", "cfstore/json/" + outputfilename, delete=False
+    )
+
+    # Clean-up remote files (At present clean-up means remove them)
+    # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
+    print("Success!")
+    """
+    print("Parsing files")
+    print("walking from ",metadatadirectory)
+    for dirName in (x.ssh._sftp.listdir(metadatadirectory)):
         parsefiles(
             x,
             state,
             metadatadirectory,
             pushdirectory,
-            dirName,
+            metadatadirectory+"/"+dirName,
             collection,
             scriptlocation,
             subdirectories,
             outputfilename,
-            []
+            [collection]
         )
-        
-
+    """
+    print("Adding metadata from aggregation files tp collection")
+    # Update database with JSON
+    x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
+    state.save()
+    """
 def parsefiles(
     x,
     state,
@@ -354,58 +409,49 @@ def parsefiles(
     higherlevelcollections
 ):
 
-    x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
-    aggscriptpath = scriptlocation + "aggscript.py"
-    aggscriptname = "aggscript.py"
-    colname = collection+path
+    print("Configuring")
+    colname = collection+"-"+path
     description = "Path "+path
-    
+    """
+    print("Making Collection called",path)
     col = x.add_collection(
         path,
         colname,
         description,
-        subcollections=subdirectories,
+        subcollections=False,
         regex=None,
     )
+    print("Success!")
+    """
+    col = x.db.retrieve_collection(colname)
+    print("Adding entrenched hierarchical system")
     for relation in higherlevelcollections:
-        col2 = x.retrieve_collection(relation)
-        x.add_relationships(col, col2, "above", "below")
-
-    # Push Script(s)
-    # x.ssh.pushScript(remotepath,col, scriptname)
-    x.ssh.pushScript(pushdirectory, colname, aggscriptpath)
-
-    # Activate Remote Environments
-    x.ssh.configureRemoteEnvironment()
-
-    # Execute script to generate Aggregation File
-    x.ssh.executeScript(pushdirectory, colname, aggscriptname)
-
-    # Retrieve JSON file
-    x.ssh.get(
-        pushdirectory + "/tempfile.cfa", "cfstore/json/" + outputfilename, delete=True
-    )
-
-    # Clean-up remote files (At present clean-up means remove them)
-    # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
+        col2 = x.db.retrieve_collection(relation)
+        print(col.name,"is above", col2.name)
+        x.db.add_relationships(col.name, col2.name, "above", "below")
+    print("Success!")
     
-    # Update database with JSON
-    x.aggregation_files_to_collection("cfstore/json/" + outputfilename, colname)
-    state.save()
     higherlevelcollections = higherlevelcollections.append(colname)
-    for dirName, directories, files in os.walk(collection):
-        parsefiles(
-            x,
-            state,
-            metadatadirectory,
-            pushdirectory,
-            dirName,
-            collection,
-            scriptlocation,
-            subdirectories,
-            outputfilename,
-            higherlevelcollections
-        )
+    for dirName in (x.ssh._sftp.listdir(path)):
+        fileattr = x.ssh._sftp.lstat(path+"/"+dirName)
+        if not stat.S_ISREG(fileattr.st_mode):
+            try:    
+                parsefiles(
+                    x,
+                    state,
+                    metadatadirectory,
+                    pushdirectory,
+                    path+"/"+dirName,
+                    collection,
+                    scriptlocation,
+                    subdirectories,
+                    outputfilename,
+                    higherlevelcollections
+                )
+            except:
+                pass
+    print("Success!")
+    print("All done!")
 
 @cli.command()
 @click.pass_context

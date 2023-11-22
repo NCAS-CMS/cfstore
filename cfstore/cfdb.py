@@ -734,7 +734,7 @@ def linkto(ctx, col1, link, col2):
     Usage: cfsdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
-    db.add_relationships(col1, col2, link, None)
+    #db.add_relationships(col1, col2, link, None)
 
 
 @cli.command()
@@ -809,6 +809,19 @@ def delete_loc(ctx, location):
     db.delete_location(location)
     view_state.save()
 
+
+@cli.command()
+@click.pass_context
+@click.argument("relationship")
+def delete_rel(ctx, relationship):
+    """
+    Delete an <collection> that contains no files
+    Raises an error if the collection is not empty
+    Usage: cfsdb delete-col <collection>
+    """
+    view_state, db = _set_context(ctx, None)
+    db.delete_relationship(relationship)
+    view_state.save()
 
 @cli.command()
 @click.pass_context

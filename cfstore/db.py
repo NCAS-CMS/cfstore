@@ -10,6 +10,7 @@ from cfstoreviewer.models import (
     Protocol,
     Cell_Method,
     Variable,
+    Relationship,
 )
 from cfstore.parse_cell_methods import parse_cell_methods
 from django import template

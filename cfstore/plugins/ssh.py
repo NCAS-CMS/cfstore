@@ -57,6 +57,8 @@ class SSHlite(SSHcore):
         """
         print("Getting file", remotepath, "and storing it in", localpath)
         try:
+            if not os.path.exists(localpath):
+                open(localpath, 'w').close() 
             self._sftp.get(remotepath, localpath)
             if delete:
                 print("Deleting remote file")
@@ -137,7 +139,7 @@ class SSHlite(SSHcore):
             stime = time.time()
 
         try:
-            self.walktree(remotepath, callback)
+            self.walktree(remotepath, callback, recurse=subcollections)
         except FileNotFoundError:
             raise FileNotFoundError(f" check {remotepath} exists?")
 
@@ -146,12 +148,15 @@ class SSHlite(SSHcore):
             print(
                 f"Walking {remotepath} for {len(files)} files took {etime-stime:.2f}s"
             )
-            print(
-                f"This would take {(1000000/len(files))*(etime-stime):.2f}s "
-                f"({(1000000/(60*len(files)))*(etime-stime):.2f}m or "
-                f"{(1000000/(60*60*len(files)))*(etime-stime):.2f}h) for 1 million files"
-            )
-
+            if files:
+                print(
+                    f"This would take {(1000000/len(files))*(etime-stime):.2f}s "
+                    f"({(1000000/(60*len(files)))*(etime-stime):.2f}m or "
+                    f"{(1000000/(60*60*len(files)))*(etime-stime):.2f}h) for 1 million files"
+                )
+            else:
+                print("No files found")
+                print(f"Took {etime-stime} in overhead")
         return files
 
     def get_b_metadata(self, remotepath, db):
@@ -214,7 +219,6 @@ class SSHlite(SSHcore):
     def executeScript(self, remotepath, collection, script):
         scriptname = os.path.basename(script)
         remotescript = remotepath + "/" + scriptname
-        print("Executing script")
         print('Executing "python ' + scriptname + '"')
         #        self.configureRemoteEnvironment()
         stdin, stdout, stderr = self._client.exec_command("source activate cfstore")

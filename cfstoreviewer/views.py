@@ -164,6 +164,8 @@ def lscol(request, page="all"):
     variables = db.retrieve_variables_in_collection(page)
     collection = db.retrieve_collection(page)
     files = db.retrieve_files_in_collection(page)
+    subcollections = db.retrieve_related(page,"below")
+    subcollections = [col.related_collection.all()[0].name for col in subcollections]
     locations = {}
     for f in files:
         for loc in f.location_set.distinct():
@@ -186,6 +188,7 @@ def lscol(request, page="all"):
             "files": displayfiles,
             "displayed": len(displayfiles),
             "locations": locations,
+            "subcollections": subcollections,
         },
     )
 
