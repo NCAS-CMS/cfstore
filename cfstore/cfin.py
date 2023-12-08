@@ -1,10 +1,11 @@
+import os
+import stat
+import time
 from datetime import datetime
 from pathlib import Path
 
 import click
-import stat
-import os
-import time
+
 from cfstore.config import CFSconfig
 from cfstore.plugins.et_main import et_main
 from cfstore.plugins.posix import Posix, RemotePosix
@@ -248,9 +249,9 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         aggscriptpath = scriptlocation + "aggscript.py"
         path = root + dirs
         aggscriptname = "aggscript.py"
-        col = collection+path
-        description = "Path "+path
-        
+        col = collection + path
+        description = "Path " + path
+
         x.add_collection(
             path,
             col,
@@ -271,12 +272,14 @@ def PopulateFromWorkspaceDirectoryByDirectory(
 
         # Retrieve JSON file
         x.ssh.get(
-            pushdirectory + "/tempfile.cfa", "cfstore/json/" + outputfilename, delete=True
+            pushdirectory + "/tempfile.cfa",
+            "cfstore/json/" + outputfilename,
+            delete=True,
         )
 
         # Clean-up remote files (At present clean-up means remove them)
         # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
-        
+
         # Update database with JSON
         x.aggregation_files_to_collection("cfstore/json/" + outputfilename, col)
         state.save()
@@ -290,7 +293,9 @@ def PopulateFromWorkspaceDirectoryByDirectory(
 @click.argument("arg1", nargs=1)
 @click.argument("argm", nargs=-1)
 @click.option(
-    "--subdirectories", default="False", help="If True searches through all subdirectories"
+    "--subdirectories",
+    default="False",
+    help="If True searches through all subdirectories",
 )
 @click.option(
     "--outputfilename", default="tempfile.cfa", help="the name of the output file"
@@ -320,7 +325,7 @@ def PopulateFromWorkspaceDirectory(
     aggscriptpath = "cfstore/scripts/aggregatebmetadata.py"
 
     print("Variables set")
-    
+
     print("Setting up remote posix")
     # SSH
     # Setup Remote Posix as normal
@@ -331,27 +336,27 @@ def PopulateFromWorkspaceDirectory(
     )
     x.configure(host, user)
     print("Posix set up")
-    """
+
     print("Configuring Aggregation Script")
     x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
     print("Success!")
 
-    print("Pushing script to",pushdirectory)
+    print("Pushing script to", pushdirectory)
     # Push Script(s)
     # x.ssh.pushScript(remotepath,col, scriptname)
-    x.ssh.pushScript(pushdirectory, collection, scriptlocation+"aggscript.py")
+    x.ssh.pushScript(pushdirectory, collection, scriptlocation + "aggscript.py")
     print("Success!")
 
     print("Adding top level collection")
     col = x.add_collection(
-    metadatadirectory,
-    collection,
-    "Top level directory",
-    subcollections=False,
-    regex=None,
+        metadatadirectory,
+        collection,
+        "Top level directory",
+        subcollections=False,
+        regex=None,
     )
     print("Collection added")
-    
+
     print("Configuring Remote Environment")
     # Activate Remote Environments
     x.ssh.configureRemoteEnvironment()
@@ -363,9 +368,8 @@ def PopulateFromWorkspaceDirectory(
     x.ssh.executeScript(pushdirectory, collection, "aggscript.py")
     print("Success!")
     scriptendtime = time.time()
-    print(f"Aggregation script took {scriptstarttime-scriptendtime:.2f} seconds")
+    print(f"Aggregation script took {scriptendtime-scriptstarttime:.2f} seconds")
     print("Getting CFA")
-    
     # Retrieve CFA file
     x.ssh.get(
         pushdirectory + "/tempfile.cfa", "cfstore/json/" + outputfilename, delete=False
@@ -374,28 +378,37 @@ def PopulateFromWorkspaceDirectory(
     # Clean-up remote files (At present clean-up means remove them)
     # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
     print("Success!")
-    """
+
     print("Parsing files")
-    print("walking from ",metadatadirectory)
-    for dirName in (x.ssh._sftp.listdir(metadatadirectory)):
+    print("walking from ", metadatadirectory)
+    scriptstarttime = time.time()
+    for dirName in x.ssh._sftp.listdir(metadatadirectory):
         parsefiles(
             x,
             state,
             metadatadirectory,
             pushdirectory,
-            metadatadirectory+"/"+dirName,
+            metadatadirectory + "/" + dirName,
             collection,
             scriptlocation,
             subdirectories,
             outputfilename,
-            [collection]
+            [collection],
         )
-    """
+    scriptendtime = time.time()
+    print(f"Walking directory took {scriptstarttime-scriptendtime:.2f} seconds")
+    scriptstarttime = time.time()
+
     print("Adding metadata from aggregation files tp collection")
     # Update database with JSON
     x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
     state.save()
-    """
+    scriptendtime = time.time()
+    print(
+        f"Aggregation metadata gathering took {scriptstarttime-scriptendtime:.2f} seconds"
+    )
+
+
 def parsefiles(
     x,
     state,
@@ -406,14 +419,13 @@ def parsefiles(
     scriptlocation,
     subdirectories,
     outputfilename,
-    higherlevelcollections
+    higherlevelcollections,
 ):
-
     print("Configuring")
-    colname = collection+"-"+path
-    description = "Path "+path
-    """
-    print("Making Collection called",path)
+    colname = collection + "-" + path
+    description = "Path " + path
+
+    print("Making Collection called", path)
     col = x.add_collection(
         path,
         colname,
@@ -422,36 +434,37 @@ def parsefiles(
         regex=None,
     )
     print("Success!")
-    """
+
     col = x.db.retrieve_collection(colname)
     print("Adding entrenched hierarchical system")
     for relation in higherlevelcollections:
         col2 = x.db.retrieve_collection(relation)
-        print(col.name,"is above", col2.name)
+        print(col.name, "is above", col2.name)
         x.db.add_relationships(col.name, col2.name, "above", "below")
     print("Success!")
-    
+
     higherlevelcollections = higherlevelcollections.append(colname)
-    for dirName in (x.ssh._sftp.listdir(path)):
-        fileattr = x.ssh._sftp.lstat(path+"/"+dirName)
+    for dirName in x.ssh._sftp.listdir(path):
+        fileattr = x.ssh._sftp.lstat(path + "/" + dirName)
         if not stat.S_ISREG(fileattr.st_mode):
-            try:    
+            try:
                 parsefiles(
                     x,
                     state,
                     metadatadirectory,
                     pushdirectory,
-                    path+"/"+dirName,
+                    path + "/" + dirName,
                     collection,
                     scriptlocation,
                     subdirectories,
                     outputfilename,
-                    higherlevelcollections
+                    higherlevelcollections,
                 )
             except:
                 pass
     print("Success!")
     print("All done!")
+
 
 @cli.command()
 @click.pass_context
@@ -497,6 +510,7 @@ def setup(ctx, location, host, user, overwrite):
 
 if __name__ == "__main__":
     safe_cli()
+
 
 # This with the right arguments can run scripts on Jasmin
 # Most of the work is done in the arguments though
@@ -565,7 +579,7 @@ def PopulateFromWorkspace(
     x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
     aggscriptpath = scriptlocation + "aggscript.py"
     aggscriptname = "aggscript.py"
-    
+
     # Push Script(s)
     # x.ssh.pushScript(remotepath,collection, scriptname)
     x.ssh.pushScript(pushdirectory, collection, aggscriptpath)
@@ -585,8 +599,7 @@ def PopulateFromWorkspace(
 
     # Clean-up remote files (At present clean-up means remove them)
     # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
-    
+
     # Update database with JSON
     x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
     state.save()
-
