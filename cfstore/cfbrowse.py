@@ -157,8 +157,9 @@ def searchvariable(ctx, key, value, verbosity):
 )
 @click.option("--tagname", default=None, help="Search by tag")
 @click.option("--facet", default=None, help="Search by facet")
+@click.option("--outputfile", default=None, help="Names a file to write the filenames to")
 def search_collections(
-    ctx, name_contains, description_contains, contains_file, tagname, facet
+    ctx, name_contains, description_contains, contains_file, tagname, facet, outputfile
 ):
     """
     Search for collections with specific features
@@ -188,6 +189,8 @@ def search_collections(
     else:
         print("Found nothing!")
 
+    if outputfile:
+        json.dump(collections)
 
 @cli.command()
 @click.pass_context
@@ -198,7 +201,8 @@ def search_collections(
     default=0,
     help="0 is just name, 2 is everything, 1 is id, name, size and domain",
 )
-def browsevariable(ctx, key, value, verbosity):
+@click.option("--outputfile", default=None, help="Names a file to write the filenames to")
+def browsevariable(ctx, key, value, verbosity, outputfile):
     """
     Iterative user input to build compound search
     Browse starts with initial key/value pair then iteratively take in additional key/value pairs gradually narrowing search
@@ -226,6 +230,8 @@ def browsevariable(ctx, key, value, verbosity):
             user_input = input('Input additional search in the format "key,value".\n')
             k, v = user_input.split(",")
             variables, query = db.retrieve_variable_query(k, v, query)
+    if outputfile:
+        json.dump(variables)
 
 
 def sizeof_fmt(num, suffix="B"):

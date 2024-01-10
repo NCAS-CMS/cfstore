@@ -3,9 +3,9 @@ import timer
 
 from cfstore.config import CFSconfig
 from cfstore.plugins.et_main import et_main
-from cfstore.plugins.jasmin import Jasmin
 from cfstore.plugins.posix import RemotePosix
-
+from cfstore.plugins.transfer import Transfer
+from cfstore.plugins.jdma import JDMAInterface, Jasmin
 
 def safe_cli():
     """
@@ -32,17 +32,22 @@ def cli(ctx):
 @click.argument("destination")
 @click.pass_context
 @cli.command()
-def copy(ctx, collection, source, destination):
+def transfer(ctx, collection, source, destination, transfer_method):
     """
     Copy collection of files from source to destination
 
-    :param collection: Collection of files which are to be moved. Collection must exist at source.
+    :param collection: LIST of files which are to be moved. Collection must exist at source.
     :param source: Source location of collection
     :param destination: Destination location for collection
     :return:
     """
-    print("\nOk, we confess, we haven't got to this yet\n")
-    raise NotImplementedError
+    with open('C:/path/numbers.txt') as f:
+        filelist = f.read().splitlines()
+
+    if transfer_method=="JDMA":
+        JDMA_Transfer(source,destination,filelist)
+    if transfer_method=="DELETE_FROM_GWS":
+        GWS_Delete(filelist)
 
 
 @click.argument("collection")
@@ -50,7 +55,7 @@ def copy(ctx, collection, source, destination):
 @click.argument("destination")
 @click.pass_context
 @cli.command()
-def JDMA_Transfer(ctx, source, destination):
+def JDMA_Transfer(ctx, collection, destination):
     """
     Copy collection of files from source to destination
 
@@ -63,15 +68,52 @@ def JDMA_Transfer(ctx, source, destination):
 
     jasmin = Jasmin()
 
+    jdma = JDMAInterface(workspace=destination)
+
     # Copy subset of streams
     jasmin.copy_streams()
 
-    # Generate a cfa
-    jasmin.generate_cfa()
+    # Update the CFA
+    jasmin.update_cfa()
 
     # Migrate data to Elastic Tape
-    jasmin.jdma_migrate()
+    jdma.submit_migrate(collection)
 
+    timer.finalise_timer()
+
+
+@click.argument("collection")
+@click.argument("source")
+@click.argument("destination")
+@click.pass_context
+@cli.command()
+def GWS_Delete(ctx, filelist, location):
+    """
+    Copy collection of files from source to destination
+
+    :param filelist: List of files which are to be moved. Files must exist at source.
+    :param location: The remote location of the GWS as stored on CFStore
+    :return:
+    """
+    timer.initialise_timer()
+
+    state = CFSconfig()
+
+    # SSH
+    # Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = (
+        state.get_location(location)["host"],
+        state.get_location(location)["user"],
+    )
+    x.configure(host, user)
+
+    jasmin = Jasmin()
+
+    for file in filelist:
+        # Update the CFA
+        jasmin.delete_from_cfa(file)
+        x.ssh.delete(file)
     timer.finalise_timer()
 
 

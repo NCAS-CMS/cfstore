@@ -55,7 +55,6 @@ class SSHlite(SSHcore):
         """
         Get remote_path and store it in local_path
         """
-        print("Getting file", remotepath, "and storing it in", localpath)
         try:
             if not os.path.exists(localpath):
                 open(localpath, 'w').close() 
@@ -65,6 +64,16 @@ class SSHlite(SSHcore):
                 self._sftp.remove(remotepath)
         except IOError:
             print("Get Failed")
+
+    def delete(self, remote_file):
+            """
+            Delete remote_file from remote location
+            """
+            try:
+                self._sftp.remove(remote_file)
+            except IOError:
+                print("Delete Failed")
+
 
     def walktree(
         self, remotepath, fcallback, dcallback=None, ucallback=None, recurse=True
