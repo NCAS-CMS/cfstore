@@ -1,5 +1,6 @@
 import click
 import timer
+import json
 
 from cfstore.config import CFSconfig
 from cfstore.plugins.et_main import et_main
@@ -41,8 +42,7 @@ def transfer(ctx, collection, source, destination, transfer_method):
     :param destination: Destination location for collection
     :return:
     """
-    with open('C:/path/numbers.txt') as f:
-        filelist = f.read().splitlines()
+    filelist = json.load(collection)
 
     if transfer_method=="JDMA":
         JDMA_Transfer(source,destination,filelist)
