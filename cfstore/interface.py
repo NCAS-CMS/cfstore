@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from cfstore.cfparse_file import cfparse_file
 from cfstore.db import (Cell_Method, Collection, CoreDB, File, Location,
-                        Protocol, Tag, Variable, Relationship)
+                        Protocol, Relationship, Tag, Variable)
 
 
 class CollectionError(Exception):
@@ -105,9 +105,11 @@ class CollectionDB(CoreDB):
         e.g. add_relationship('father_x','son_y','parent_of','child_of')
         (It is possible to add a one way relationship by passing relationship_21=None)
         """
-        rel1 = self.add_relationship(collection_one,collection_two,relationship_12)
+        rel1 = self.add_relationship(collection_one, collection_two, relationship_12)
         if relationship_21 is not None and collection_one != collection_two:
-            rel2 = self.add_relationship(collection_two,collection_one,relationship_21)
+            rel2 = self.add_relationship(
+                collection_two, collection_one, relationship_21
+            )
 
     def add_variables_from_file(self, filename):
         """Add all the variables found in a file to the database"""
@@ -399,7 +401,7 @@ class CollectionDB(CoreDB):
             assert len(x) == 1
             return x[0]
         else:
-            raise FileNotFoundError  # (f'File "{path}/{name}" not found')
+            raise FileNotFoundError
 
     def retrieve_file_if_present(self, fullpath, size=None, checksum=None):
         """
@@ -411,6 +413,7 @@ class CollectionDB(CoreDB):
         (The use case for extra detail is to look for specific files amongst duplicates.)
         """
         pathname, filename = os.path.split(fullpath)
+
         if size and checksum:
             raise ValueError("Can only retrieve files by size OR checksum, not both!")
         if size:
@@ -460,7 +463,9 @@ class CollectionDB(CoreDB):
         """
         c = Collection.objects.get(name=collection)
         try:
-            r = Relationship.objects.filter(predicate=relationship,subject_collection=c).all()
+            r = Relationship.objects.filter(
+                predicate=relationship, subject_collection=c
+            ).all()
             return r
         except KeyError:
             return []
@@ -552,12 +557,12 @@ class CollectionDB(CoreDB):
         f = self.retrieve_file(path, filename)
 
         c = Collection.objects.get(name=collection)
-        
+
         if f not in c.files.all():
             print(
                 f"Attempt to delete file {file} from {c} - but it's already not there"
             )
-        
+
         c.files.remove(f)
         c.volume -= f.size
 
@@ -568,22 +573,24 @@ class CollectionDB(CoreDB):
         """Retrieve single variable by arbitrary property"""
         if key == "identity":
             results = Variable.objects.filter(identity=value)
-        if key == "id":
+        elif key == "id":
             results = Variable.objects.filter(id=value)
-        if key == "long_name":
+        elif key == "long_name":
             results = Variable.objects.filter(long_name=value)
-        if key == "standard_name":
+        elif key == "standard_name":
             results = Variable.objects.filter(standard_name=value)
-        if key == "cfdm_size":
+        elif key == "cfdm_size":
             results = Variable.objects.filter(cfdm_size=value)
-        if key == "cfdm_domain":
+        elif key == "cfdm_domain":
             results = Variable.objects.filter(cfdm_domain=value)
-        if key == "cell_methods":
+        elif key == "cell_methods":
             results = Variable.objects.filter(cell_methods__in=value)
-        if key == "in_files":
+        elif key == "in_files":
             results = Variable.objects.filter(in_files__in=value)
-        if key == "all":
+        elif key == "all":
             return Variable.objects.all()
+        else:
+            results = None
 
         if not results.exists():
             return results
@@ -638,7 +645,7 @@ class CollectionDB(CoreDB):
             results = Variable.objects.filter(*queries).all()
         return results, queries
 
-    def search_variable(self, key, value):
+    def search_variables(self, key, value):
         """Retrieve variable by arbitrary property"""
         if key == "identity":
             results = Variable.objects.filter(identity__contains=value)
@@ -661,12 +668,17 @@ class CollectionDB(CoreDB):
 
         if not results.exists():
             return results
+        return results
+
+    def search_variable(self, key, value):
+        results = self.search_variables(self, key, value)
+        if not results.exists():
+            return results
         return results[0]
 
     def show_collections_with_variable(self, variable):
         """Find all collections with a given variable"""
         coldict = {}
-        print(variable.in_files)
         for file in variable.in_files.all():
             for collection in Collection.objects.filter(files=file).all():
                 if collection not in coldict:
@@ -675,12 +687,16 @@ class CollectionDB(CoreDB):
                     coldict[collection] += 1
         return coldict
 
+    def show_files_with_variable(self, variable):
+        """Find all files with a given variable"""
+        return variable.in_files.all()
+
     def retrieve_variables_in_collection(self, collection_name):
         collection = Collection.objects.get(name=collection_name)
         return collection.variable_set.distinct()
 
     def retrieve_variables_subset_in_collection(self, collection_name, properties):
-        if collection_name=="all":
+        if collection_name == "all":
             variables = Variable.objects.all()
         else:
             collection = Collection.objects.get(name=collection_name)
@@ -688,7 +704,7 @@ class CollectionDB(CoreDB):
         for k, value in properties.items():
             for var in variables:
                 if (k, value) not in var._proxied.items():
-                    variables = (variables.exclude(id=var.id))
+                    variables = variables.exclude(id=var.id)
         variables = variables.distinct()
         return variables
 
@@ -741,7 +757,7 @@ class CollectionDB(CoreDB):
         Delete a tag, from wherever it is used
         """
         t = Tag.objects.filter(name=tagname).delete()
-    
+
     def delete_relationship(self, relationshipname):
         """
         Delete a tag, from wherever it is used
