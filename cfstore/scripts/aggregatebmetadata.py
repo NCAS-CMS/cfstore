@@ -17,8 +17,6 @@ if __name__ == "__main__":
         "concatenate": False,
         "cells": cf.climatology_cells(),
         "contiguous": True,
-        "dimension": ["variant_label"]
-
     }
 
     cff = cf.read(
@@ -31,10 +29,6 @@ if __name__ == "__main__":
         chunks=None,
     )
 
-    print('Ran cf.read("{{fileinput}}",**{{aggregate}})')
-    print("With the following settings for aggregate:")
-    print("aggregate=**{{aggregate}}")
-    print("cff length:", len(cff))
     writepath = "{{homedir}}/" + "tempfile.cfa"
 
     cf.write(cff, cfa={"strict": False}, filename=writepath)
