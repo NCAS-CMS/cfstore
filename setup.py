@@ -1,7 +1,7 @@
 import fnmatch
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 
 def find_package_data_files(directory):
@@ -16,37 +16,37 @@ plugins = [f for f in find_package_data_files("cfstore/plugins")]
 package_data = plugins
 
 setup(
-    name='cfstore',
-    version='0.3.0',
+    name="cfstore",
+    version="0.3.0",
     packages=find_packages(),
-    url='',
-    license='MIT',
-    author='Bryan Lawrence + George OBrien',
-    author_email='bryan.lawrence@ncas.ac.uk',
-    description='Provides an interface to managing cf compliant data held in multiple storage locations',
+    url="",
+    license="MIT",
+    author="Bryan Lawrence + George OBrien",
+    author_email="bryan.lawrence@ncas.ac.uk",
+    description="Provides an interface to managing cf compliant data held in multiple storage locations",
     platforms=["Linux", "MacOS"],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS"
+        "Operating System :: MacOS",
     ],
     install_requires=[
-        'click',
-        'BeautifulSoup4',
-        'paramiko',
-        'rich',
-        'sphinx-click',
-        'cfdm',
-        'python-dateutil'
+        "click",
+        "BeautifulSoup4",
+        "paramiko",
+        "rich",
+        "sphinx-click",
+        "cfdm",
+        "python-dateutil",
     ],
     entry_points={
-        'console_scripts': [
-            'cfdb=cfstore.cfdb:safe_cli',
-            'cfin=cfstore.cfin:safe_cli',
-            'cfmv=cfstore.cfmv:safe_cli'
-            'cfbrowse=cfstore.cfbrowse:safe_cli',
+        "console_scripts": [
+            "cfdb=cfstore.cfdb:safe_cli",
+            "cfin=cfstore.cfin:safe_cli",
+            "cfmv=cfstore.cfmv:safe_cli",
+            "cfbr=cfstore.cfbrowse:safe_cli",
         ],
     },
     package_data={"cfstore": package_data},
