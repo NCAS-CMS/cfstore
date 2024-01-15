@@ -586,9 +586,6 @@ def PopulateFromWorkspace(
 
     x.ssh.configureRemoteEnvironment()
 
-    # Generate Aggregation File
-    x.ssh.aggregateFiles(pushdirectory)
-
     # Generate JSON from Aggregation File
     x.ssh.executeScript(pushdirectory, collection, aggscriptname)
 
@@ -601,5 +598,34 @@ def PopulateFromWorkspace(
     # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
 
     # Update database with JSON
-    x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
+    # x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
     state.save()
+
+
+# This with the right arguments can run scripts on Jasmin
+# Most of the work is done in the arguments though
+# So needs fiddling
+@cli.command()
+@click.pass_context
+@click.argument("location", nargs=1)
+@click.argument("pushdirectory", nargs=1)
+@click.argument("filename", nargs=1)
+def Get(ctx, location, pushdirectory, filename):
+    """
+    Runs a remote script to aggregate metadata and store it in the database
+    Format is:
+        cfin rp getbmetadataclean sshlocation wheretopushscript remotedirectory collection
+    Other scripts from /scripts/ folder can be used by setting --aggscript=scriptname (only name is needed, .py is optional)
+    Other locations for scripts can be used by setting --scriptlocation=afolder
+    """
+    state = CFSconfig()
+
+    # SSH
+    # Setup Remote Posix as normal
+    x = RemotePosix(state.db, location)
+    host, user = (
+        state.get_location(location)["host"],
+        state.get_location(location)["user"],
+    )
+    x.configure(host, user)
+    x.ssh.get(pushdirectory + filename, "cfstore/json/gob" + filename, delete=False)
