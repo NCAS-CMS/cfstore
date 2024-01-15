@@ -422,6 +422,27 @@ def ls(ctx, collection, output):
                     print("Return list failed to print")
     view_state.save()
 
+
+@cli.command()
+@click.pass_context
+@click.argument("file")
+@click.option(
+    "--collection", default=None, help="Look in collection (use and make default)"
+)
+def print_file_variables(ctx, file, collection):
+    view_state, db = _set_context(ctx, collection)
+    file = db.retrieve_file_if_present(file)
+    print(file)
+    print(file.name)
+    variables = db.search_variables("in_files", [file])
+    k = 1
+    for v in variables:
+        name = v.identity  # .replace("long_name=","")
+        name = "ncvcar%" + name
+        print(f'"{k}"   :  [dkey + "_mon__grid_T_",     \'{name}\'],')
+        k = k + 1
+
+
 @cli.command()
 @click.pass_context
 @click.option(
@@ -734,7 +755,7 @@ def linkto(ctx, col1, link, col2):
     Usage: cfsdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
-    #db.add_relationships(col1, col2, link, None)
+    # db.add_relationships(col1, col2, link, None)
 
 
 @cli.command()
@@ -823,16 +844,14 @@ def delete_rel(ctx, relationship):
     db.delete_relationship(relationship)
     view_state.save()
 
+
 @cli.command()
 @click.pass_context
-@click.option(
-    "--variable", default=None, help="Variable to delete")
-@click.option(    
-    "--col", default=None, help="Optional collection"
-)
+@click.option("--variable", default=None, help="Variable to delete")
+@click.option("--col", default=None, help="Optional collection")
 def delete_var(ctx, variable, col):
     """
-    Deletes a variable. 
+    Deletes a variable.
     If given a collection will delete remove all variable from that collection and delete any variables only in that collection.
     If given "all" will delete all variables
     Usage: cfsdb delete-var variable <collection>
@@ -843,8 +862,8 @@ def delete_var(ctx, variable, col):
         print("Needs a variable or collection to delete")
     elif not col:
         db.delete_var(variable)
-    elif col=="all":
-        click.confirm('Are you sure? This deletes all variables.', abort=True)
+    elif col == "all":
+        click.confirm("Are you sure? This deletes all variables.", abort=True)
         db.delete_all_var()
     else:
         col = db.retrieve_collection(col)
@@ -852,8 +871,9 @@ def delete_var(ctx, variable, col):
             var.in_collection.remove(col)
             if not var.in_collection:
                 db.delete_var(variable)
-        
+
     view_state.save()
+
 
 @cli.command()
 @click.pass_context
