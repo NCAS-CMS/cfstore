@@ -131,7 +131,10 @@ def aaftc(ctx, aggfile, collection):
     default=0,
     help="0 is just name, 2 is everything, 1 is id, name, size and domain",
 )
-def searchvariable(ctx, key, value, verbosity):
+@click.option(
+    "--outputfile", default=None, help="Names a file to write the filenames to"
+)
+def searchvariable(ctx, key, value, verbosity, outputfile):
     """
     Search for collections with a variable
     Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
@@ -140,10 +143,19 @@ def searchvariable(ctx, key, value, verbosity):
     """
     view_state, db = _set_context(ctx, "all")
 
-    variables = db.retrieve_variable(key, value)
+    variables = db.retrieve_all_variables(key, value)
+
     for var in variables:
         # print(var.get_properties(verbosity))
         db.show_collections_with_variable(var)
+    files = []
+    for var in variables:
+        varfiles = db.show_files_with_variable(var)
+        for file in varfiles:
+            files.append(file.path + "/" + file.name)
+    if outputfile:
+        with open(outputfile, "w") as f:
+            json.dump(files, f)
 
 
 @cli.command()
@@ -157,7 +169,9 @@ def searchvariable(ctx, key, value, verbosity):
 )
 @click.option("--tagname", default=None, help="Search by tag")
 @click.option("--facet", default=None, help="Search by facet")
-@click.option("--outputfile", default=None, help="Names a file to write the filenames to")
+@click.option(
+    "--outputfile", default=None, help="Names a file to write the filenames to"
+)
 def search_collections(
     ctx, name_contains, description_contains, contains_file, tagname, facet, outputfile
 ):
@@ -192,6 +206,7 @@ def search_collections(
     if outputfile:
         json.dump(collections)
 
+
 @cli.command()
 @click.pass_context
 @click.argument("key")
@@ -201,7 +216,9 @@ def search_collections(
     default=0,
     help="0 is just name, 2 is everything, 1 is id, name, size and domain",
 )
-@click.option("--outputfile", default=None, help="Names a file to write the filenames to")
+@click.option(
+    "--outputfile", default=None, help="Names a file to write the filenames to"
+)
 def browsevariable(ctx, key, value, verbosity, outputfile):
     """
     Iterative user input to build compound search
@@ -427,6 +444,7 @@ def ls(ctx, collection, output):
                 else:
                     print("Return list failed to print")
     view_state.save()
+
 
 @cli.command()
 @click.pass_context
@@ -740,7 +758,7 @@ def linkto(ctx, col1, link, col2):
     Usage: cfsdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
-    #db.add_relationships(col1, col2, link, None)
+    # db.add_relationships(col1, col2, link, None)
 
 
 @cli.command()
@@ -829,16 +847,14 @@ def delete_rel(ctx, relationship):
     db.delete_relationship(relationship)
     view_state.save()
 
+
 @cli.command()
 @click.pass_context
-@click.option(
-    "--variable", default=None, help="Variable to delete")
-@click.option(    
-    "--col", default=None, help="Optional collection"
-)
+@click.option("--variable", default=None, help="Variable to delete")
+@click.option("--col", default=None, help="Optional collection")
 def delete_var(ctx, variable, col):
     """
-    Deletes a variable. 
+    Deletes a variable.
     If given a collection will delete remove all variable from that collection and delete any variables only in that collection.
     If given "all" will delete all variables
     Usage: cfsdb delete-var variable <collection>
@@ -849,8 +865,8 @@ def delete_var(ctx, variable, col):
         print("Needs a variable or collection to delete")
     elif not col:
         db.delete_var(variable)
-    elif col=="all":
-        click.confirm('Are you sure? This deletes all variables.', abort=True)
+    elif col == "all":
+        click.confirm("Are you sure? This deletes all variables.", abort=True)
         db.delete_all_var()
     else:
         col = db.retrieve_collection(col)
@@ -858,8 +874,9 @@ def delete_var(ctx, variable, col):
             var.in_collection.remove(col)
             if not var.in_collection:
                 db.delete_var(variable)
-        
+
     view_state.save()
+
 
 @cli.command()
 @click.pass_context
