@@ -57,8 +57,9 @@ class SSHlite(SSHcore):
         """
         try:
             if not os.path.exists(localpath):
-                open(localpath, 'w').close() 
+                open(localpath, "w").close()
             self._sftp.get(remotepath, localpath)
+            print("Saved", remotepath, "to", localpath)
             if delete:
                 print("Deleting remote file")
                 self._sftp.remove(remotepath)
@@ -66,14 +67,25 @@ class SSHlite(SSHcore):
             print("Get Failed")
 
     def delete(self, remote_file):
-            """
-            Delete remote_file from remote location
-            """
-            try:
-                self._sftp.remove(remote_file)
-            except IOError:
-                print("Delete Failed")
+        """
+        Delete remote_file from remote location
+        """
+        try:
+            self._sftp.remove(remote_file)
+        except IOError:
+            print("Delete Failed")
 
+    def delete_from_master_cfa(self, filelist):
+        """
+        Delete remote_file from remote location
+        """
+        print(filelist)
+        try:
+            self._sftp.put(
+                filelist, "/home/users/gobncas/CFA_location_deletion_list.json"
+            )
+        except IOError:
+            print("Failed to put list of file locations to remove")
 
     def walktree(
         self, remotepath, fcallback, dcallback=None, ucallback=None, recurse=True
@@ -256,23 +268,6 @@ class SSHlite(SSHcore):
         for line in stdout:
             print("out:", line)
         self._sftp.remove(remotepath + "/" + scriptname)
-
-    def aggregateFiles(self, remotepath):
-        print("Aggregating files")
-        print('Executing "python -i -f CFA4 --overwrite ' + remotepath + '.nc *.nc"')
-        try:
-            stdin, stdout, stderr = self._client.exec_command(
-                "python -i -f CFA4 --overwrite " + remotepath + ".nc *.nc"
-            )
-            print("Aggregation file built")
-        except IOError:
-            print("Could not successfully execute script")
-            print("Removing script from remote server")
-        print(stderr)
-        for line in stderr:
-            print("err:", line)
-        for line in stdout:
-            print("out:", line)
 
     def runScript(self, remotepath, collection, script):
         self.pushScript(remotepath, collection, script)
