@@ -11,7 +11,7 @@ import hashlib
 
 from tqdm import tqdm
 
-from cfstore.cfparse_file import cfparse_file
+from cfstore.cfparse_file import cfparse_file, cfparse_file_to_collection
 from cfstore.db import (Cell_Method, Collection, CoreDB, File, Location,
                         Protocol, Relationship, Tag, Variable)
 
@@ -31,8 +31,6 @@ class CollectionDB(CoreDB):
             cm = self.cell_method_retrieve(axis=axis, method=method)
         except Cell_Method.DoesNotExist:
             cm = Cell_Method(axis=axis, method=method)
-            self.session.add(cm)
-            self.session.commit()
             return cm
         else:
             raise ValueError(f"Attempt to add an existing cell method {cm}")
@@ -50,7 +48,7 @@ class CollectionDB(CoreDB):
         """
         Retrieve a specific cell method
         """
-        cm = Cell_Method.get(axis=axis, method=method)
+        cm = Cell_Method.objects.get(axis=axis, method=method)
 
         return cm
 
@@ -115,7 +113,11 @@ class CollectionDB(CoreDB):
         """Add all the variables found in a file to the database"""
         cfparse_file(self, filename)
 
-    def create_collection(self, collection_name, description, kw={}):
+    def add_variables_from_file_to_collection(self, filename, collection):
+        """Add all the variables found in a file to the database"""
+        cfparse_file_to_collection(self, filename, collection)
+
+    def create_collection(self, collection_name, description=None, kw={}):
         """
         Add a collection and any properties, and return instance
         """
@@ -123,7 +125,7 @@ class CollectionDB(CoreDB):
             description = "No Description"
         # c = Collection.objects.get(name=collection_name)[0]
         try:
-            c = Collection.objects.create(
+            c = Collection(
                 name=collection_name,
                 volume=0,
                 description=description,
@@ -483,13 +485,22 @@ class CollectionDB(CoreDB):
         Retrieve files where <match> appears in either the path or the name.
         """
         m = f"%{match}%"
-        # FIXME make this an OR
-        # return File.objects.filter(name_contains=m,path_contains=m)
         return (
             self.session.query(File)
-            .filter(or_(File.name.like(m), File.path.like(m)))
+            .filter((File.name.like(m)) | (File.path.like(m)))
             .all()
         )
+
+    def retrieve_or_make_file(self, match):
+        """
+        Retrieve a file of the chosen name. If one doesn't exist, it makes one.
+        """
+        file = File.objects.filter(name__contains=match).all()
+        if not file.exists():
+            file = File.objects.create(name=match, size=0)
+            file.save()
+            file = File.objects.filter(name__contains=match).all()
+        return file
 
     def retrieve_files_in_collection(self, collection, match=None, replicants=False):
         """
@@ -645,9 +656,72 @@ class CollectionDB(CoreDB):
             results = Variable.objects.filter(*queries).all()
         return results, queries
 
+    def retrieve_or_make_variable(
+        self, standard_name, long_name, identity, cfdm_size, cfdm_domain
+    ):
+        """Retrieve variable by arbitrary property"""
+        var = Variable.objects.filter(
+            standard_name=standard_name,
+            long_name=long_name,
+            cfdm_size=cfdm_size,
+            cfdm_domain=cfdm_domain,
+        ).one()
+        if not var.exists():
+            var = Variable(
+                standard_name=standard_name,
+                long_name=long_name,
+                identity=identity,
+                cfdm_size=cfdm_size,
+                cfdm_domain=cfdm_domain,
+            )
+        return var
+
+    def make_variable(self, standard_name, long_name, identity, cfdm_size, cfdm_domain):
+        """Retrieve variable by arbitrary property"""
+        var = Variable.objects.filter(
+            standard_name=standard_name,
+            long_name=long_name,
+            cfdm_size=cfdm_size,
+            cfdm_domain=cfdm_domain,
+        ).one()
+        if not var.exists():
+            var = Variable(
+                standard_name=standard_name,
+                long_name=long_name,
+                identity=identity,
+                cfdm_size=cfdm_size,
+                cfdm_domain=cfdm_domain,
+            )
+        return var
+
+    def generatecollection(self, replacedb, col):
+        """Retrieve variable by arbitrary property"""
+        vars = self.retrieve_variables_in_collection(col)
+        for v in vars:
+            for memberid, replace in replacedb.items():
+                files = v.in_files.distinct()
+                newvar = self.clone(v)
+                for file in files:
+                    newfile = self.retrieve_or_make_file(
+                        match=os.path.basename(
+                            file.name.replace("cn134", replace[0]).replace(
+                                "999", replace[1][1]
+                            )
+                        )
+                    ).last()
+                    newvar.in_files.remove(file)
+                    newvar.in_files.add(newfile)
+                    col.files.add(newfile)
+                    newfile.save()
+
+    def clone(self, instance):
+        instance.pk = None
+        instance.save()
+        return instance
+
     def search_variables(self, key, value):
         """Retrieve variable by arbitrary property"""
-        if key == "identity":
+        if key == "identity" or key == "name":
             results = Variable.objects.filter(identity__contains=value)
         if key == "id":
             results = Variable.objects.filter(id__contains=value)
@@ -671,7 +745,7 @@ class CollectionDB(CoreDB):
         return results
 
     def search_variable(self, key, value):
-        results = self.search_variables(self, key, value)
+        results = self.search_variables(key, value)
         if not results.exists():
             return results
         return results[0]
@@ -691,9 +765,10 @@ class CollectionDB(CoreDB):
         """Find all files with a given variable"""
         return variable.in_files.all()
 
-    def retrieve_variables_in_collection(self, collection_name):
-        collection = Collection.objects.get(name=collection_name)
-        return collection.variable_set.distinct()
+    def retrieve_variables_in_collection(self, collection):
+        variables = collection.variable_set.all()
+        print(variables)
+        return variables
 
     def retrieve_variables_subset_in_collection(self, collection_name, properties):
         if collection_name == "all":

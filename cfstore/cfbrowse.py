@@ -108,18 +108,23 @@ def setc(ctx, collection):
 @click.option(
     "--collection", default=None, help="Where to send contents of aggregation file"
 )
-def aaftc(ctx, aggfile, collection):
+@click.option("--new", default=False, help="True if collection doesn't exist")
+def aaftc(ctx, aggfile, collection, new):
     """
     (A)dd (A)ggregation (F)ile (T)o (C)ollection
     Takes in an aggregation file and a collection. Collection is not actually an optional input.
     The contents of the aggregation file are added to the collection.
     Usage: #FIXME
     """
+
+    view_state, db = _set_context(ctx, collection)
+    if new:
+        des = f"Generated from {aggfile}"
+        db.create_collection(collection_name=collection, description=des)
     view_state, db = _set_context(ctx, collection)
     variables = cf.read(aggfile)
-    for var in variables:
-        print(var.get_filenames())
-    db.add_variables_from_file(aggfile)
+
+    db.add_variables_from_file_to_collection(aggfile, collection)
 
 
 @cli.command()

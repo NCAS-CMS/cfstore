@@ -124,6 +124,36 @@ def aaftc(ctx, aggfile, collection):
 
 @cli.command()
 @click.pass_context
+@click.argument("replacementdict")
+@click.option(
+    "--collection", default=None, help="Where to send contents of aggregation file"
+)
+def generatecollection(ctx, replacementdict, collection):
+    """
+    (A)dd (A)ggregation (F)ile (T)o (C)ollection
+    Takes in an aggregation file and a collection. Collection is not actually an optional input.
+    The contents of the aggregation file are added to the collection.
+    Usage: #FIXME
+    """
+    view_state, db = _set_context(ctx, collection)
+    col = db.retrieve_collection(collection)
+    replacedb = {
+        "0": ["u-cs125", "r1i1p1f3"],
+        "1": ["u-cv575", "r1i1p1f3"],
+        "2": ["u-cv625", "r1i1p1f3"],
+        "3": ["u-cw345", "r1i1p1f3"],
+        "4": ["u-cw356", "r1i1p1f3"],
+        "5": ["u-cv827", "r1i1p1f3"],
+        "6": ["u-cv976", "r1i1p1f3"],
+        "7": ["u-cz547", "r2i1p1f3"],
+        "8": ["u-cy436", "r2i1p1f3"],
+        "9": ["u-cw342", "r2i1p1f3"],
+    }
+    db.generatecollection(replacedb, col)
+
+
+@cli.command()
+@click.pass_context
 @click.argument("key")
 @click.argument("value")
 @click.option(
@@ -140,10 +170,16 @@ def searchvariable(ctx, key, value, verbosity):
     """
     view_state, db = _set_context(ctx, "all")
 
-    variables = db.retrieve_variable(key, value)
+    variables = db.search_variables(key, value)
     for var in variables:
-        # print(var.get_properties(verbosity))
-        db.show_collections_with_variable(var)
+        print("Name:", var.identity)
+        print("is in ")
+        collections = var.in_collection.all()
+        if collections:
+            for c in collections:
+                print("     ", c.name)
+        else:
+            print("     No collections")
 
 
 @cli.command()
