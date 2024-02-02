@@ -286,7 +286,7 @@ def getBMetadataClean(
 
     # Clean-up remote files (At present clean-up means remove them)
     # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
-
+    
     # Update database with JSON
     x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
     state.save()

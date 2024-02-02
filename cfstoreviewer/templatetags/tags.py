@@ -106,6 +106,58 @@ def getvariableproperties(variable):
 
 
 @template.defaulttags.register.filter
+def getallvariablecellmethods(collection):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    allcellmethods = {}
+    for var in variables:
+        cellmethods = var._cell_methods
+        for cellmethod in cellmethods:
+            if isinstance(cellmethod, dict):
+                print(cellmethods)
+                method = cellmethod["methods"]
+                axes = cellmethod["axes"]
+                if method not in allcellmethods:
+                    allcellmethods[method] = [method]
+                elif method not in allcellmethods[method]:
+                    allcellmethods[method].append(method)
+    for cm in allcellmethods:
+        allcellmethods[cm] = len(allcellmethods[cm])  
+    return allcellmethods
+
+@template.defaulttags.register.filter
+def getallvariablecellaxes(collection):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    allcellmethods = {}
+    for var in variables:
+        cellmethods = var._cell_methods
+        for cellmethod in cellmethods:
+            if isinstance(cellmethod, dict):
+                print(cellmethods)
+                axes = cellmethod["axes"]
+                print("AXES",axes)
+                for a in axes:
+                    if a not in allcellmethods:
+                        allcellmethods[a] = [a]
+                    elif a not in allcellmethods[a]:
+                        allcellmethods[a].append(a)
+    for cm in allcellmethods:
+        allcellmethods[cm] = len(allcellmethods[cm])  
+    return allcellmethods
+
+@template.defaulttags.register.filter
+def getcellmethods(variable):
+    print("VARIABLE",variable)
+    return variable
+
+@template.defaulttags.register.filter
+def getcellmethodaxes(variable):
+    print(variable)
+    axes = variable._cell_methods["axes"]
+    return axes
+
+@template.defaulttags.register.filter
 def getpropertyvalues(propname):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
