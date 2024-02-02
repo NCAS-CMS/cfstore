@@ -6,9 +6,9 @@
   <link rel="stylesheet" href="{% static '/cfstore.css' %}">
 </head>
 <html>
-  <h2>Collections</h2>
+  <a href="/cfstoreviewer/viewcollections"><h2>Collections</h2></a>
 
-  {%for collection in collections %}
+  {%for collection in collections|checkcol:checks %}
   <button type="button" class="collapsible">{{collection.name}}</button>
   <div class="collection-block">
   
@@ -22,22 +22,30 @@
     </form>  
     <table id="collapsibletable">
 
-      {% for var,count in collection|getuniquevariables %}
+      {% for var,count in collection|getuniquevariables:checks %}
       
-      {% if var|checkvar:checks %}
         <tr>
           <td><a href="/cfstoreviewer/viewcollections/variables/{{var}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
        </tr>
-        {% endif %}
       {% endfor %}
     </table>
   </div>
 
-
+  <form action="download" method="post">
+      {% csrf_token %}
+      <input type="hidden" id="collection" name="collection" value="{{collection.name}}"> 
+      <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
+      <input type="submit" value="Download Collection" />
+  </form>
 
   </div>
   {% endfor %}
-
+  <form action="download" method="post">
+    {% csrf_token %}
+    <input type="hidden" id="collection" name="collection" value="all"> 
+    <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
+    <input type="submit" value="Download Collection" />
+</form>
   <div class="browser">
     <form action="/cfstoreviewer/viewcollections/search/" method="post">
       {% csrf_token %}
@@ -78,7 +86,7 @@
               <tr>
                 <td> 
                   <p class="property">
-                    <input type="checkbox" id="{{property}}" name="check{{property}}" value="{{property}}"> {{property}} 
+                    <input type="checkbox" id="{{property}}" name="P_{{propkey|getproperty}}" value="{{property}}"> {{property}} 
                   </p>
                 </td>
               </tr>
@@ -87,6 +95,7 @@
       </div>
       {% endfor %}
       <button type="submit" name="browse">Browse!</button>
+      <a href="/cfstoreviewer/viewcollections" class="button">End Browse</a>
     </form>
   </div>
 
