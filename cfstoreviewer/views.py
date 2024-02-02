@@ -1,6 +1,8 @@
+import ast
+
 from django.http import FileResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
-import ast
+
 from cfstore.config import CFSconfig
 
 from .forms import (CollectionSearchForm, SaveAsCollectionForm,
@@ -101,13 +103,12 @@ def lsbrowse(request):
                     collections = collections.filter(files__in=var.in_files.all())
                     search_method = "Exact match found"
                 else:
-                    var = db.search_variable("standard_name", s)
+                    var = db.search_variables("standard_name", s)
                     if var.exists():
-                        collections = collections.filter(files__in=var.in_files.all())
+                        pass
                     else:
-                        var = db.search_variable("long_name", s)
+                        var = db.search_variables("long_name", s)
                     if var.exists():
-                        collections = collections.filter(files__in=var.in_files.all())
                         search_method = "Partial match found"
                     else:
                         return render(request, "no_result_view.html")
@@ -132,19 +133,17 @@ def lsbrowse(request):
             request,
             "browse_view.html",
             {
-                "collections": collections,
+                "variables": var,
                 "variable_search_form": variable_search_form,
                 "collection_search_form": collection_search_form,
                 "collection_save_form": collection_save_form,
                 "search_method": search_method,
-                "checks": checks,
+                "checks": s,
             },
         )
 
     if request.method == "POST":
         print(request.POST)
-
-    print("AAAAH", checks)
 
     return render(
         request,
@@ -164,7 +163,7 @@ def lscol(request, page="all"):
     variables = db.retrieve_variables_in_collection(page)
     collection = db.retrieve_collection(page)
     files = db.retrieve_files_in_collection(page)
-    subcollections = db.retrieve_related(page,"below")
+    subcollections = db.retrieve_related(page, "below")
     subcollections = [col.related_collection.all()[0].name for col in subcollections]
     locations = {}
     for f in files:
@@ -197,19 +196,44 @@ def downloadcol(request, page="all"):
     db = CFSconfig().db
     checks = {}
     if request.method == "POST":
-        checks = ast.literal_eval(request.POST["checks"])
-        page = request.POST["collection"]
-    variables = db.retrieve_variables_subset_in_collection(page, checks)
-    files = db.retrieve_files_from_variables(variables)
+        checks = request.POST["checks"]
+    # variables = db.retrieve_variables_subset_in_collection(page, checks)
+    filenames = []
+    variables = db.search_variables("name", checks)
+    for var in variables:
+        files = var.in_files.distinct()
+        for f in files:
+            if f not in filenames:
+                filenames.append(f)
+    output = ""
+    for f in filenames:
+        output = output + f.name + "<br>"
+    return FileResponse(output, as_attachment=True, filename="Export.txt")
 
-    filenames = (f.path + "/" + f.name + "<br>" for f in files if f.name.endswith(".nc"))
-    return FileResponse(filenames, as_attachment=True, filename="Export.txt")
+
+def downloadsearch(request, page="all"):
+    db = CFSconfig().db
+    checks = {}
+    if request.method == "POST":
+        checks = ast.literal_eval(request.POST["checks"])
+    print(checks)
+    filenames = []
+    for var in checks:
+        print(var)
+
+    output = ""
+    for f in filenames:
+        output = output + f.name + "<br>"
+    return FileResponse(output, as_attachment=True, filename="Export.txt")
 
 
 def lsvar(request, var="all"):
     db = CFSconfig().db
-    var = var.replace(" ", "_")
-    variables = db.retrieve_all_variables("identity", var)
+    print(var)
+    var = var.replace("_", " ")
+    var = var.replace("[s]", "/")
+    print(var)
+    variables = db.search_variables("identity", var)
     return render(
         request,
         "variables_view.html",

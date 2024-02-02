@@ -161,8 +161,8 @@ class Variable(models.Model):
     def exists(self):
         return True
 
-    _cell_methods = models.JSONField()
-    _proxied = models.JSONField()
+    _cell_methods = models.JSONField(default=dict)
+    _proxied = models.JSONField(default=dict)
     cfdm_size = models.BigIntegerField()
     long_name = models.CharField(max_length=1024, null=True)
     id = models.AutoField(primary_key=True)

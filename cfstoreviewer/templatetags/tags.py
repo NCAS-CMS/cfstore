@@ -144,8 +144,9 @@ def getallvariablecellmethods(collection):
                 elif method not in allcellmethods[method]:
                     allcellmethods[method].append(method)
     for cm in allcellmethods:
-        allcellmethods[cm] = len(allcellmethods[cm])  
+        allcellmethods[cm] = len(allcellmethods[cm])
     return allcellmethods
+
 
 @template.defaulttags.register.filter
 def getallvariablecellaxes(collection):
@@ -158,26 +159,29 @@ def getallvariablecellaxes(collection):
             if isinstance(cellmethod, dict):
                 print(cellmethods)
                 axes = cellmethod["axes"]
-                print("AXES",axes)
+                print("AXES", axes)
                 for a in axes:
                     if a not in allcellmethods:
                         allcellmethods[a] = [a]
                     elif a not in allcellmethods[a]:
                         allcellmethods[a].append(a)
     for cm in allcellmethods:
-        allcellmethods[cm] = len(allcellmethods[cm])  
+        allcellmethods[cm] = len(allcellmethods[cm])
     return allcellmethods
+
 
 @template.defaulttags.register.filter
 def getcellmethods(variable):
-    print("VARIABLE",variable)
+    print("VARIABLE", variable)
     return variable
+
 
 @template.defaulttags.register.filter
 def getcellmethodaxes(variable):
     print(variable)
     axes = variable._cell_methods["axes"]
     return axes
+
 
 @template.defaulttags.register.filter
 def getpropertyvalues(propname):
@@ -205,3 +209,21 @@ def getproperty(prop):
 @template.defaulttags.register.filter
 def length(list):
     return len(list)
+
+
+@template.defaulttags.register.filter
+def format_long_name(name):
+    print(name)
+    name = name.replace("long_name=", "")
+    name = name.replace(" ", "_")
+    name = name.replace("/", "")
+    return name
+
+
+@template.defaulttags.register.filter
+def get_percentage(col):
+    print(col.name)
+    if col.name == "CANATMOS":
+        return 16.6
+    else:
+        return 0

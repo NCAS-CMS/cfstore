@@ -9,7 +9,7 @@
   <a href="/cfstoreviewer/viewcollections"><h2>Collections</h2></a>
 
   {%for collection in collections|checkcol:checks %}
-  <button type="button" class="collapsible">{{collection.name}}</button>
+  <button type="button" class="collapsible">{{collection.name}} ({{collection|get_percentage}}% on tape)</button>
   <div class="collection-block">
   
 
@@ -25,13 +25,13 @@
       {% for var,count in collection|getuniquevariables:checks %}
       
         <tr>
-          <td><a href="/cfstoreviewer/viewcollections/variables/{{var}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
+          <td><a href="/cfstoreviewer/viewcollections/variables/{{var|format_long_name}}"> <p class="variable">{{var}} ({{count}} unique variation(s))</p></a></td>
        </tr>
       {% endfor %}
     </table>
   </div>
 
-  <form action="download" method="post">
+  <form action="{{collection.name}}/download/" method="post">
       {% csrf_token %}
       <input type="hidden" id="collection" name="collection" value="{{collection.name}}"> 
       <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
@@ -40,7 +40,7 @@
 
   </div>
   {% endfor %}
-  <form action="download" method="post">
+  <form action="all/download/" method="post">
     {% csrf_token %}
     <input type="hidden" id="collection" name="collection" value="all"> 
     <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
