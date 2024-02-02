@@ -1,5 +1,4 @@
 sh ansible.sh centos-1-packages.yaml
-sh ansible.sh centos-2-getapp.yaml
 sh ansible.sh centos-3-venv.yaml
 sh ansible.sh centos-3a-fix-django.yaml
 sh ansible.sh centos-4-config-django.yaml

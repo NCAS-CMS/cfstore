@@ -26,6 +26,8 @@
           - gcc-c++
           - udunits2-devel
           - policycoreutils-python
+          - django
+
     - name: Now get certificates in play (but this doesn't seem to work)
       command: update-ca-trust
     - name: Download miniconda

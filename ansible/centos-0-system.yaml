@@ -9,6 +9,6 @@
         ssh_key_bits: 2048
         ssh_key_file: ".ssh/{{keyname}}"
     - name: Read SSH public key
-      slurp: src="/home/{{user}}/.ssh/{{keyname}}.pub"
+      slurp: src="/home/{{user}}/.ssh/{{keyname}}"
       register: public_key
     - debug: msg="{{ public_key['content'] | b64decode }}"
