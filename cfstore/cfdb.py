@@ -124,36 +124,6 @@ def aaftc(ctx, aggfile, collection):
 
 @cli.command()
 @click.pass_context
-@click.argument("replacementdict")
-@click.option(
-    "--collection", default=None, help="Where to send contents of aggregation file"
-)
-def generatecollection(ctx, replacementdict, collection):
-    """
-    (A)dd (A)ggregation (F)ile (T)o (C)ollection
-    Takes in an aggregation file and a collection. Collection is not actually an optional input.
-    The contents of the aggregation file are added to the collection.
-    Usage: #FIXME
-    """
-    view_state, db = _set_context(ctx, collection)
-    col = db.retrieve_collection(collection)
-    replacedb = {
-        "0": ["u-cs125", "r1i1p1f3"],
-        "1": ["u-cv575", "r1i1p1f3"],
-        "2": ["u-cv625", "r1i1p1f3"],
-        "3": ["u-cw345", "r1i1p1f3"],
-        "4": ["u-cw356", "r1i1p1f3"],
-        "5": ["u-cv827", "r1i1p1f3"],
-        "6": ["u-cv976", "r1i1p1f3"],
-        "7": ["u-cz547", "r2i1p1f3"],
-        "8": ["u-cy436", "r2i1p1f3"],
-        "9": ["u-cw342", "r2i1p1f3"],
-    }
-    db.generatecollection(replacedb, col)
-
-
-@cli.command()
-@click.pass_context
 @click.argument("key")
 @click.argument("value")
 @click.option(
@@ -180,6 +150,105 @@ def searchvariable(ctx, key, value, verbosity):
                 print("     ", c.name)
         else:
             print("     No collections")
+
+
+@cli.command()
+@click.pass_context
+@click.argument("directory")
+def generatencfiles(ctx, directory):
+    """
+    Search for collections with a variable
+    Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
+    Other properties can also be searched
+    Usage: cfsdb searchvariable <key> <value>
+    """
+    view_state, db = _set_context(ctx, "all")
+
+    replacelist = [
+        {"memberid": 0, "suiteid": "cs125", "r": 1, "i": 1, "p": 1, "f": 3},
+        {"memberid": 1, "suiteid": "cv575", "r": 1, "i": 1, "p": 1, "f": 3},
+        {"memberid": 2, "suiteid": "cv625", "r": 1, "i": 1, "p": 1, "f": 3},
+        {"memberid": 3, "suiteid": "cw345", "r": 1, "i": 1, "p": 1, "f": 3},
+        {"memberid": 4, "suiteid": "cw356", "r": 1, "i": 1, "p": 1, "f": 3},
+        {"memberid": 5, "suiteid": "cv827", "r": 1, "i": 1, "p": 1, "f": 3},
+        {"memberid": 6, "suiteid": "cv976", "r": 2, "i": 1, "p": 1, "f": 3},
+        {"memberid": 7, "suiteid": "cz547", "r": 2, "i": 1, "p": 1, "f": 3},
+        {"memberid": 8, "suiteid": "cy436", "r": 2, "i": 1, "p": 1, "f": 3},
+        {"memberid": 9, "suiteid": "cw342", "r": 2, "i": 1, "p": 1, "f": 3},
+        {"memberid": 10, "suiteid": "cw343", "r": 2, "i": 1, "p": 1, "f": 3},
+        {"memberid": 11, "suiteid": "cy375", "r": 3, "i": 1, "p": 1, "f": 3},
+        {"memberid": 12, "suiteid": "cy376", "r": 3, "i": 1, "p": 1, "f": 3},
+        {"memberid": 13, "suiteid": "cy537", "r": 3, "i": 1, "p": 1, "f": 3},
+        {"memberid": 14, "suiteid": "cy811", "r": 3, "i": 1, "p": 1, "f": 3},
+        {"memberid": 15, "suiteid": "cy866", "r": 3, "i": 1, "p": 1, "f": 3},
+        {"memberid": 16, "suiteid": "cy873", "r": 4, "i": 1, "p": 1, "f": 3},
+        {"memberid": 17, "suiteid": "cy877", "r": 4, "i": 1, "p": 1, "f": 3},
+        {"memberid": 18, "suiteid": "cy879", "r": 4, "i": 1, "p": 1, "f": 3},
+        {"memberid": 19, "suiteid": "cy880", "r": 4, "i": 1, "p": 1, "f": 3},
+        {"memberid": 20, "suiteid": "cy881", "r": 4, "i": 1, "p": 1, "f": 3},
+        {"memberid": 21, "suiteid": "da179", "r": 21, "i": 5, "p": 1, "f": 1},
+        {"memberid": 22, "suiteid": "da190", "r": 21, "i": 5, "p": 1, "f": 1},
+        {"memberid": 23, "suiteid": "da191", "r": 21, "i": 5, "p": 1, "f": 1},
+        {"memberid": 24, "suiteid": "da192", "r": 21, "i": 5, "p": 1, "f": 1},
+        {"memberid": 25, "suiteid": "da193", "r": 21, "i": 5, "p": 1, "f": 1},
+        {"memberid": 26, "suiteid": "db291", "r": 26, "i": 6, "p": 1, "f": 1},
+        {"memberid": 27, "suiteid": "db301", "r": 26, "i": 6, "p": 1, "f": 1},
+        {"memberid": 28, "suiteid": "db303", "r": 26, "i": 6, "p": 1, "f": 1},
+        {"memberid": 29, "suiteid": "db304", "r": 26, "i": 6, "p": 1, "f": 1},
+        {"memberid": 30, "suiteid": "db305", "r": 26, "i": 6, "p": 1, "f": 1},
+        {"memberid": 31, "suiteid": "cz475", "r": 31, "i": 7, "p": 1, "f": 1},
+        {"memberid": 32, "suiteid": "cz568", "r": 31, "i": 7, "p": 1, "f": 1},
+        {"memberid": 33, "suiteid": "cz647", "r": 31, "i": 7, "p": 1, "f": 1},
+        {"memberid": 34, "suiteid": "cz648", "r": 31, "i": 7, "p": 1, "f": 1},
+        {"memberid": 35, "suiteid": "cz649", "r": 31, "i": 7, "p": 1, "f": 1},
+    ]
+
+    for replace in replacelist:
+        print("reading")
+        aggregate = {
+            # "relaxed_units": True, (not needed if we're only looking at NetCDF files)
+            "relaxed_identities": True,
+            "exclude": False,
+            "concatenate": False,
+            "cells": cf.climatology_cells(),
+            "contiguous": True,
+        }
+        cff = cf.read(
+            directory,
+            ignore_read_error=True,
+            fmt="NETCDF",
+            aggregate=aggregate,
+            recursive=True,
+            followlinks=True,
+            chunks=None,
+        )
+        print("editing")
+        writepath = (
+            "/home/george/Documents/generatedncfiles/CANARI_"
+            + str(replace["f"])
+            + "_"
+            + str(replace["suiteid"])
+            + "_ocean.nc"
+        )
+        for f in cff:
+            files = f.get_filenames()
+            f.set_properties(
+                {
+                    "realization_index": replace["r"],
+                    "forcing_index": replace["f"],
+                    "initialization_index": replace["i"],
+                    "physics_index": replace["p"],
+                }
+            )
+            for file in files:
+                f.add_file_location(
+                    file.replace(
+                        "cn134o_999", replace["suiteid"] + "_" + str(replace["r"])
+                    )
+                )
+                f.del_file_location(file)
+        print("writing")
+        cf.write(cff, cfa={"strict": False}, filename=writepath)
 
 
 @cli.command()
