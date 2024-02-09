@@ -3,9 +3,12 @@
 import json
 import os
 import sys
+import time
 
 import cf
 import click
+import netCDF4
+import numpy as np
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -155,7 +158,8 @@ def searchvariable(ctx, key, value, verbosity):
 @cli.command()
 @click.pass_context
 @click.argument("directory")
-def generatencfiles(ctx, directory):
+@click.argument("basefilename")
+def generatencfiles(ctx, directory, basefilename):
     """
     Search for collections with a variable
     Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
@@ -204,55 +208,63 @@ def generatencfiles(ctx, directory):
     ]
 
     for replace in replacelist:
-        print("reading")
-        aggregate = {
-            # "relaxed_units": True, (not needed if we're only looking at NetCDF files)
-            "relaxed_identities": True,
-            "exclude": False,
-            "concatenate": False,
-            "cells": cf.climatology_cells(),
-            "contiguous": True,
-        }
-        cff = cf.read(
-            directory,
-            ignore_read_error=True,
-            fmt="NETCDF",
-            aggregate=aggregate,
-            recursive=True,
-            followlinks=True,
-            chunks=None,
+        print("Making new file")
+        writepath = directory.replace(
+            "999_cn134", str(replace["r"]) + "_" + replace["suiteid"]
         )
-        print("editing")
-        writepath = (
-            "/home/george/Documents/generatedncfiles/CANARI_"
+        copycommand = "cp " + directory + " " + writepath
+        os.popen(copycommand).read()
+        print("reading", writepath)
+        cff = netCDF4.Dataset(writepath, "a")
+        cff.realization_index = str(replace["r"])
+        cff.forcing_index = str(replace["f"])
+        cff.initialization_index = str(replace["i"])
+        cff.physics_index = str(replace["p"])
+        cff.variant_id = (
+            "r"
+            + str(replace["r"])
+            + "i"
+            + str(replace["i"])
+            + "p"
+            + str(replace["p"])
+            + "f"
             + str(replace["f"])
-            + "_"
-            + str(replace["suiteid"])
-            + "_ocean.nc"
         )
-        for f in cff:
-            files = f.get_filenames()
-            f.set_properties(
-                {
-                    "realization_index": replace["r"],
-                    "forcing_index": replace["f"],
-                    "initialization_index": replace["i"],
-                    "physics_index": replace["p"],
-                }
+        for ncvar, var in cff.variables.items():
+            if not var.name.startswith("cfa_file"):
+                continue
+            varshape = var.shape
+            files = var[..., 0:1]
+            varshape = files.shape
+            files = files.flatten()
+            print("Setting properties")
+            print(files.shape)
+            var.realization_index = replace["r"]
+            var.forcing_index = replace["f"]
+            var.initialization_index = replace["i"]
+            var.physics_index = replace["p"]
+            var.variant_id = (
+                "r"
+                + str(replace["r"])
+                + "i"
+                + str(replace["i"])
+                + "p"
+                + str(replace["p"])
+                + "f"
+                + str(replace["f"])
             )
-            for file in files:
-                f.add_file_location(
-                    file.replace(
-                        "cn134o_999", replace["suiteid"] + "_" + str(replace["r"])
-                    )
+            print("Setting ", len(files), " files")
+            for file in range(len(files)):
+                files[file] = files[file].replace(
+                    basefilename + replace["suiteid"] + "_" + str(replace["r"])
                 )
-                f.del_file_location(file)
-        print("writing")
-        cf.write(cff, cfa={"strict": False}, filename=writepath)
+            files = np.reshape(files, varshape)
+            print(files)
+            var[..., 0:1] = files
+        print("Closing file")
+        cff.close()
 
 
-@cli.command()
-@click.pass_context
 @click.option("--name_contains", default=None, help="Search by collection name")
 @click.option(
     "--description_contains", default=None, help="Search by text in description"

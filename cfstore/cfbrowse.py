@@ -3,11 +3,13 @@
 import json
 import os
 import sys
+import time
 
 import cf
 import click
 from rich.console import Console
 from rich.markdown import Markdown
+from tqdm import tqdm
 
 from cfstore.config import CFSconfig
 
@@ -125,6 +127,35 @@ def aaftc(ctx, aggfile, collection, new):
     variables = cf.read(aggfile)
 
     db.add_variables_from_file_to_collection(aggfile, collection)
+
+
+@cli.command()
+@click.pass_context
+@click.argument("directory")
+@click.option(
+    "--collection", default=None, help="Where to send contents of aggregation file"
+)
+@click.option("--new", default=False, help="True if collection doesn't exist")
+def aafdtc(ctx, directory, collection, new):
+    """
+    (A)dd (A)ggregation (F)ile (D)irectory (T)o (C)ollection
+    Takes in an aggregation file and a collection. Collection is not actually an optional input.
+    The contents of the aggregation file are added to the collection.
+    Usage: #FIXME
+    """
+
+    view_state, db = _set_context(ctx, collection)
+    if new:
+        des = f"Generated from {directory} automatically"
+        db.create_collection(collection_name=collection, description=des)
+    view_state, db = _set_context(ctx, collection)
+    start = time.time()
+    for filename in tqdm(os.listdir(directory)):
+        aggfile = directory + "/" + filename
+        variables = cf.read(aggfile)
+
+        db.add_variables_from_file_to_collection(aggfile, collection)
+    print("Directory uploaded in", time.time() - start)
 
 
 @cli.command()

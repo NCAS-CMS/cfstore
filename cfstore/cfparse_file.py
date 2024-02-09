@@ -5,7 +5,7 @@ import cf
 import numpy as np
 from deepdiff import DeepDiff
 
-from cfstore.db import Variable
+from cfstore.db import Collection, File, Variable
 
 
 def manage_types(value):
@@ -39,12 +39,12 @@ def cfparse_file_to_collection(db, filename, collection):
     **Examples:**
     >>> cfparse_file(db, 'my_model_file.nc')
     """
-    print("Running cfparse_file")
+    fullstart = time.time()
     cff = cf.read(filename)
     # loop over fields in file (not the same as netcdf variables)
-    print(collection)
     collection = db.retrieve_collection(collection)
     for v in cff:
+        varstart = time.time()
         properties = v.properties()
         if "standard_name" not in properties and "long_name" not in properties:
             properties["long_name"] = v.identity
@@ -63,18 +63,29 @@ def cfparse_file_to_collection(db, filename, collection):
             cfdm_domain=domain,
         )
         var.save()
-        print("||", var)
+
         for k, p in properties.items():
             if k not in ["standard_name", "long_name"]:
                 var[k] = manage_types(p)
 
-        for file in v.get_filenames():
-            for f in db.retrieve_or_make_file(os.path.basename(file)):
-                f.save()
-                var.in_files.add(f)
-                collection.files.add(f)
-                var.save()
-                collection.save()
+        through_files = File.objects.bulk_create(
+            [
+                File(name=os.path.basename(bulkfilename), size=0)
+                for bulkfilename in v.get_filenames()
+            ]
+        )
+        Variable.in_files.through.objects.bulk_create(
+            [
+                Variable.in_files.through(file_id=tf.id, variable_id=var.id)
+                for tf in through_files
+            ]
+        )
+        Collection.files.through.objects.bulk_create(
+            [
+                Collection.files.through(file_id=tf.id, collection_id=collection.id)
+                for tf in through_files
+            ]
+        )
 
         # there is a more pythonic way of doing this
         # if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
@@ -83,37 +94,28 @@ def cfparse_file_to_collection(db, filename, collection):
         #   first should we be checking everything? Probably not, there will be some very similar variables we can group
         #   second these only included ordered lists which definitely needs to be changed - those are at least one example of similar variables we can group
         querylist = []
-        duplicate = True
+        duplicate = False
         if var.long_name:
             querylist = db.retrieve_all_variables("long_name", var.long_name)
         if var.standard_name:
             querylist = db.retrieve_all_variables("standard_name", var.standard_name)
         if querylist:
             for queryvar in querylist:
-                if (
-                    var.cfdm_domain == queryvar.cfdm_domain
-                    and var.cfdm_size == queryvar.cfdm_size
-                ):
-                    if DeepDiff(var._proxied, queryvar._proxied):
-                        duplicate = True
-                    else:
-                        duplicate = False
-                else:
-                    duplicate = False
-        else:
-            duplicate = False
+                if not var.id == queryvar.id:
+                    if var.cfdm_size == queryvar.cfdm_size:
+                        if var.cfdm_domain == queryvar.cfdm_domain:
+                            if DeepDiff(var._proxied, queryvar._proxied):
+                                duplicate = True
+                                continue
+        var.save()
+        db.add_variable_to_collection(collection.name, var)
 
-        if duplicate:
-            var.delete()
-        else:
-            var.save()
-            db.add_variable_to_collection(collection.name, var)
-
-            for m, cm in v.cell_methods().items():
-                for a in cm.get_axes():
-                    method = cm.get_method()
-                    dbmethod = db.cell_method_get_or_make(axis=a, method=method)
-                    var._cell_methods[method] = dbmethod
+        for m, cm in v.cell_methods().items():
+            for a in cm.get_axes():
+                method = cm.get_method()
+                dbmethod = db.cell_method_get_or_make(axis=a, method=method)
+                var._cell_methods[method] = dbmethod
+    collection.save()
 
 
 def cfparse_file(db, filename):
