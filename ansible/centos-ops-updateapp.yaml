@@ -10,6 +10,7 @@
         key_file: "/home/{{user}}/.ssh/{{keyname}}"
         repo: "{{ repo_url }}/{{ repo }}.git"
         dest: "{{ repo_dir }}"
+        version: demo_branch_website
         accept_hostkey: true
         clone: false
         update: true

@@ -7,5 +7,6 @@
         key_file: "/home/{{user}}/.ssh/cfstore_key"
         repo: https://github.com/NCAS-CMS/cfstore
         dest: "{{ repo_dir }}"
+        version: demo_branch_website 
         accept_hostkey: true
         force: true
