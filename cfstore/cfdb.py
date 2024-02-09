@@ -390,8 +390,9 @@ def ls(ctx, collection, output):
             return_list = db.retrieve_collections()
 
         elif output == "variables" or output == "var":
+            collection = db.retrieve_collection(view_state.collection)
             return_list = db.retrieve_variables_in_collection(
-                collection_name=collection
+                collection=collection
             )
 
         elif output == "locations":
