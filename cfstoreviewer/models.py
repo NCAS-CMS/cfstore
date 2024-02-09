@@ -161,6 +161,9 @@ class Variable(models.Model):
     def exists(self):
         return True
 
+    def __name__(self):
+        return self.identity
+
     _cell_methods = models.JSONField(default=dict)
     _proxied = models.JSONField(default=dict)
     cfdm_size = models.BigIntegerField()
