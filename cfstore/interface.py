@@ -660,21 +660,14 @@ class CollectionDB(CoreDB):
         self, standard_name, long_name, identity, cfdm_size, cfdm_domain
     ):
         """Retrieve variable by arbitrary property"""
-        var = Variable.objects.filter(
+        var, created = Variable.objects.get_or_create(
             standard_name=standard_name,
             long_name=long_name,
+            identity=identity,
             cfdm_size=cfdm_size,
             cfdm_domain=cfdm_domain,
-        ).one()
-        if not var.exists():
-            var = Variable(
-                standard_name=standard_name,
-                long_name=long_name,
-                identity=identity,
-                cfdm_size=cfdm_size,
-                cfdm_domain=cfdm_domain,
-            )
-        return var
+        )
+        return var, created
 
     def make_variable(self, standard_name, long_name, identity, cfdm_size, cfdm_domain):
         """Retrieve variable by arbitrary property"""
@@ -768,19 +761,6 @@ class CollectionDB(CoreDB):
     def retrieve_variables_in_collection(self, collection):
         variables = collection.variable_set.all()
         print(variables)
-        return variables
-
-    def retrieve_variables_subset_in_collection(self, collection_name, properties):
-        if collection_name == "all":
-            variables = Variable.objects.all()
-        else:
-            collection = Collection.objects.get(name=collection_name)
-            variables = collection.variable_set.all()
-        for k, value in properties.items():
-            for var in variables:
-                if (k, value) not in var._proxied.items():
-                    variables = variables.exclude(id=var.id)
-        variables = variables.distinct()
         return variables
 
     def delete_collection(self, collection_name, force):
