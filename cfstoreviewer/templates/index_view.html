@@ -71,7 +71,7 @@
           {% for key,value in propertydict|getpropertyvalues %}
               <tr>
                 <td> 
-                  <button type="button" id="{{key}}" class="collapsiblebrowser">{{key}}: {{value}}</button>
+                  <button type="button" id="{{key}}" class="collapsiblebrowser">{{key}}</button>
                   <div class="collapsiblebrowser-content"> 
                     <table id="collapsibletable">
                       {% for val in value %}
