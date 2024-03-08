@@ -21,7 +21,6 @@ urlpatterns = [
     path("", views.ls, name="index"),
     path("viewcollections/", views.ls, name="allcollections"),
     path("viewcollections/search/", views.lsbrowse, name="allcollections"),
-    path("viewcollections/search/", views.lsbrowse, name="allcollections"),
     path(
         "viewcollections/search/download", views.downloadsearch, name="allcollections"
     ),
@@ -29,7 +28,9 @@ urlpatterns = [
     path("viewcollections/<str:collection>/delete", views.deletecol),
     path("viewcollections/<str:collection>/confirmdelete", views.confirmdelete),
     path("viewcollections/<str:page>/download/", views.downloadcol),
+    path("<str:page>/download/", views.downloadcol),
     path("viewcollections/<str:page>/search/download/", views.downloadcol),
     path("viewcollections/variables/", views.lsvar, name="variableindex"),
     path("viewcollections/variables/<str:var>", views.lsvar),
+    path("viewcollections/variables/<str:var>/<str:prop>/download/", views.downloadvar),
 ]

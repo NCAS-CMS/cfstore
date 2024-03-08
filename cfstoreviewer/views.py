@@ -55,15 +55,32 @@ def ls(request):
         },
     )
 
-
 def lsbrowse(request):
+    db = CFSconfig().db
+    collections = db.retrieve_collections()
+    variable_search_form = VariableSearchForm()
+    collection_search_form = CollectionSearchForm()
+    variable_browse_form = VariableBrowseForm()
+    return render(
+        request,
+        "index_view.html",
+        {
+            "collections": collections,
+            "variable_search_form": variable_search_form,
+            "collection_search_form": collection_search_form,
+            "variable_browse_form": variable_browse_form,
+            "checks": {},
+        },
+    )
+
+
+def lsbrowse2(request):
     db = CFSconfig().db
     search_method = ""
     collection_save_name = ""
     varsearch = []
     colsearch = []
     checks = {}
-
     if request.method == "POST":
         variable_search_form = VariableSearchForm(request.POST)
         collection_search_form = CollectionSearchForm(request.POST)
@@ -92,6 +109,7 @@ def lsbrowse(request):
     collections = db.retrieve_collections()
 
     if varsearch:
+        print("VARSEARCH",varsearch)
         for s in varsearch:
             if collections:
                 var = db.retrieve_variable("standard_name", s)
@@ -116,6 +134,7 @@ def lsbrowse(request):
                 return render(request, "no_result_view.html")
 
     if colsearch:
+        print("COLSEARCH",colsearch)
         for s in colsearch:
             if collections:
                 collections = collections.filter(name__contains=s)
@@ -145,6 +164,7 @@ def lsbrowse(request):
     if request.method == "POST":
         print(request.POST)
 
+    print("Render!")
     return render(
         request,
         "index_view.html",
@@ -197,18 +217,28 @@ def downloadcol(request, page="all"):
     checks = {}
     if request.method == "POST":
         checks = request.POST["checks"]
-    # variables = db.retrieve_variables_subset_in_collection(page, checks)
+    collection = db.retrieve_collection(page)
+    variables = db.retrieve_variables_in_collection(collection)
     filenames = []
-    variables = db.search_variables("name", checks)
-    for var in variables:
-        files = var.in_files.distinct()
-        for f in files:
-            if f not in filenames:
-                filenames.append(f)
-    output = ""
-    for f in filenames:
-        output = output + f.name + "<br>"
-    return FileResponse(output, as_attachment=True, filename="Export.txt")
+
+    for variable in variables:
+        filenames.append([file.name for file in variable.in_files.all()])
+    #filenames = [file.name + "<br>" for file in files]
+
+    return FileResponse(filenames, as_attachment=True, filename="Export.txt")
+
+def downloadvar(request, var, prop):
+    db = CFSconfig().db
+    checks = {}
+    if request.method == "POST":
+        checks = request.POST["checks"]
+    variables = db.retrieve_all_variables("identity",var)
+    filenames = []
+
+    files = db.retrieve_files_from_variables(variables)
+    filenames = [file.name + "<br>" for file in files]
+
+    return FileResponse(filenames, as_attachment=True, filename="Export.txt")
 
 
 def downloadsearch(request, page="all"):
@@ -216,11 +246,7 @@ def downloadsearch(request, page="all"):
     checks = {}
     if request.method == "POST":
         checks = ast.literal_eval(request.POST["checks"])
-    print(checks)
     filenames = []
-    for var in checks:
-        print(var)
-
     output = ""
     for f in filenames:
         output = output + f.name + "<br>"
@@ -229,13 +255,18 @@ def downloadsearch(request, page="all"):
 
 def lsvar(request, var="all"):
     db = CFSconfig().db
-    print(var)
-    var = var.replace("_", " ")
-    var = var.replace("[s]", "/")
-    print(var)
-    variables = db.search_variables("identity", var)
-    return render(
-        request,
-        "variables_view.html",
-        {"variables": variables},
-    )
+    #var = var.replace("_", " ")
+    #var = var.replace("[s]", "/")
+    print("VAR",var)
+    variable = db.search_variables("identity", var)
+    if not variable.exists():
+        return render(
+            request,
+            "no_result_view.html"
+        )
+    else:
+        return render(
+            request,
+            "variables_view.html",
+            {"variable": variable[0]},
+        )

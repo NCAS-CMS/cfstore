@@ -64,23 +64,30 @@
         </table>
       </div>
       <div>
-      {% for propkey in collection|getallvariableproperties %}
-      <button type="button" id="{{prop}}" class="collapsiblebrowser">{{propkey|displayproperty}} </button>
+      {% for simulation,propertydict in collection|getallvariableproperties %}
+      <button type="button" id="{{simulation}}" class="collapsiblebrowser">{{simulation}} </button>
       <div class="collapsiblebrowser-content"> 
         <table id="collapsibletable">
-          {% for property in propkey|getpropertyvalues %}
+          {% for key,value in propertydict|getpropertyvalues %}
               <tr>
                 <td> 
-                  <p class="property">
-                    <input type="checkbox" id="{{property}}" name="P_{{propkey|getproperty}}" value="{{property}}"> {{property}} 
-                  </p>
+                  <button type="button" id="{{key}}" class="collapsiblebrowser">{{key}}: {{value}}</button>
+                  <div class="collapsiblebrowser-content"> 
+                    <table id="collapsibletable">
+                      {% for val in value %}
+                        <p class="property">
+                          <input type="checkbox" id="{{value}}" name="P_{{value}}" value="{{value}}">  {{value}}
+                        </p>
+                      {% endfor %}
+                    </table>
+                  </div>
                 </td>
               </tr>
           {% endfor %}
         </table>
       </div>
       {% endfor %}
-      <button type="submit" name="browse">Browse!</button>
+      <button type="submit" id="True" name="browse">Browse!</button>
       <a href="/cfstoreviewer/viewcollections" class="button">End Browse</a>
     </form>
   </div>

@@ -60,8 +60,7 @@ class File(models.Model):
     checksum_method = models.CharField(max_length=256)
     size = models.IntegerField()
     format = models.CharField(max_length=256, default="Unknown format")
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256,primary_key=True)
     locations = models.ManyToManyField(Location, related_name="filelocations")
     replicas = models.ManyToManyField(Location)
 

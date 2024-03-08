@@ -20,7 +20,6 @@ def outputvar(var):
     """Can't use the django built in coz not everything is a float.
     But we can use this to suppress 0.0 in a nice way."""
     iden = var.identity
-    iden = iden.replace("_", " ")
     iden = iden.replace("long name=", "(Long Name) ")
     return iden
 
@@ -53,14 +52,11 @@ def getcollectionsfromvariable(variable):
 @template.defaulttags.register.filter
 def getuniquevariables(collection, check):
     db = CFSconfig().db
-    variables = db.retrieve_variables_subset_in_collection(collection.name, check)
-    variablenames = [v.identity for v in variables]
-    uniquevariables = {}
-    for v in variablenames:
-        if v not in uniquevariables:
-            uniquevariables[v] = 1
-        else:
-            uniquevariables[v] += 1
+    variables = db.retrieve_variables_in_collection(collection)
+    print("VAR",variables)
+    uniquevariables={}
+    for v in variables:
+        uniquevariables[v.identity]=len(v._proxied)
     return uniquevariables.items()
 
 
@@ -68,20 +64,16 @@ def getuniquevariables(collection, check):
 def getallvariableproperties(collection):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
-    properties = {}
+    properydict = {}
     for var in variables:
-        for prop, value in var._proxied.items():
-            if prop not in properties:
-                properties[prop] = [value]
-            elif value not in properties[prop]:
-                properties[prop].append(value)
-    for p in properties:
-        properties[p] = len(properties[p])
-    properties = {
-        k: v
-        for k, v in sorted(properties.items(), key=lambda item: item[1], reverse=True)
-    }
-    return properties.items()
+        for simulation,properties in var._proxied.items():
+            properydict[simulation] = {}
+            for prop, value in properties.items():
+                if prop not in properydict[simulation].keys():
+                    properydict[simulation][prop] = [value]
+                elif value not in properydict[simulation][prop]:
+                    properydict[simulation][prop].append(value)
+    return properydict.items()
 
 
 @template.defaulttags.register.filter
@@ -100,7 +92,7 @@ def checkcol(collections, check):
     db = CFSconfig().db
     returncollections = []
     for collection in collections:
-        variables = db.retrieve_variables_subset_in_collection(collection.name, check)
+        variables = db.retrieve_variables_in_collection(collection)
         variablenames = [v.identity for v in variables]
         uniquevariables = {}
         for v in variablenames:
@@ -114,7 +106,7 @@ def checkcol(collections, check):
 
 
 @template.defaulttags.register.filter
-def getvariableproperty(variable):
+def getvariablepropertyvalues(variable):
     db = CFSconfig().db
     variable = db.retrieve_variable("identity", variable)
     properties = variable._proxied.values()
@@ -122,10 +114,20 @@ def getvariableproperty(variable):
 
 
 @template.defaulttags.register.filter
-def getvariableproperties(variable):
+def getvariablepropertykeys(variable):
+    print(variable)
+    properties = variable._proxied.keys()
+    return properties
+
+@template.defaulttags.register.filter
+def getvariablepropertyitems(variable):
+    print(variable)
     properties = variable._proxied.items()
     return properties
 
+@template.defaulttags.register.filter
+def unpackverttable(verttable):
+    return verttable
 
 @template.defaulttags.register.filter
 def getallvariablecellmethods(collection):
@@ -136,7 +138,6 @@ def getallvariablecellmethods(collection):
         cellmethods = var._cell_methods
         for cellmethod in cellmethods:
             if isinstance(cellmethod, dict):
-                print(cellmethods)
                 method = cellmethod["methods"]
                 axes = cellmethod["axes"]
                 if method not in allcellmethods:
@@ -157,9 +158,7 @@ def getallvariablecellaxes(collection):
         cellmethods = var._cell_methods
         for cellmethod in cellmethods:
             if isinstance(cellmethod, dict):
-                print(cellmethods)
                 axes = cellmethod["axes"]
-                print("AXES", axes)
                 for a in axes:
                     if a not in allcellmethods:
                         allcellmethods[a] = [a]
@@ -172,13 +171,11 @@ def getallvariablecellaxes(collection):
 
 @template.defaulttags.register.filter
 def getcellmethods(variable):
-    print("VARIABLE", variable)
     return variable
 
 
 @template.defaulttags.register.filter
 def getcellmethodaxes(variable):
-    print(variable)
     axes = variable._cell_methods["axes"]
     return axes
 
@@ -187,11 +184,10 @@ def getcellmethodaxes(variable):
 def getpropertyvalues(propname):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
-    output = []
-    for var in variables:
-        if propname[0] in var._proxied and var[propname[0]] not in output:
-            output.append(var[propname[0]])
-    return output
+    output = propname
+    print("GETVALUES",propname)
+    
+    return output.items()
 
 
 @template.defaulttags.register.filter
@@ -213,17 +209,11 @@ def length(list):
 
 @template.defaulttags.register.filter
 def format_long_name(name):
-    print(name)
     name = name.replace("long_name=", "")
-    name = name.replace(" ", "_")
     name = name.replace("/", "")
     return name
 
 
 @template.defaulttags.register.filter
 def get_percentage(col):
-    print(col.name)
-    if col.name == "CANATMOS":
-        return 16.6
-    else:
-        return 0
+    return 0

@@ -3,6 +3,7 @@
     <head>
         {% load static %}
         <meta charset="UTF-8">
+        <link rel="stylesheet" href="{% static '/cfstore.css' %}">
     <style>
  /* unvisited link */
  a:link {
@@ -104,20 +105,19 @@ a:active {
     <body>
       <h2>Versions</h2>
       <div class="tab">
-        {% for variable in variables %}
-        <button class="tablinks" onclick="openVar(event, '{{variable.id}}')">{{variable.id}}</button>
+        {% for prop in variable|getvariablepropertykeys %}
+        <button class="tablinks" onclick="openVar(event, '{{prop}}')">{{prop}}</button>
         {% endfor %}
       </div>
 
-      {% for variable in variables %}
-         <div id="{{variable.id}}" class="tabcontent">
+      {% for prop,value in variable|getvariablepropertyitems %}
+         <div id="{{prop}}" class="tabcontent">
 
         <table border="1"><tr><td>
             <table border="1">
                 <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
                     <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
                     <tr><th>Size</th><td>{{variable.cfdm_size}}</td></tr>
-                    <tr><th>ID</th><td>{{variable.id}}</td></tr>
                     <tr>   
                         <th>Collections</th>
                         <td>
@@ -137,15 +137,20 @@ a:active {
                         <div class="dropdown">
                           <button class="dropbtn">Properties</button>
                           <div class="dropdown-content">
-                              {% for prop in variable|getvariableproperties %}
-                                  <a>{{prop}}</a>
+                              {% for key,val in value.items %}
+                                  <a>{{key}}|{{val}}</a>
                               {% endfor %}
                           </div>
                         </div> 
                       </td>
                   </tr>
             </table>
-        
+            <form action="{{variable.identity}}/{{prop}}/download/" method="post">
+              {% csrf_token %}
+              <input type="hidden" id="collection" name="collection" value="{{collection.name}}"> 
+              <input type="hidden" id="checks" name="checks" value="{{checks}}"> 
+              <input type="submit" value="Download Variable" />
+            </form>
             </tr></td></table>
             </div>
             <script>
