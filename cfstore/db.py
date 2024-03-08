@@ -1,19 +1,14 @@
 from ast import For, In
 from xml.etree.ElementTree import canonicalize
+
 import django
-from django.db import models
-from cfstoreviewer.models import (
-    Collection,
-    File,
-    Tag,
-    Location,
-    Protocol,
-    Cell_Method,
-    Variable,
-    Relationship,
-)
-from cfstore.parse_cell_methods import parse_cell_methods
 from django import template
+from django.db import models
+
+from cfstore.parse_cell_methods import parse_cell_methods
+from cfstoreviewer.models import (Cell_Method, Collection, File, Location,
+                                  Protocol, Relationship, Tag, Variable)
+
 # sqlalchemy relationships etc:
 # https://docs.sqlalchemy.org/en/13/orm/basic_relationships.html
 # see also https://docs.sqlalchemy.org/en/13/_modules/examples/vertical/dictlike.html
@@ -22,7 +17,6 @@ from django import template
 # Would like to add "ubercollection" to be associated with a GWS and a user.
 # Need to be able to total the unique volumes associated with eash user and GWS.
 # This will need new tables and data counting on addinng and subtracting files.
-
 
 
 def sizeof_fmt(num, suffix="B"):
@@ -41,9 +35,11 @@ def sizeof_fmt(num, suffix="B"):
 
 register = template.Library()
 
+
 @register.filter
 def get_obj_field(obj, key):
     return obj[key]
+
 
 class CoreDB:
     """Provides the interface to these tables"""
@@ -52,7 +48,7 @@ class CoreDB:
     engine = None
     conn_string = None
     collections = []
-    metadata = None #MetaData()
+    metadata = None  # MetaData()
     session = None
 
     def init(self, conn_string):
