@@ -4,6 +4,7 @@ import time
 import cf
 import numpy as np
 from deepdiff import DeepDiff
+from django.db import transaction
 
 from cfstore.db import Collection, File, Variable
 
@@ -54,8 +55,7 @@ def cfparse_file_to_collection(db, filename, collection):
 
         domain = v.domain._one_line_description()
         size = v.size
-
-        var = Variable(
+        var, created = db.retrieve_or_make_variable(
             standard_name=name,
             long_name=long_name,
             identity=v.identity(),
@@ -64,28 +64,38 @@ def cfparse_file_to_collection(db, filename, collection):
         )
         var.save()
 
+        var[properties["variant_id"]] = {}
+
         for k, p in properties.items():
             if k not in ["standard_name", "long_name"]:
-                var[k] = manage_types(p)
+                var[properties["variant_id"]][k] = manage_types(p)
+        with transaction.atomic():
+            through_files = File.objects.bulk_create(
+                [
+                    File(name=os.path.basename(bulkfilename), size=0)
+                    for bulkfilename in (v.get_filenames())
+                ],
+                ignore_conflicts=True,
+            )
 
-        through_files = File.objects.bulk_create(
-            [
-                File(name=os.path.basename(bulkfilename), size=0)
-                for bulkfilename in v.get_filenames()
-            ]
-        )
-        Variable.in_files.through.objects.bulk_create(
-            [
-                Variable.in_files.through(file_id=tf.id, variable_id=var.id)
-                for tf in through_files
-            ]
-        )
-        Collection.files.through.objects.bulk_create(
-            [
-                Collection.files.through(file_id=tf.id, collection_id=collection.id)
-                for tf in through_files
-            ]
-        )
+        with transaction.atomic():
+            Collection.files.through.objects.bulk_create(
+                [
+                    Collection.files.through(file_id=tf.pk, collection_id=collection.id)
+                    for tf in through_files
+                ],
+                ignore_conflicts=True,
+            )
+
+        with transaction.atomic():
+            Variable.in_files.through.objects.bulk_create(
+                [
+                    Variable.in_files.through(file_id=tf.pk, variable_id=var.id)
+                    for tf in through_files
+                ],
+                ignore_conflicts=True,
+            )
+        print(var, ":", time.time() - varstart)
 
         # there is a more pythonic way of doing this
         # if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
@@ -116,6 +126,7 @@ def cfparse_file_to_collection(db, filename, collection):
                 dbmethod = db.cell_method_get_or_make(axis=a, method=method)
                 var._cell_methods[method] = dbmethod
     collection.save()
+    print("LOOP", time.time() - fullstart)
 
 
 def cfparse_file(db, filename):
