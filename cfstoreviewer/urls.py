@@ -33,4 +33,5 @@ urlpatterns = [
     path("viewcollections/variables/", views.lsvar, name="variableindex"),
     path("viewcollections/variables/<str:var>", views.lsvar),
     path("viewcollections/variables/<str:var>/<str:prop>/download/", views.downloadvar),
+    path("demo", views.demo),
 ]

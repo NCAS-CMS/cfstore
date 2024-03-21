@@ -55,6 +55,7 @@ def ls(request):
         },
     )
 
+
 def lsbrowse(request):
     db = CFSconfig().db
     collections = db.retrieve_collections()
@@ -109,7 +110,7 @@ def lsbrowse2(request):
     collections = db.retrieve_collections()
 
     if varsearch:
-        print("VARSEARCH",varsearch)
+        print("VARSEARCH", varsearch)
         for s in varsearch:
             if collections:
                 var = db.retrieve_variable("standard_name", s)
@@ -134,7 +135,7 @@ def lsbrowse2(request):
                 return render(request, "no_result_view.html")
 
     if colsearch:
-        print("COLSEARCH",colsearch)
+        print("COLSEARCH", colsearch)
         for s in colsearch:
             if collections:
                 collections = collections.filter(name__contains=s)
@@ -223,16 +224,17 @@ def downloadcol(request, page="all"):
 
     for variable in variables:
         filenames.append([file.name for file in variable.in_files.all()])
-    #filenames = [file.name + "<br>" for file in files]
+    # filenames = [file.name + "<br>" for file in files]
 
     return FileResponse(filenames, as_attachment=True, filename="Export.txt")
+
 
 def downloadvar(request, var, prop):
     db = CFSconfig().db
     checks = {}
     if request.method == "POST":
         checks = request.POST["checks"]
-    variables = db.retrieve_all_variables("identity",var)
+    variables = db.retrieve_all_variables("identity", var)
     filenames = []
 
     files = db.retrieve_files_from_variables(variables)
@@ -255,18 +257,24 @@ def downloadsearch(request, page="all"):
 
 def lsvar(request, var="all"):
     db = CFSconfig().db
-    #var = var.replace("_", " ")
-    #var = var.replace("[s]", "/")
-    print("VAR",var)
+    # var = var.replace("_", " ")
+    # var = var.replace("[s]", "/")
+    print("VAR", var)
     variable = db.search_variables("identity", var)
     if not variable.exists():
-        return render(
-            request,
-            "no_result_view.html"
-        )
+        return render(request, "no_result_view.html")
     else:
         return render(
             request,
             "variables_view.html",
             {"variable": variable[0]},
         )
+
+
+def demo(request):
+    db = CFSconfig().db
+    variables = db.retrieve_all_variables("all", "")
+    collections = db.retrieve_collections()
+    return render(
+        request, "demo_view.html", {"variables": variables, "collections": collections}
+    )

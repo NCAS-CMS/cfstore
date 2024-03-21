@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {% load static %}
+      
+        <link rel="stylesheet" href="{% static '/demo_cfstore.css' %}">
+      </head>
+      <html>
+<html>
+<body>
+
+    <ul>
+    <li><a href="na">Projects</a></li>
+    <li><a href="na">Collections</a></li>
+    <li><a href="na">Tags</a></li>
+    <li><a href="na">Other stuff</a></li>
+    </ul>
+    
+    <h1 class="title"> CFStore Atomic Dataset Web Browser </h1>
+    
+    
+    <table class="variable-title">
+        <tr>
+            <td width="20%">Variable Identity</td>
+            <td width="10%">Long Name</td>
+            <td width="10%">Standard Name</td>
+            <td width="20%"></td>
+            <td width="20%">Other stuff</td>
+        </tr>
+    </table>
+    
+    {%for variable in variables %}
+    <button type="button" class="collapsible">
+        <table class="variable-display">
+            <tr>
+                <td width="22%">{{variable.identity}}</td>
+                <td width="11%">{{variable.long_name}}</td>
+                <td width="11%">{{variable.standard_name}}</td>
+                <td width="22%"></td>
+                <td width="22%">Other stuff</td>
+            </tr>
+        </table>
+    </button>
+    <div class="collection-block">
+    
+  
+    <button type="button" class="collapsible">Properties</button>
+    <div class="collapsible-content">
+      <table id="collapsibletable">  
+        
+          <tr>
+            <td>Some stuff</td>
+         </tr>
+      </table>
+    </div>
+  
+    </div>
+    {% endfor %}
+
+    <div class="browser">
+        <div class="collapsiblebrowser-title">Browse Section </div>
+        <form action="/cfstoreviewer/viewcollections/search/" method="post">
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">Browse options! </button>
+            <div class="collapsiblebrowser-content"> 
+              <button type="submit" id="True" name="browse">Browse!</button>
+              <a href="/cfstoreviewer/viewcollections" class="button">End Browse</a>
+            </div>
+            <div>
+            <div class="collapsiblebrowser-title">Collection Section </div>
+          {% for collection in collections %}
+          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
+          <div class="collapsiblebrowser-content"> 
+            <table id="collapsibletable">
+                <tr>
+                <td> 
+                    <p class="description">
+                    {{collection.description}} 
+                    </p>
+                </td>
+                </tr>
+            </table>
+          </div>
+          {% endfor %}
+
+        </form>
+      </div>
+      <div class="collapsiblebrowser-title">Property Section </div>
+      {% for key, values in collection|demogetallvariableproperties %}
+          <tr>
+                <td> 
+                  <button type="button" id="{{key}}" class="collapsiblebrowser">{{key}}</button>
+                  <div class="collapsiblebrowser-content"> 
+                    <table id="collapsibletable">
+                      {% for val in values %}
+                        <p class="property">
+                          <input type="checkbox" id="{{value}}" name="P_{{value}}" value="{{value}}">  {{val}}
+                        </p>
+                      {% endfor %}
+                    </table>
+                  </div>
+                </td>
+              </tr>
+      {% endfor %}
+
+<script>
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+        content.style.display = "none";
+    } else {
+        content.style.display = "block";
+    }
+    });
+}
+</script>
+
+<script>
+var coll = document.getElementsByClassName("collapsible-content");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+        content.style.display = "none";
+    } else {
+        content.style.display = "block";
+    }
+    });
+}
+</script>
+
+<script>
+var coll = document.getElementsByClassName("collapsiblebrowser");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+        content.style.display = "none";
+    } else {
+        content.style.display = "block";
+    }
+    });
+}
+</script>
+
+<script>
+var coll = document.getElementsByClassName("collapsible-browser-content");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+        content.style.display = "none";
+    } else {
+        content.style.display = "block";
+    }
+    });
+}
+</script>
+
+</body>
+</html>

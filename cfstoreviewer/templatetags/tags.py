@@ -53,10 +53,10 @@ def getcollectionsfromvariable(variable):
 def getuniquevariables(collection, check):
     db = CFSconfig().db
     variables = db.retrieve_variables_in_collection(collection)
-    print("VAR",variables)
-    uniquevariables={}
+    print("VAR", variables)
+    uniquevariables = {}
     for v in variables:
-        uniquevariables[v.identity]=len(v._proxied)
+        uniquevariables[v.identity] = len(v._proxied)
     return uniquevariables.items()
 
 
@@ -66,13 +66,28 @@ def getallvariableproperties(collection):
     variables = db.retrieve_variable("all", "")
     properydict = {}
     for var in variables:
-        for simulation,properties in var._proxied.items():
+        for simulation, properties in var._proxied.items():
             properydict[simulation] = {}
             for prop, value in properties.items():
                 if prop not in properydict[simulation].keys():
                     properydict[simulation][prop] = [value]
                 elif value not in properydict[simulation][prop]:
                     properydict[simulation][prop].append(value)
+    return properydict.items()
+
+
+@template.defaulttags.register.filter
+def demogetallvariableproperties(collection):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    properydict = {}
+    for var in variables:
+        for _, properties in var._proxied.items():
+            for prop, value in properties.items():
+                if prop not in properydict.keys():
+                    properydict[prop] = [value]
+                elif value not in properydict[prop]:
+                    properydict[prop].append(value)
     return properydict.items()
 
 
@@ -119,15 +134,18 @@ def getvariablepropertykeys(variable):
     properties = variable._proxied.keys()
     return properties
 
+
 @template.defaulttags.register.filter
 def getvariablepropertyitems(variable):
     print(variable)
     properties = variable._proxied.items()
     return properties
 
+
 @template.defaulttags.register.filter
 def unpackverttable(verttable):
     return verttable
+
 
 @template.defaulttags.register.filter
 def getallvariablecellmethods(collection):
@@ -185,8 +203,8 @@ def getpropertyvalues(propname):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
     output = propname
-    print("GETVALUES",propname)
-    
+    print("GETVALUES", propname)
+
     return output.items()
 
 
