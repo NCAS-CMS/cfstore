@@ -144,6 +144,19 @@ a:active {
                         </div> 
                       </td>
                   </tr>
+                  <tr>   
+                    <th>Axes</th>
+                    <td>
+                      <div class="dropdown">
+                        <button class="dropbtn">Axes</button>
+                        <div class="dropdown-content">
+                            {% for axis in {{variable|getallvariablecellaxes}} %}
+                                <a>{{axis}}</a>
+                            {% endfor %}
+                        </div>
+                      </div> 
+                    </td>
+                </tr>
             </table>
             <form action="{{variable.identity}}/{{prop}}/download/" method="post">
               {% csrf_token %}

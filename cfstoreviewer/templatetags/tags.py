@@ -90,6 +90,17 @@ def demogetallvariableproperties(collection):
                     properydict[prop].append(value)
     return properydict.items()
 
+@template.defaulttags.register.filter
+def getpropertyforsearchbar(collection,property):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    experiments = []
+    for variable in variables:
+        for var in variable._proxied.values():
+            value =  var[property]
+            if value not in experiments:
+                experiments.append(value)
+    return experiments
 
 @template.defaulttags.register.filter
 def checkvar(variable, properties):
@@ -173,7 +184,9 @@ def getallvariablecellaxes(collection):
     variables = db.retrieve_variable("all", "")
     allcellmethods = {}
     for var in variables:
+        print("VAR",var)
         cellmethods = var._cell_methods
+        print(cellmethods)
         for cellmethod in cellmethods:
             if isinstance(cellmethod, dict):
                 axes = cellmethod["axes"]
