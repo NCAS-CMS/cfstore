@@ -14,7 +14,6 @@ def active(request, pattern):
         return "active"
     return ""
 
-
 @template.defaulttags.register.filter
 def outputvar(var):
     """Can't use the django built in coz not everything is a float.

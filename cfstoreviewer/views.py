@@ -181,8 +181,9 @@ def lsbrowse2(request):
 
 def lscol(request, page="all"):
     db = CFSconfig().db
-    variables = db.retrieve_variables_in_collection(page)
     collection = db.retrieve_collection(page)
+    variables = db.retrieve_variables_in_collection(collection)
+
     files = db.retrieve_files_in_collection(page)
     subcollections = db.retrieve_related(page, "below")
     subcollections = [col.related_collection.all()[0].name for col in subcollections]

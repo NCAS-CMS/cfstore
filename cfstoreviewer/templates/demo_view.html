@@ -19,150 +19,162 @@
     <h1 class="title"> CFStore Atomic Dataset Web Browser </h1>
     
     
-    <table class="variable-title">
-        <tr>
-            <td width="20%">Variable Identity</td>
-            <td width="10%">Long Name</td>
-            <td width="10%">Standard Name</td>
-            <td width="20%"></td>
-            <td width="20%">Other stuff</td>
-        </tr>
-    </table>
-    
+
+    <div id="variable-block">
+    <div id="movable">
+        <div id="movableheader"><table class="variable-title">
+        
+            <tr>
+                <td width="22%">Variable Identity</td>
+                <td width="11%">Long Name</td>
+                <td width="11%">Standard Name</td>
+                <td width="5%">Save</td>
+            </tr>
+        
+    </table></div>
     {%for variable in variables %}
-    <button type="button" class="collapsible">
+    <br>
         <table class="variable-display">
             <tr>
-                <td width="22%">{{variable.identity}}</td>
-                <td width="11%">{{variable.long_name}}</td>
-                <td width="11%">{{variable.standard_name}}</td>
-                <td width="22%"></td>
-                <td width="22%"> <button type="button">Add to "Basket"</button></td>
+                <td width="22%" id="identity">{{variable.identity}}</td>
+                <td width="11%" id="longname">{{variable.long_name}}</td>
+                <td width="11%" id="standard_name">{{variable.standard_name}}</td>          
+                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('table'),this.id)" class="addbutton" id="addbutton" value="+"></button></td>
             </tr>
         </table>
-    </button>
-    <div class="collection-block">
-    
-  
-    <button type="button" class="collapsible">Properties</button>
-    <div class="collapsible-content">
+    <button type="button" class="collapsible">More</button>
+      <div class="collapsible-content">
       <table id="collapsibletable">  
-        
-          <tr>
-            <td>Some stuff</td>
-         </tr>
-      </table>
-    </div>
+            <table>
+                <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
+                    <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
+                    <tr><th>Size</th><td>{{variable.cfdm_size|sizeoffmt}}</td></tr>
+                    <tr>   
+                        <th>Collections</th>
+                        {% for col in variable|getcollectionsfromvariable %}
+                            <td>{{col.name}}</td>
+                        {% endfor %}
+                    </tr>
+            
+                  </tr>
+                  <tr>   
+                </tr>
+            </table>
   
     </div>
     {% endfor %}
-
-    <div class="browser">
-        <div class="collapsiblebrowser-title">Browse Section </div>
-        <form action="/cfstoreviewer/viewcollections/search/" method="post">
-            <button type="button" id="{{collection}}" class="collapsiblebrowser">Browse options! </button>
-            <div class="collapsiblebrowser-content"> 
-              <button type="submit" id="True" name="browse">Browse!</button>
-              <a href="/cfstoreviewer/viewcollections" class="button">End Browse</a>
+    </div>
+    </div>
+    <div id="modvable">
+        <div class="browser">
+            <div id="movabffleheader">
+            <div class="collapsiblebrowser-title">Browse Section </div>
             </div>
-            <div>
-            <div class="collapsiblebrowser-title">Collection Section </div>
-          {% for collection in collections %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
-          <div class="collapsiblebrowser-content"> 
-            <table id="collapsibletable">
-                <tr>
-                <td> 
-                    <p class="description">
-                    {{collection.description}} 
-                    </p>
-                </td>
-                </tr>
-            </table>
-          </div>
-          {% endfor %}
-          <div class="collapsiblebrowser-title">User Collection Section </div>
-          {% for collection in usercollections %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
-          <div class="collapsiblebrowser-content"> 
-            <table id="collapsibletable">
-                <tr>
-                <td> 
-                    <p class="description">
-                    {{collection.description}} 
-                    </p>
-                </td>
-                </tr>
-            </table>
-          </div>
-          {% endfor %}
+            <form action="/cfstoreviewer/viewcollections/search/" method="post">
+                <button type="button" id="{{collection}}" class="collapsiblebrowser">Browse options! </button>
+                <div class="collapsiblebrowser-content"> 
+                <button type="submit" id="True" name="browse">Browse!</button>
+                <a href="/cfstoreviewer/viewcollections" class="button">End Browse</a>
+                </div>
+                <div>
+                <div class="collapsiblebrowser-title">Collection Section </div>
+            {% for collection in collections %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
+            <div class="collapsiblebrowser-content"> 
+                <table id="collapsibletable">
+                    <tr>
+                    <td> 
+                        <p class="description">
+                        {{collection.description}} 
+                        </p>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
+            <div class="collapsiblebrowser-title">User Collection Section </div>
+            {% for collection in usercollections %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
+            <div class="collapsiblebrowser-content"> 
+                <table id="collapsibletable">
+                    <tr>
+                    <td> 
+                        <p class="description">
+                        {{collection.description}} 
+                        </p>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
 
 
 
-          <div class="collapsiblebrowser-title">Experiment </div>
-          {% for experiment in collections|getpropertyforsearchbar:'experiment' %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{experiment}} </button>
-          {% endfor %}
+            <div class="collapsiblebrowser-title">Experiment </div>
+            {% for experiment in collections|getpropertyforsearchbar:'experiment' %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{experiment}} </button>
+            {% endfor %}
 
-          <div class="collapsiblebrowser-title">Variant ID </div>
-          {% for collection in usercollections %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
-          <div class="collapsiblebrowser-content"> 
-            <table id="collapsibletable">
-                <tr>
-                <td> 
-                    <p class="description">
-                    {{collection.description}} 
-                    </p>
-                </td>
-                </tr>
-            </table>
-          </div>
-          {% endfor %}
+            <div class="collapsiblebrowser-title">Variant ID </div>
+            {% for collection in usercollections %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
+            <div class="collapsiblebrowser-content"> 
+                <table id="collapsibletable">
+                    <tr>
+                    <td> 
+                        <p class="description">
+                        {{collection.description}} 
+                        </p>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
 
-          <div class="collapsiblebrowser-title">Realm </div>
-          {% for realm in collections|getpropertyforsearchbar:'realm' %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{realm}} </button>
-          {% endfor %}
+            <div class="collapsiblebrowser-title">Realm </div>
+            {% for realm in collections|getpropertyforsearchbar:'realm' %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{realm}} </button>
+            {% endfor %}
 
-          <div class="collapsiblebrowser-title">Variant ID </div>
-          {% for variant_id in collections|getpropertyforsearchbar:'variant_id' %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{variant_id}} </button>
-          {% endfor %}
+            <div class="collapsiblebrowser-title">Variant ID </div>
+            {% for variant_id in collections|getpropertyforsearchbar:'variant_id' %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{variant_id}} </button>
+            {% endfor %}
 
-          <div class="collapsiblebrowser-title">Frequency </div>
-          {% for collection in usercollections %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
-          <div class="collapsiblebrowser-content"> 
-            <table id="collapsibletable">
-                <tr>
-                <td> 
-                    <p class="description">
-                    {{collection.description}} 
-                    </p>
-                </td>
-                </tr>
-            </table>
-          </div>
-          {% endfor %}
+            <div class="collapsiblebrowser-title">Frequency </div>
+            {% for collection in usercollections %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
+            <div class="collapsiblebrowser-content"> 
+                <table id="collapsibletable">
+                    <tr>
+                    <td> 
+                        <p class="description">
+                        {{collection.description}} 
+                        </p>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
 
-          <div class="collapsiblebrowser-title">Method </div>
-          {% for collection in usercollections %}
-          <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
-          <div class="collapsiblebrowser-content"> 
-            <table id="collapsibletable">
-                <tr>
-                <td> 
-                    <p class="description">
-                    {{collection.description}} 
-                    </p>
-                </td>
-                </tr>
-            </table>
-          </div>
-          {% endfor %}
+            <div class="collapsiblebrowser-title">Method </div>
+            {% for collection in usercollections %}
+            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
+            <div class="collapsiblebrowser-content"> 
+                <table id="collapsibletable">
+                    <tr>
+                    <td> 
+                        <p class="description">
+                        {{collection.description}} 
+                        </p>
+                    </td>
+                    </tr>
+                </table>
+            </div>
+            {% endfor %}
 
-        </form>
+            </form>
+        </div>
       </div>
       
       <!--
@@ -185,6 +197,20 @@
       {% endfor %}
             -->
 
+
+            <div id="variable-block">
+                <div id="movablecheckout">
+                <table class="variable-title">
+                    <div id="movablecheckoutheader">
+                        <a>Selected variables</a>
+                    </div>
+                </table>
+
+                    <table class="variable-display" id="checkout">
+                    </table>
+
+                </div>
+                </div>
 <script>
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -252,6 +278,120 @@ for (i = 0; i < coll.length; i++) {
     });
 }
 </script>
+
+<script>
+
+ // Make the DIV element draggable:
+ dragElement(document.getElementById("movable"));
+
+function dragElement(elmnt) {
+  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  if (document.getElementById(elmnt.id + "header")) {
+    // if present, the header is where you move the DIV from:
+    document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+  } else {
+    // otherwise, move the DIV from anywhere inside the DIV:
+    elmnt.onmousedown = dragMouseDown;
+  }
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // get the mouse cursor position at startup:
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // call a function whenever the cursor moves:
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    // calculate the new cursor position:
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // set the element's new position:
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    elmnt.style.right = (elmnt.offsetBottom - pos2) + "px";
+    elmnt.style.bottom = (elmnt.offsetRight - pos1) + "px";
+  }
+
+  function closeDragElement() {
+    // stop moving when mouse button is released:
+    document.onmouseup = null;
+    document.onmousemove = null;
+  }
+}
+</script>
+
+<script>
+
+    // Make the DIV element draggable:
+    dragElement(document.getElementById("movablecheckout"));
+   
+   function dragElement(elmnt) {
+     var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+     if (document.getElementById(elmnt.id + "header")) {
+       // if present, the header is where you move the DIV from:
+       document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+     } else {
+       // otherwise, move the DIV from anywhere inside the DIV:
+       elmnt.onmousedown = dragMouseDown;
+     }
+   
+     function dragMouseDown(e) {
+       e = e || window.event;
+       e.preventDefault();
+       // get the mouse cursor position at startup:
+       pos3 = e.clientX;
+       pos4 = e.clientY;
+       document.onmouseup = closeDragElement;
+       // call a function whenever the cursor moves:
+       document.onmousemove = elementDrag;
+     }
+   
+     function elementDrag(e) {
+       e = e || window.event;
+       e.preventDefault();
+       // calculate the new cursor position:
+       pos1 = pos3 - e.clientX;
+       pos2 = pos4 - e.clientY;
+       pos3 = e.clientX;
+       pos4 = e.clientY;
+       // set the element's new position:
+       elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+       elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+       elmnt.style.right = (elmnt.offsetBottom - pos2) + "px";
+       elmnt.style.bottom = (elmnt.offsetRight - pos1) + "px";
+     }
+   
+     function closeDragElement() {
+       // stop moving when mouse button is released:
+       document.onmouseup = null;
+       document.onmousemove = null;
+     }
+    }
+    </script>
+
+    <script>
+        function AddToBasket(sourcetableid, button) {
+            // Find a <table> element with id="myTable":
+            var table = document.getElementById("checkout");
+            var button = document.getElementById(button);
+            var sourcetable = document.getElementById(sourcetableid);
+
+            button.remove();
+            const clone = JSON.parse(JSON.stringify(sourcetableid));
+
+            // Add some text to the new cells:
+            table.append(clone);
+            table.append("<br>")
+        }
+    </script>
 
 </body>
 </html>
