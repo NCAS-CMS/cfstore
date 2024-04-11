@@ -124,7 +124,8 @@ def cfparse_file_to_collection(db, filename, collection):
             for a in cm.get_axes():
                 method = cm.get_method()
                 dbmethod = db.cell_method_get_or_make(axis=a, method=method)
-                var._cell_methods[method] = dbmethod
+                var._cell_methods[method] = (a, method)
+        var.save()
     collection.save()
     print("LOOP", time.time() - fullstart)
 
