@@ -97,15 +97,16 @@
     </table></div>
     <table class="variable-display" id="middletable">
     {%for variable in variables %}        
+          {%for var in variable|getproxied %}
             <tr>
-                <td width="22%" id="identity">{{variable.identity}}</td>
+                <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable.identity}}</td>
                 <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="addbutton" value="+"></button></td>
                 <td width="10%">
                     <button type="button" class="collapsible">More</button>
                     <div class="collapsible-content">
                       <table width="100%" id="collapsibletable">  
                           
-                              <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
+                              <tr><h3><a href="">{{var|vardrsdisplay}} {{variable.identity}}</a><h3></tr>
                                   <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
                                   <tr><th>Size</th><td>{{variable.cfdm_size|sizeoffmt}}</td></tr>
                                   <tr>   
@@ -121,6 +122,7 @@
             </tr>
 
     </div>
+      {% endfor %}
     {% endfor %}
 </table>
     </div>

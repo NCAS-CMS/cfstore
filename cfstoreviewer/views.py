@@ -279,3 +279,14 @@ def demo(request):
     return render(
         request, "demo_view.html", {"variables": variables, "collections": collections}
     )
+
+
+def demosearch(request):
+    db = CFSconfig().db
+    if request.method == "POST":
+        print(request)
+    variables = db.retrieve_all_variables("all", "")
+    collections = db.retrieve_collections()
+    return render(
+        request, "demo_view.html", {"variables": variables, "collections": collections}
+    )

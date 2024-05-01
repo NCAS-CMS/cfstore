@@ -17,11 +17,20 @@ def active(request, pattern):
 
 @template.defaulttags.register.filter
 def outputvar(var):
-    """Can't use the django built in coz not everything is a float.
-    But we can use this to suppress 0.0 in a nice way."""
     iden = var.identity
     iden = iden.replace("long name=", "(Long Name) ")
     return iden
+
+
+@template.defaulttags.register.filter
+def vardrsdisplay(var):
+    drs = var["experiment"] + "." + var["variant_id"] + "." + var["realm"] + "."
+    return drs
+
+
+@template.defaulttags.register.filter
+def getproxied(var):
+    return var._proxied.values()
 
 
 @template.defaulttags.register.filter
@@ -41,10 +50,11 @@ def getvariables(collection):
     variables = db.retrieve_variables_in_collection(collection.name)
     return variables
 
+
 @template.defaulttags.register.filter
 def getallvariables(collection):
     db = CFSconfig().db
-    variables = db.retrieve_all_variables("all","_")
+    variables = db.retrieve_all_variables("all", "_")
     variables = [var.identity for var in variables]
     print(variables)
     return variables
@@ -125,11 +135,13 @@ def getpropertyforautocompletesearchbar(property):
     print(experiments)
     return experiments
 
-@register.inclusion_tag('demo_page.html', takes_context=True)
+
+@register.inclusion_tag("demo_page.html", takes_context=True)
 def jump_link(context):
     return {
-        'realm': getpropertyforautocompletesearchbar('realm'),
+        "realm": getpropertyforautocompletesearchbar("realm"),
     }
+
 
 @template.defaulttags.register.filter
 def checkvar(variable, properties):
@@ -245,8 +257,6 @@ def getpropertyvalues(propname):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
     output = propname
-    print("GETVALUES", propname)
-
     return output.items()
 
 
