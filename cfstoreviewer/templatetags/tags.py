@@ -14,6 +14,7 @@ def active(request, pattern):
         return "active"
     return ""
 
+
 @template.defaulttags.register.filter
 def outputvar(var):
     """Can't use the django built in coz not everything is a float.
@@ -38,6 +39,14 @@ def sizeoffmt(num):
 def getvariables(collection):
     db = CFSconfig().db
     variables = db.retrieve_variables_in_collection(collection.name)
+    return variables
+
+@template.defaulttags.register.filter
+def getallvariables(collection):
+    db = CFSconfig().db
+    variables = db.retrieve_all_variables("all","_")
+    variables = [var.identity for var in variables]
+    print(variables)
     return variables
 
 
@@ -89,17 +98,38 @@ def demogetallvariableproperties(collection):
                     properydict[prop].append(value)
     return properydict.items()
 
+
 @template.defaulttags.register.filter
-def getpropertyforsearchbar(collection,property):
+def getpropertyforsearchbar(collection, property):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
     experiments = []
     for variable in variables:
         for var in variable._proxied.values():
-            value =  var[property]
+            value = var[property]
             if value not in experiments:
                 experiments.append(value)
     return experiments
+
+
+@template.defaulttags.register.filter
+def getpropertyforautocompletesearchbar(property):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    experiments = []
+    for variable in variables:
+        for var in variable._proxied.values():
+            value = var[property]
+            if value not in experiments:
+                experiments.append(value)
+    print(experiments)
+    return experiments
+
+@register.inclusion_tag('demo_page.html', takes_context=True)
+def jump_link(context):
+    return {
+        'realm': getpropertyforautocompletesearchbar('realm'),
+    }
 
 @template.defaulttags.register.filter
 def checkvar(variable, properties):
@@ -183,7 +213,7 @@ def getallvariablecellaxes(collection):
     variables = db.retrieve_variable("all", "")
     allcellmethods = {}
     for var in variables:
-        print("VAR",var)
+        print("VAR", var)
         cellmethods = var._cell_methods
         print(cellmethods)
         for cellmethod in cellmethods:

@@ -2,13 +2,77 @@
 <html>
     <head>
         {% load static %}
-      
         <link rel="stylesheet" href="{% static '/demo_cfstore.css' %}">
+
+
+        <style>
+            * {
+              box-sizing: border-box;
+            }
+            
+            body {
+              font: 16px Arial;  
+            }
+            
+            /*the container must be positioned relative:*/
+            .autocomplete {
+              position: relative;
+              display: inline-block;
+            }
+            
+            input {
+              border: 1px solid transparent;
+              background-color: #f1f1f1;
+              padding: 10px;
+              font-size: 16px;
+            }
+            
+            input[type=text] {
+              background-color: #f1f1f1;
+              width: 100%;
+            }
+            
+            input[type=submit] {
+              background-color: DodgerBlue;
+              color: #fff;
+              cursor: pointer;
+            }
+            
+            .autocomplete-items {
+              position: absolute;
+              border: 1px solid #d4d4d4;
+              border-bottom: none;
+              border-top: none;
+              z-index: 99;
+              /*position the autocomplete items to be the same width as the container:*/
+              top: 100%;
+              left: 0;
+              right: 0;
+            }
+            
+            .autocomplete-items div {
+              padding: 10px;
+              cursor: pointer;
+              background-color: #fff; 
+              border-bottom: 1px solid #d4d4d4; 
+            }
+            
+            /*when hovering an item:*/
+            .autocomplete-items div:hover {
+              background-color: #e9e9e9; 
+            }
+            
+            /*when navigating through the items using the arrow keys:*/
+            .autocomplete-active {
+              background-color: DodgerBlue !important; 
+              color: #ffffff; 
+            }
+            </style>
       </head>
       <html>
 <html>
 <body>
-
+    {{ "['ocean','atmos','ice']"|json_script:"realm-data" }}
     <ul>
     <li><a href="na">Projects</a></li>
     <li><a href="na">Collections</a></li>
@@ -25,48 +89,45 @@
         <div id="movableheader"><table class="variable-title">
         
             <tr>
-                <td width="22%">Variable Identity</td>
-                <td width="11%">Long Name</td>
-                <td width="11%">Standard Name</td>
+                <td width="60%">Variable Identity</td>
                 <td width="5%">Save</td>
+                <td width="10%">More</td>
             </tr>
         
     </table></div>
-    {%for variable in variables %}
-    <br>
-        <table class="variable-display">
+    <table class="variable-display" id="middletable">
+    {%for variable in variables %}        
             <tr>
                 <td width="22%" id="identity">{{variable.identity}}</td>
-                <td width="11%" id="longname">{{variable.long_name}}</td>
-                <td width="11%" id="standard_name">{{variable.standard_name}}</td>          
-                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('table'),this.id)" class="addbutton" id="addbutton" value="+"></button></td>
+                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="addbutton" value="+"></button></td>
+                <td width="10%">
+                    <button type="button" class="collapsible">More</button>
+                    <div class="collapsible-content">
+                      <table width="100%" id="collapsibletable">  
+                          
+                              <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
+                                  <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
+                                  <tr><th>Size</th><td>{{variable.cfdm_size|sizeoffmt}}</td></tr>
+                                  <tr>   
+                                      <th>Collections</th>
+                                      {% for col in variable|getcollectionsfromvariable %}
+                                          <td>{{col.name}}</td>
+                                      {% endfor %}
+                                  </tr>
+              
+                            </table>
+                          </div>
+                </td>
             </tr>
-        </table>
-    <button type="button" class="collapsible">More</button>
-      <div class="collapsible-content">
-      <table id="collapsibletable">  
-            <table>
-                <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
-                    <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
-                    <tr><th>Size</th><td>{{variable.cfdm_size|sizeoffmt}}</td></tr>
-                    <tr>   
-                        <th>Collections</th>
-                        {% for col in variable|getcollectionsfromvariable %}
-                            <td>{{col.name}}</td>
-                        {% endfor %}
-                    </tr>
-            
-                  </tr>
-                  <tr>   
-                </tr>
-            </table>
-  
+
     </div>
     {% endfor %}
+</table>
     </div>
     </div>
+    
     <div id="modvable">
-        <div class="browser">
+        <div class="browser" id="searchtable">
             <div id="movabffleheader">
             <div class="collapsiblebrowser-title">Browse Section </div>
             </div>
@@ -92,6 +153,7 @@
                 </table>
             </div>
             {% endfor %}
+
             <div class="collapsiblebrowser-title">User Collection Section </div>
             {% for collection in usercollections %}
             <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
@@ -109,13 +171,23 @@
             {% endfor %}
 
 
+            <div class="collapsiblebrowser-title">Experiment </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="ExperimentAutosearch" type="text" name="{{'experiment'|getpropertyforautocompletesearchbar}}" placeholder="Experiment">
+                    </div>
+            </form>
 
+            <!--
             <div class="collapsiblebrowser-title">Experiment </div>
             {% for experiment in collections|getpropertyforsearchbar:'experiment' %}
             <button type="button" id="{{collection}}" class="collapsiblebrowser">{{experiment}} </button>
             {% endfor %}
+            -->
 
-            <div class="collapsiblebrowser-title">Variant ID </div>
+
+              <!--
+            <div class="collapsiblebrowser-title">Collection Name </div>
             {% for collection in usercollections %}
             <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
             <div class="collapsiblebrowser-content"> 
@@ -130,17 +202,37 @@
                 </table>
             </div>
             {% endfor %}
+          -->
 
+
+            <div class="collapsiblebrowser-title">Variant ID </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="variantIDAutosearch" type="text" name="{{'variant_id'|getpropertyforautocompletesearchbar}}" placeholder="Variant ID">
+                    </div>
+            </form>
+
+            <div class="collapsiblebrowser-title">Realm </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="RealmAutosearch" type="text" name="{{'realm'|getpropertyforautocompletesearchbar}}" placeholder="Realm">
+                    </div>
+            </form>
+            <!-- 
             <div class="collapsiblebrowser-title">Realm </div>
             {% for realm in collections|getpropertyforsearchbar:'realm' %}
             <button type="button" id="{{collection}}" class="collapsiblebrowser">{{realm}} </button>
             {% endfor %}
+            -->
 
-            <div class="collapsiblebrowser-title">Variant ID </div>
-            {% for variant_id in collections|getpropertyforsearchbar:'variant_id' %}
-            <button type="button" id="{{collection}}" class="collapsiblebrowser">{{variant_id}} </button>
-            {% endfor %}
 
+            <div class="collapsiblebrowser-title">Frequency </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="FrequencyAutosearch" type="text" name="{{'frequency'|getpropertyforautocompletesearchbar}}" placeholder="Frequency">
+                    </div>
+            </form>
+            <!--
             <div class="collapsiblebrowser-title">Frequency </div>
             {% for collection in usercollections %}
             <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
@@ -156,7 +248,15 @@
                 </table>
             </div>
             {% endfor %}
+            -->
+            <div class="collapsiblebrowser-title">Method </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="MethodAutosearch" type="text" name="" placeholder="Method">
+                    </div>
+            </form>
 
+            <!--
             <div class="collapsiblebrowser-title">Method </div>
             {% for collection in usercollections %}
             <button type="button" id="{{collection}}" class="collapsiblebrowser">{{collection.name}} </button>
@@ -172,6 +272,13 @@
                 </table>
             </div>
             {% endfor %}
+            -->
+            <div class="collapsiblebrowser-title">Variable Name </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="variableNameAutosearch" type="text" name="{{'all'|getallvariables}}" placeholder="Variable Name">
+                    </div>
+            </form>
 
             </form>
         </div>
@@ -375,23 +482,404 @@ function dragElement(elmnt) {
        document.onmousemove = null;
      }
     }
-    </script>
+</script>
 
-    <script>
-        function AddToBasket(sourcetableid, button) {
-            // Find a <table> element with id="myTable":
-            var table = document.getElementById("checkout");
-            var button = document.getElementById(button);
-            var sourcetable = document.getElementById(sourcetableid);
-
-            button.remove();
-            const clone = JSON.parse(JSON.stringify(sourcetableid));
-
-            // Add some text to the new cells:
-            table.append(clone);
-            table.append("<br>")
+<script>
+  function georgecopy(source) {
+    if (Object.prototype.toString.call(source) === '[object Array]') {
+        var clone = [];
+        for (var i=0; i<source.length; i++) {
+            clone[i] = goclone(source[i]);
         }
-    </script>
+        return clone;
+    } else if (typeof(source)=="object") {
+        var clone = {};
+        for (var prop in source) {
+            if (source.hasOwnProperty(prop)) {
+                clone[prop] = goclone(source[prop]);
+            }
+        }
+        return clone;
+    } else {
+        return source;
+    }
+  }
+
+  function AddToBasket(sourcetableid, button) {
+      // Find a <table> element with id="checkout":
+      var table = document.getElementById("checkout");
+      var button = document.getElementById(button);
+
+      alert("adding");
+      alert(button.value)
+      button.setAttribute("onclick","RemoveFromBasket(this.closest('tr'),this.id)");
+      button.setAttribute("value","-")
+
+      // Clone the cons
+      // Add some the clone to the new cells:
+      table.appendChild(sourcetableid);
+  }
+
+  function RemoveFromBasket(sourcetableid, button) {
+      // Find a <table> element with id="checkout":
+      var table = document.getElementById("middletable");
+      var button = document.getElementById(button);
+      alert(button.getAttribute("onclick"));
+      alert(button.getAttribute("value"));
+      button.setAttribute("onclick","AddToBasket(this.closest('tr'),this.id)");
+      button.setAttribute("value","+");
+      alert(button.getAttribute("onclick"));
+      alert(button.getAttribute("value"));
+      // Clone the cons
+      // Add some the clone to the new cells:
+      table.appendChild(sourcetableid);
+  }
+</script>
+
+<script>
+    addPagerToTables('#middletable',32);
+
+    function addPagerToTables(tables, rowsPerPage = 10) {
+
+        tables = 
+            typeof tables == "string"
+        ? document.querySelectorAll(tables)
+        : tables;
+
+        for (let table of tables) 
+            addPagerToTable(table, rowsPerPage);
+
+    }
+
+    function addPagerToTable(table, rowsPerPage = 10) {
+
+        let tBodyRows = getBodyRows(table);
+        let numPages = Math.ceil(tBodyRows.length/rowsPerPage);
+
+        let colCount = 
+        [].slice.call(
+            table.querySelector('tr').cells
+        )
+        .reduce((a,b) => a + parseInt(b.colSpan), 0);
+
+        table
+        .createTFoot()
+        .insertRow()
+        .innerHTML = `<td colspan=${colCount}><div class="nav"></div></td>`;
+
+        if(numPages == 1)
+            return;
+
+        for(i = 0;i < numPages;i++) {
+
+            let pageNum = i + 1;
+
+            table.querySelector('.nav')
+            .insertAdjacentHTML(
+                'beforeend',
+                `<a href="#" rel="${i}">${pageNum}</a> `        
+            );
+
+        }
+
+        changeToPage(table, 1, rowsPerPage);
+
+        for (let navA of table.querySelectorAll('.nav a'))
+            navA.addEventListener(
+                'click', 
+                e => changeToPage(
+                    table, 
+                    parseInt(e.target.innerHTML), 
+                    rowsPerPage
+                )
+            );
+
+    }
+
+    function changeToPage(table, page, rowsPerPage) {
+
+        let startItem = (page - 1) * rowsPerPage;
+        let endItem = startItem + rowsPerPage;
+        let navAs = table.querySelectorAll('.nav a');
+        let tBodyRows = getBodyRows(table);
+
+        for (let nix = 0; nix < navAs.length; nix++) {
+
+            if (nix == page - 1)
+                navAs[nix].classList.add('active');
+            else 
+                navAs[nix].classList.remove('active');
+
+            for (let trix = 0; trix < tBodyRows.length; trix++) 
+                tBodyRows[trix].style.display = 
+                    (trix >= startItem && trix < endItem)
+                    ? 'table-row'
+                    : 'none';  
+
+        }
+
+    }
+
+    function getBodyRows(table) {
+        let initial = table.querySelectorAll('tbody tr');
+    return Array.from(initial)
+        .filter(row => row.querySelectorAll('td').length > 0);
+    }
+</script>
+
+<script>
+    function autocomplete(inp, arr) {
+    /*the autocomplete function takes two arguments,
+    the text field element and an array of possible autocompleted values:*/
+    var currentFocus;
+    /*execute a function when someone writes in the text field:*/
+    inp.addEventListener("input", function(e) {
+        var a, b, i, val = this.value;
+        /*close any already open lists of autocompleted values*/
+        closeAllLists();
+        if (!val) { return false;}
+        currentFocus = -1;
+        /*create a DIV element that will contain the items (values):*/
+        a = document.createElement("DIV");
+        a.setAttribute("id", this.id + "autocomplete-list");
+        a.setAttribute("class", "autocomplete-items");
+        /*append the DIV element as a child of the autocomplete container:*/
+        this.parentNode.appendChild(a);
+        /*for each item in the array...*/
+        for (i = 0; i < arr.length; i++) {
+            /*check if the item starts with the same letters as the text field value:*/
+            if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+            /*create a DIV element for each matching element:*/
+            b = document.createElement("DIV");
+            /*make the matching letters bold:*/
+            b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+            b.innerHTML += arr[i].substr(val.length);
+            /*insert a input field that will hold the current array item's value:*/
+            b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+            /*execute a function when someone clicks on the item value (DIV element):*/
+                b.addEventListener("click", function(e) {
+                /*insert the value for the autocomplete text field:*/
+                inp.value = this.getElementsByTagName("input")[0].value;
+                /*close the list of autocompleted values,
+                (or any other open lists of autocompleted values:*/
+                closeAllLists();
+            });
+            a.appendChild(b);
+            }
+        }
+    });
+    /*execute a function presses a key on the keyboard:*/
+    inp.addEventListener("keydown", function(e) {
+        var x = document.getElementById(this.id + "autocomplete-list");
+        if (x) x = x.getElementsByTagName("div");
+        if (e.keyCode == 40) {
+            /*If the arrow DOWN key is pressed,
+            increase the currentFocus variable:*/
+            currentFocus++;
+            /*and and make the current item more visible:*/
+            addActive(x);
+        } else if (e.keyCode == 38) { //up
+            /*If the arrow UP key is pressed,
+            decrease the currentFocus variable:*/
+            currentFocus--;
+            /*and and make the current item more visible:*/
+            addActive(x);
+        } else if (e.keyCode == 13) {
+            /*If the ENTER key is pressed, prevent the form from being submitted,*/
+            e.preventDefault();
+            if (currentFocus > -1) {
+            /*and simulate a click on the "active" item:*/
+            if (x) x[currentFocus].click();
+            }
+        }
+    });
+    function addActive(x) {
+        /*a function to classify an item as "active":*/
+        if (!x) return false;
+        /*start by removing the "active" class on all items:*/
+        removeActive(x);
+        if (currentFocus >= x.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (x.length - 1);
+        /*add class "autocomplete-active":*/
+        x[currentFocus].classList.add("autocomplete-active");
+    }
+    function removeActive(x) {
+        /*a function to remove the "active" class from all autocomplete items:*/
+        for (var i = 0; i < x.length; i++) {
+        x[i].classList.remove("autocomplete-active");
+        }
+    }
+    function closeAllLists(elmnt) {
+        /*close all autocomplete lists in the document,
+        except the one passed as an argument:*/
+        var x = document.getElementsByClassName("autocomplete-items");
+        for (var i = 0; i < x.length; i++) {
+        if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode.removeChild(x[i]);
+        }
+    }
+    }
+    /*execute a function when someone clicks in the document:*/
+    document.addEventListener("click", function (e) {
+        closeAllLists(e.target);
+    });
+    } 
+</script>
+
+
+<script>
+function autocomplete(inp, arr) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an array of possible autocompleted values:*/
+  var currentFocus;
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", function(e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      if (!val) { return false;}
+      currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+      /*for each item in the array...*/
+      for (i = 0; i < arr.length; i++) {
+        /*check if the item starts with the same letters as the text field value:*/
+        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          /*create a DIV element for each matching element:*/
+          b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+          b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+          b.innerHTML += arr[i].substr(val.length);
+          /*insert a input field that will hold the current array item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+          b.addEventListener("click", function(e) {
+              /*insert the value for the autocomplete text field:*/
+              inp.value = this.getElementsByTagName("input")[0].value;
+              /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+              closeAllLists();
+          });
+          a.appendChild(b);
+        }
+      }
+  });
+  inp.addEventListener("focus", function(e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      currentFocus = -1;
+
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+      /*for each item in the array...*/
+      for (i = 0; i < arr.length; i++) {
+        /*create a DIV element for each matching element:*/
+        b = document.createElement("DIV");
+        /*make the matching letters bold:*/
+        b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+        b.innerHTML += arr[i].substr(val.length);
+        /*insert a input field that will hold the current array item's value:*/
+        b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+        /*execute a function when someone clicks on the item value (DIV element):*/
+        b.addEventListener("click", function(e) {
+            /*insert the value for the autocomplete text field:*/
+            inp.value = this.getElementsByTagName("input")[0].value;
+            /*close the list of autocompleted values,
+            (or any other open lists of autocompleted values:*/
+            closeAllLists();
+        });
+        a.appendChild(b);
+      }
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function(e) {
+      var x = document.getElementById(this.id + "autocomplete-list");
+      if (x) x = x.getElementsByTagName("div");
+      if (e.keyCode == 40) {
+        /*If the arrow DOWN key is pressed,
+        increase the currentFocus variable:*/
+        currentFocus++;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 38) { //up
+        /*If the arrow UP key is pressed,
+        decrease the currentFocus variable:*/
+        currentFocus--;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 13) {
+        /*If the ENTER key is pressed, prevent the form from being submitted,*/
+        e.preventDefault();
+        if (currentFocus > -1) {
+          /*and simulate a click on the "active" item:*/
+          if (x) x[currentFocus].click();
+        }
+      }
+  });
+  function addActive(x) {
+    /*a function to classify an item as "active":*/
+    if (!x) return false;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+  function removeActive(x) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (var i = 0; i < x.length; i++) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+  function closeAllLists(elmnt) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    var x = document.getElementsByClassName("autocomplete-items");
+    for (var i = 0; i < x.length; i++) {
+      if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode.removeChild(x[i]);
+      }
+    }
+  }
+  /*execute a function when someone clicks in the document:*/
+  document.addEventListener("click", function (e) {
+  });
+}
+var experiment = document.getElementById("ExperimentAutosearch").getAttribute("name")
+experiment = experiment.replace(/'/g, '"');
+obj = JSON.parse(experiment);
+
+autocomplete(document.getElementById("ExperimentAutosearch"), obj);
+
+var realm= document.getElementById("RealmAutosearch").getAttribute("name")
+realm = realm.replace(/'/g, '"');
+obj = JSON.parse(realm);
+
+autocomplete(document.getElementById("RealmAutosearch"), obj);
+
+var variantid = document.getElementById("variantIDAutosearch").getAttribute("name")
+variantid = variantid.replace(/'/g, '"');
+obj = JSON.parse(variantid);
+
+autocomplete(document.getElementById("variantIDAutosearch"), obj);
+
+var variableName = document.getElementById("variableNameAutosearch").getAttribute("name")
+variableName = variableName.replace(/'/g, '"');
+obj = JSON.parse(variableName);
+
+autocomplete(document.getElementById("variableNameAutosearch"), obj);
+
+</script>
 
 </body>
 </html>
