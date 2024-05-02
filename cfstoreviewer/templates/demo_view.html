@@ -48,6 +48,9 @@
               top: 100%;
               left: 0;
               right: 0;
+              word-wrap: break-word;
+              overflow-y: scroll;
+              max-height: 400px;
             }
             
             .autocomplete-items div {
@@ -72,7 +75,6 @@
       <html>
 <html>
 <body>
-    {{ "['ocean','atmos','ice']"|json_script:"realm-data" }}
     <ul>
     <li><a href="na">Projects</a></li>
     <li><a href="na">Collections</a></li>
@@ -99,7 +101,7 @@
     {%for variable in variables %}        
           {%for var in variable|getproxied %}
             <tr>
-                <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable.identity}}</td>
+                <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}</td>
                 <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="addbutton" value="+"></button></td>
                 <td width="10%">
                     <button type="button" class="collapsible">More</button>
@@ -231,7 +233,7 @@
             <div class="collapsiblebrowser-title">Frequency </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="FrequencyAutosearch" type="text" name="{{'frequency'|getpropertyforautocompletesearchbar}}" placeholder="Frequency">
+                        <input id="FrequencyAutosearch" type="text" name="{{''|getfrequencyforautocompletesearchbar}}" placeholder="Frequency">
                     </div>
             </form>
             <!--
@@ -254,7 +256,7 @@
             <div class="collapsiblebrowser-title">Method </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="MethodAutosearch" type="text" name="" placeholder="Method">
+                        <input id="MethodAutosearch" type="text" name="{{''|getcellmethodsforautocompletesearchbar}}" placeholder="Method">
                     </div>
             </form>
 
@@ -282,7 +284,14 @@
                     </div>
             </form>
 
+            <div class="collapsiblebrowser-title">Location </div>
+            <form autocomplete="off" action=""> 
+                    <div class="autocomplete" style="width:300px;">
+                        <input id="locationAutosearch" type="text" name="{{''|getLocationAutosearchallvariables}}" placeholder="Location">
+                    </div>
             </form>
+            
+          </form>
         </div>
       </div>
       
@@ -512,8 +521,6 @@ function dragElement(elmnt) {
       var table = document.getElementById("checkout");
       var button = document.getElementById(button);
 
-      alert("adding");
-      alert(button.value)
       button.setAttribute("onclick","RemoveFromBasket(this.closest('tr'),this.id)");
       button.setAttribute("value","-")
 
@@ -526,12 +533,10 @@ function dragElement(elmnt) {
       // Find a <table> element with id="checkout":
       var table = document.getElementById("middletable");
       var button = document.getElementById(button);
-      alert(button.getAttribute("onclick"));
-      alert(button.getAttribute("value"));
+
       button.setAttribute("onclick","AddToBasket(this.closest('tr'),this.id)");
       button.setAttribute("value","+");
-      alert(button.getAttribute("onclick"));
-      alert(button.getAttribute("value"));
+
       // Clone the cons
       // Add some the clone to the new cells:
       table.appendChild(sourcetableid);
@@ -875,12 +880,28 @@ obj = JSON.parse(variantid);
 
 autocomplete(document.getElementById("variantIDAutosearch"), obj);
 
+var frequency = document.getElementById("FrequencyAutosearch").getAttribute("name")
+frequency = frequency.replace(/'/g, '"');
+obj = JSON.parse(frequency);
+
+autocomplete(document.getElementById("FrequencyAutosearch"), obj);
+
+var method = document.getElementById("MethodAutosearch").getAttribute("name")
+method = method.replace(/'/g, '"');
+obj = JSON.parse(method);
+
+autocomplete(document.getElementById("MethodAutosearch"), obj);
+
 var variableName = document.getElementById("variableNameAutosearch").getAttribute("name")
 variableName = variableName.replace(/'/g, '"');
 obj = JSON.parse(variableName);
 
 autocomplete(document.getElementById("variableNameAutosearch"), obj);
 
+var loc = document.getElementById("locationAutosearch").getAttribute("name")
+loc = loc.replace(/'/g, '"');
+loc = JSON.parse(loc);
+autocomplete(document.getElementById("locationAutosearch"), loc);
 </script>
 
 </body>

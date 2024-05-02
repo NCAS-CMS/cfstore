@@ -18,9 +18,14 @@ def active(request, pattern):
 @template.defaulttags.register.filter
 def outputvar(var):
     iden = var.identity
-    iden = iden.replace("long name=", "(Long Name) ")
+    iden = iden.replace("long_name=", "")
+    iden = iden.replace(" ","_")
     return iden
 
+@template.defaulttags.register.filter
+def outputcellmethods(var):
+    cm = var._cell_methods
+    return cm
 
 @template.defaulttags.register.filter
 def vardrsdisplay(var):
@@ -55,8 +60,7 @@ def getvariables(collection):
 def getallvariables(collection):
     db = CFSconfig().db
     variables = db.retrieve_all_variables("all", "_")
-    variables = [var.identity for var in variables]
-    print(variables)
+    variables = [outputvar(var) for var in variables]
     return variables
 
 
@@ -71,7 +75,6 @@ def getcollectionsfromvariable(variable):
 def getuniquevariables(collection, check):
     db = CFSconfig().db
     variables = db.retrieve_variables_in_collection(collection)
-    print("VAR", variables)
     uniquevariables = {}
     for v in variables:
         uniquevariables[v.identity] = len(v._proxied)
@@ -136,6 +139,32 @@ def getpropertyforautocompletesearchbar(property):
     return experiments
 
 
+@template.defaulttags.register.filter
+def getcellmethodsforautocompletesearchbar(property):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    output = []
+    for variable in variables:
+        for var in variable._cell_methods:
+            if var not in output:
+                output.append(var)
+    print("CELL",output)
+    return output
+
+@template.defaulttags.register.filter
+def getfrequencyforautocompletesearchbar(property):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    output = ['hourly','daily','monthly']
+    return output
+
+@template.defaulttags.register.filter
+def getLocationAutosearchallvariables(property):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    output = ['unavailable','tape','monthly']
+    return output
+
 @register.inclusion_tag("demo_page.html", takes_context=True)
 def jump_link(context):
     return {
@@ -182,14 +211,12 @@ def getvariablepropertyvalues(variable):
 
 @template.defaulttags.register.filter
 def getvariablepropertykeys(variable):
-    print(variable)
     properties = variable._proxied.keys()
     return properties
 
 
 @template.defaulttags.register.filter
 def getvariablepropertyitems(variable):
-    print(variable)
     properties = variable._proxied.items()
     return properties
 
@@ -225,9 +252,7 @@ def getallvariablecellaxes(collection):
     variables = db.retrieve_variable("all", "")
     allcellmethods = {}
     for var in variables:
-        print("VAR", var)
         cellmethods = var._cell_methods
-        print(cellmethods)
         for cellmethod in cellmethods:
             if isinstance(cellmethod, dict):
                 axes = cellmethod["axes"]
