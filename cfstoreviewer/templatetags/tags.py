@@ -20,6 +20,7 @@ def outputvar(var):
     iden = var.identity
     iden = iden.replace("long_name=", "")
     iden = iden.replace(" ","_")
+    iden = iden.lower()
     return iden
 
 @template.defaulttags.register.filter
