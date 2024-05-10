@@ -94,6 +94,7 @@
                 <td width="60%">Variable Identity</td>
                 <td width="5%">Save</td>
                 <td width="10%">More</td>
+                <td width="5%" id="button"> <input type="button" onclick="AddAllToBasket()" class="addbutton" id="addalltobasket" value="+"></button></td>
             </tr>
         
     </table></div>
@@ -101,8 +102,8 @@
     {%for variable in variables %}        
           {%for var in variable|getproxied %}
             <tr>
-                <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}</td>
-                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}" value="+"></button></td>
+                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}" value="+"></button></td>  
+                <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}.{{variable.location}}</td>
                 <td width="10%">
                     <button type="button" class="collapsible">More</button>
                     <div class="collapsible-content">
@@ -529,6 +530,21 @@ function dragElement(elmnt) {
       table.appendChild(sourcetableid);
   }
 
+  function AddAllToBasket() {
+    var table = document.getElementById("middletable")
+    var button
+    //Loop through table rows
+    for (let row of table.rows) {
+      if (row.style.display != "none" && row.getElementsByClassName("addbutton")){
+        for (let button of row.getElementsByClassName("addbutton")) {
+          AddToBasket(middletable,button.id)
+        }
+        
+      }
+    }
+    //If the row displays are visible AddToBasket 
+  }
+
   function RemoveFromBasket(sourcetableid, button) {
       // Find a <table> element with id="checkout":
       var table = document.getElementById("middletable");
@@ -639,6 +655,7 @@ function dragElement(elmnt) {
     /*the autocomplete function takes two arguments,
     the text field element and an array of possible autocompleted values:*/
     var currentFocus;
+    arr = arr.push("fdgsg")
     /*execute a function when someone writes in the text field:*/
     inp.addEventListener("input", function(e) {
         var a, b, i, val = this.value;
@@ -938,8 +955,12 @@ function autocomplete(inp, arr) {
           /*and simulate a click on the "active" item:*/
           if (x) x[currentFocus].click();
         }
+      } else if (e.keyCode == 8) {
+        /*If the backspace key is pressed, simulate a click,*/
+         if (x) x.click();
       }
   });
+
 
   
   function addActive(x) {
