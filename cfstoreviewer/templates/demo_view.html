@@ -102,7 +102,7 @@
           {%for var in variable|getproxied %}
             <tr>
                 <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}</td>
-                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="addbutton" value="+"></button></td>
+                <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}" value="+"></button></td>
                 <td width="10%">
                     <button type="button" class="collapsible">More</button>
                     <div class="collapsible-content">
@@ -178,7 +178,7 @@
             <div class="collapsiblebrowser-title">Experiment </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="ExperimentAutosearch" type="text" name="{{'experiment'|getpropertyforautocompletesearchbar}}" placeholder="Experiment">
+                        <input id="ExperimentAutosearch" class="autosearch" type="text" name="{{'experiment'|getpropertyforautocompletesearchbar}}" placeholder="Experiment">
                     </div>
             </form>
 
@@ -212,14 +212,14 @@
             <div class="collapsiblebrowser-title">Variant ID </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="variantIDAutosearch" type="text" name="{{'variant_id'|getpropertyforautocompletesearchbar}}" placeholder="Variant ID">
+                        <input id="variantIDAutosearch" class="autosearch" type="text" name="{{'variant_id'|getpropertyforautocompletesearchbar}}" placeholder="Variant ID">
                     </div>
             </form>
 
             <div class="collapsiblebrowser-title">Realm </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="RealmAutosearch" type="text" name="{{'realm'|getpropertyforautocompletesearchbar}}" placeholder="Realm">
+                        <input id="RealmAutosearch" class="autosearch" type="text" name="{{'realm'|getpropertyforautocompletesearchbar}}" placeholder="Realm">
                     </div>
             </form>
             <!-- 
@@ -233,7 +233,7 @@
             <div class="collapsiblebrowser-title">Frequency </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="FrequencyAutosearch" type="text" name="{{''|getfrequencyforautocompletesearchbar}}" placeholder="Frequency">
+                        <input id="FrequencyAutosearch" class="autosearch" type="text" name="{{''|getfrequencyforautocompletesearchbar}}" placeholder="Frequency">
                     </div>
             </form>
             <!--
@@ -256,7 +256,7 @@
             <div class="collapsiblebrowser-title">Method </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="MethodAutosearch" type="text" name="{{''|getcellmethodsforautocompletesearchbar}}" placeholder="Method">
+                        <input id="MethodAutosearch" class="autosearch" type="text" name="{{''|getcellmethodsforautocompletesearchbar}}" placeholder="Method">
                     </div>
             </form>
 
@@ -280,14 +280,14 @@
             <div class="collapsiblebrowser-title">Variable Name </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="variableNameAutosearch" type="text" name="{{'all'|getallvariables}}" placeholder="Variable Name">
+                        <input id="variableNameAutosearch" class="autosearch" type="text" name="{{'all'|getallvariables}}" placeholder="Variable Name">
                     </div>
             </form>
 
             <div class="collapsiblebrowser-title">Location </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
-                        <input id="locationAutosearch" type="text" name="{{''|getLocationAutosearchallvariables}}" placeholder="Location">
+                        <input id="locationAutosearch" class="autosearch" type="text" name="{{''|getLocationAutosearchallvariables}}" placeholder="Location">
                     </div>
             </form>
             
@@ -533,7 +533,6 @@ function dragElement(elmnt) {
       // Find a <table> element with id="checkout":
       var table = document.getElementById("middletable");
       var button = document.getElementById(button);
-
       button.setAttribute("onclick","AddToBasket(this.closest('tr'),this.id)");
       button.setAttribute("value","+");
 
@@ -578,7 +577,7 @@ function dragElement(elmnt) {
             return;
 
         for(i = 0;i < numPages;i++) {
-
+          
             let pageNum = i + 1;
 
             table.querySelector('.nav')
@@ -624,6 +623,7 @@ function dragElement(elmnt) {
                     : 'none';  
 
         }
+        
 
     }
 
@@ -664,9 +664,31 @@ function dragElement(elmnt) {
             /*insert a input field that will hold the current array item's value:*/
             b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
             /*execute a function when someone clicks on the item value (DIV element):*/
+            
                 b.addEventListener("click", function(e) {
                 /*insert the value for the autocomplete text field:*/
                 inp.value = this.getElementsByTagName("input")[0].value;
+                var searchText = document.getElementById("middletable");
+                var searchQueryTable = document.getElementById("searchtable")
+                var match = true
+                  for (let row of searchText.rows) 
+                  {
+                    match = true
+                    for(let cell of row.cells) 
+                    {
+                      for (let input of searchQueryTable.getElementsByClassName("autosearch")){
+                        if ((!cell.textContent.match(input.value) && cell.id == "identity")) {
+                          match = false;
+                        }
+                      }
+                    }
+                    if (match) {
+                      row.style.display = "block";
+                    }
+                    else {
+                      row.style.display = "none";
+                    }
+                  }
                 /*close the list of autocompleted values,
                 (or any other open lists of autocompleted values:*/
                 closeAllLists();
@@ -719,6 +741,7 @@ function dragElement(elmnt) {
     function closeAllLists(elmnt) {
         /*close all autocomplete lists in the document,
         except the one passed as an argument:*/
+        alert("added pager")
         var x = document.getElementsByClassName("autocomplete-items");
         for (var i = 0; i < x.length; i++) {
         if (elmnt != x[i] && elmnt != inp) {
@@ -767,6 +790,24 @@ function autocomplete(inp, arr) {
           b.addEventListener("click", function(e) {
               /*insert the value for the autocomplete text field:*/
               inp.value = this.getElementsByTagName("input")[0].value;
+              var searchText = document.getElementById("middletable");
+              var match = false
+              for (let row of searchText.rows) 
+              {
+                  match = false
+                  for(let cell of row.cells) 
+                  {
+                    if (cell.textContent.match(inp.value) && cell.id == "identity") {
+                      match = true;
+                    }
+                  }
+                  if (match) {
+                    row.style.display = "block";
+                  }
+                  else {
+                    row.style.display = "none";
+                  }
+              };
               /*close the list of autocompleted values,
               (or any other open lists of autocompleted values:*/
               closeAllLists();
@@ -774,6 +815,51 @@ function autocomplete(inp, arr) {
           a.appendChild(b);
         }
       }
+      var searchText = document.getElementById("middletable");
+      var searchQueryTable = document.getElementById("searchtable")
+      var match = true
+        for (let row of searchText.rows) 
+        {
+          match = true
+          for(let cell of row.cells) 
+          {
+            for (let input of searchQueryTable.getElementsByClassName("autosearch")){
+              if ((!cell.textContent.match(input.value) && cell.id == "identity")) {
+                match = false;
+              }
+            }
+          }
+          if (match) {
+            row.style.display = "block";
+          }
+          else {
+            row.style.display = "none";
+          }
+      };
+
+  });
+  inp.addEventListener("click", function(e) {
+    var searchText = document.getElementById("middletable");
+      var searchQueryTable = document.getElementById("searchtable")
+      var match = true
+        for (let row of searchText.rows) 
+        {
+          match = true
+          for(let cell of row.cells) 
+          {
+            for (let input of searchQueryTable.getElementsByClassName("autosearch")){
+              if ((!cell.textContent.match(input.value) && cell.id == "identity")) {
+                match = false;
+              }
+            }
+          }
+          if (match) {
+            row.style.display = "block";
+          }
+          else {
+            row.style.display = "none";
+          }
+        }
   });
   inp.addEventListener("focus", function(e) {
       var a, b, i, val = this.value;
@@ -799,7 +885,29 @@ function autocomplete(inp, arr) {
         /*execute a function when someone clicks on the item value (DIV element):*/
         b.addEventListener("click", function(e) {
             /*insert the value for the autocomplete text field:*/
+
             inp.value = this.getElementsByTagName("input")[0].value;
+            var searchText = document.getElementById("middletable");
+            var searchQueryTable = document.getElementById("searchtable")
+            var match = true
+              for (let row of searchText.rows) 
+              {
+                match = true
+                for(let cell of row.cells) 
+                {
+                  for (let input of searchQueryTable.getElementsByClassName("autosearch")){
+                    if ((!cell.textContent.match(input.value) && cell.id == "identity")) {
+                      match = false;
+                    }
+                  }
+                }
+                if (match) {
+                  row.style.display = "block";
+                }
+                else {
+                  row.style.display = "none";
+                }
+              }
             /*close the list of autocompleted values,
             (or any other open lists of autocompleted values:*/
             closeAllLists();
@@ -832,6 +940,8 @@ function autocomplete(inp, arr) {
         }
       }
   });
+
+  
   function addActive(x) {
     /*a function to classify an item as "active":*/
     if (!x) return false;

@@ -25,7 +25,10 @@ def outputvar(var):
 @template.defaulttags.register.filter
 def outputcellmethods(var):
     cm = var._cell_methods
-    return cm
+    output= ""
+    for key in cm.keys():
+        output = output + key + " "
+    return output[:-1]
 
 @template.defaulttags.register.filter
 def vardrsdisplay(var):
@@ -148,7 +151,6 @@ def getcellmethodsforautocompletesearchbar(property):
         for var in variable._cell_methods:
             if var not in output:
                 output.append(var)
-    print("CELL",output)
     return output
 
 @template.defaulttags.register.filter
