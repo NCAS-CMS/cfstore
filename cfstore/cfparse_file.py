@@ -45,7 +45,6 @@ def cfparse_file_to_collection(db, filename, collection):
     # loop over fields in file (not the same as netcdf variables)
     collection = db.retrieve_collection(collection)
     for v in cff:
-        varstart = time.time()
         properties = v.properties()
         if "standard_name" not in properties and "long_name" not in properties:
             properties["long_name"] = v.identity
@@ -95,7 +94,6 @@ def cfparse_file_to_collection(db, filename, collection):
                 ],
                 ignore_conflicts=True,
             )
-        print(var, ":", time.time() - varstart)
 
         # there is a more pythonic way of doing this
         # if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
