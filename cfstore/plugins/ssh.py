@@ -180,6 +180,26 @@ class SSHlite(SSHcore):
                 print(f"Took {etime-stime} in overhead")
         return files
 
+    def get_and_update_files(self, files):
+        """
+        Given a list of files and a list of directories, check if those files are in one of those directories
+        """
+        for f in files:
+            if not os.path.exists(f.address):
+                print(f.path)
+
+    def move_file(self, remotePath, fileName):
+        self._sftp.rename(remotePath+'/tmp/'+fileName, remotePath+fileName)
+
+    def copy_file(self, remotepath, newremotepath, localtemp):
+        """
+        copies a file to a new location by copying it to a local area, then putting that back.
+        #FIXME Surely there's a better way, surely 
+        """
+        self._sftp.get(remotepath, localtemp)
+        self._sftp.put(localtemp,newremotepath)
+        os.remove(localtemp)
+
     def get_b_metadata(self, remotepath, db):
         print("SSH is getting B metadata")
 
