@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from cfstore.cfparse_file import cfparse_file, cfparse_file_to_collection
 from cfstore.db import (Cell_Method, Collection, CoreDB, File, Location,
-                        Protocol, Relationship, Tag, Variable)
+                        Protocol, Relationship, Tag, Variable, Directory)
 
 
 class CollectionError(Exception):
@@ -451,6 +451,13 @@ class CollectionDB(CoreDB):
         locs = Location.objects.all()
         return locs
 
+    def retrieve_directories(self):
+        """
+        Retrieve directories locations.
+        """
+        dir = Directory.objects.all()
+        return dir
+
     def retrieve_protocols(self):
         """
         Retrieve protocols.
@@ -490,6 +497,22 @@ class CollectionDB(CoreDB):
             .filter((File.name.like(m)) | (File.path.like(m)))
             .all()
         )
+
+    def retrieve_files_in_location(self,location):
+        files = File.objects,filter(locations__contains=location).all()
+        return(files)
+
+    def retrieve_CFA_directory(self):
+        """
+        Retrieve directories locations.
+        """
+        cfa = Directory.objects.filter(cfa=True)
+        return cfa
+
+    def make_directory(self, path, location, cfa):
+        cfa = Directory.objects.create(path=path, location=location,CFA=cfa)
+        cfa.save()
+        return cfa
 
     def retrieve_or_make_file(self, match):
         """
@@ -1128,3 +1151,10 @@ def chkeq(file1, file2, try_hash=False, return_hash=False):
 
         return hash_equal
     return filesize_equal
+
+    def getFileStore(self):
+        """
+        Remove a tag from a collection
+        """
+        x = Location.objects.filter(primary=True).All()
+        return x[0]
