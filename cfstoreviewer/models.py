@@ -54,6 +54,8 @@ class Location(models.Model):
 class File(models.Model):
     class Meta:
         app_label = "cfstoreviewer"
+    def __address__(self):
+        return self.path+"/"+self.name
 
     path = models.CharField(max_length=256)
     checksum = models.CharField(max_length=1024)
@@ -197,3 +199,12 @@ class Cell_Method(models.Model):
     id = models.AutoField(primary_key=True)
     method = models.CharField(max_length=1024)
     axis = models.CharField(max_length=256)
+
+class Directory(models.Model):
+    class Meta:
+        app_label = "cfstoreviewer"
+    
+    id = models.AutoField(primary_key=True)
+    path = models.CharField(max_length=1024)
+    location = models.ManyToManyField(Location)
+    CFA = models.BooleanField()
