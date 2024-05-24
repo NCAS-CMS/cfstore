@@ -1,0 +1,28 @@
+
+<html>
+    <head>
+        {% load static %}
+    </head>
+    <body>
+        <div>Disc</div><br>
+        {% for u in disc %}
+            {{u}} <br>
+        {% endfor %}  
+        <br>    
+        <div>Tape</div><br>
+        {% for u in tape %}
+            {{u}} <br>
+        {% endfor %}  
+        <br>    
+        <div>Unavailable</div><br>
+        {% for u in unavailable %}
+            {{u}} <br>
+        {% endfor %}  
+        <br>    
+        <div>Other</div><br>
+        {% for u in other %}
+            {{u}} <br>
+        {% endfor %}  
+        <br>    
+    </body>
+</html>

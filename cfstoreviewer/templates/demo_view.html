@@ -103,7 +103,10 @@
           {%for var in variable|getproxied %}
             <tr>
                 <td width="5%" id="button"> <input type="button" onclick="AddToBasket(this.closest('tr'),this.id)" class="addbutton" id="{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}" value="+"></button></td>  
-                <td width="22%" id="identity">{{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}.{{variable.location}}</td>
+                <td width="22%" id="identity">
+                  <input type="hidden"  name="{{variable|checkoutform}}" value="{{variable|checkoutform}}" />
+                  {{var|vardrsdisplay}}{{variable|outputcellmethods}}.{{variable|outputvar}}.{{variable.location}}
+                </td>
                 <td width="10%">
                     <button type="button" class="collapsible">More</button>
                     <div class="collapsible-content">
@@ -131,9 +134,9 @@
     </div>
     </div>
     
-    <div id="modvable">
+    <div id="NOTmodable">
         <div class="browser" id="searchtable">
-            <div id="movabffleheader">
+            <div id="NOTmovableheader">
             <div class="collapsiblebrowser-title">Browse Section </div>
             </div>
             <form action="/cfstoreviewer/viewcollections/search/" method="post">
@@ -319,15 +322,23 @@
 
             <div id="variable-block">
                 <div id="movablecheckout">
-                <table class="variable-title">
-                    <div id="movablecheckoutheader">
-                        <a>Selected variables</a>
+                  <table class="variable-title">
+                      <div id="movablecheckoutheader">
+                          <a>Selected variables</a>
+                      </div>
+                  </table>
+
+
+                  <form method="POST" action="/cfstoreviewer/checkout" id="checkout_form">
+                    {% csrf_token %}
+                    <div id="downloadbutton"> 
+                      <input type="submit" value="Checkout" />
                     </div>
-                </table>
-
-                    <table class="variable-display" id="checkout">
-                    </table>
-
+                    <input type="hidden" name="checkout_table" form="checkout_form">
+                      <table class="variable-display" id="checkout">
+                      </table>
+                    </input>
+                  </form>
                 </div>
                 </div>
 <script>
