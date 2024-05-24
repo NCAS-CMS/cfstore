@@ -352,7 +352,16 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return "%.1f%s%s" % (num, "Yi", suffix)
 
-
+@cli.command()
+@click.pass_context
+@click.option(
+    "--collection", default=None, help="Required collection (use and make default)"
+)
+def get_file_no(ctx, collection):
+    view_state, db = _set_context(ctx, collection)
+    files = (db.retrieve_files_in_collection(collection))
+    print(len(files))
+   
 @cli.command()
 @click.pass_context
 @click.option(
@@ -441,6 +450,7 @@ def ls(ctx, collection, output):
                 try:
                     for variable in return_list:
                         print("Variable:")
+                        print(variable._cell_methods)
                         if variable.standard_name:
                             print(variable.standard_name)
                         elif variable.long_name:
