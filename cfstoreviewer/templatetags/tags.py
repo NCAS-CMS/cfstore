@@ -24,6 +24,11 @@ def outputvar(var):
     return iden
 
 @template.defaulttags.register.filter
+def checkoutform(var):
+    output = var.identity
+    return output
+
+@template.defaulttags.register.filter
 def outputcellmethods(var):
     cm = var._cell_methods
     output= ""
@@ -35,6 +40,7 @@ def outputcellmethods(var):
 def vardrsdisplay(var):
     drs = var["experiment"] + "." + var["variant_id"] + "." + var["realm"] + "."
     return drs
+
 
 
 @template.defaulttags.register.filter

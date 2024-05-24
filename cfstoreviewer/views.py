@@ -280,6 +280,30 @@ def demo(request):
         request, "demo_view.html", {"variables": variables, "collections": collections}
     )
 
+def checkout(request):
+    db = CFSconfig().db
+    variables = []
+    files = {"unavailable":[],"tape":[],"disc":[],"other":[]}
+    if request.method == "POST":
+        checks = request.POST
+    for check in checks.keys():
+        variables.append(check)
+    variables = variables[2:]
+
+    for variable in variables:
+        var = db.retrieve_variable("identity",variable)
+        for file in var.in_files.all():
+            if "unavailable" in file.name:
+                files["unavailable"].append(file.name.replace("unavailable:",""))
+            elif ("tape") in file.name:
+                files["tape"].append(file.name.replace("tape:",""))
+            elif ("disc") in file.name:
+                files["disc"].append(file.name.replace("disc:",""))
+            else:
+                files["other"].append(file.name)
+    return render(
+        request, "checkout_view.html", {"unavailable":files["unavailable"],"tape":files["tape"],"disc":files["disc"],"other":files["other"]}
+    )
 
 def demosearch(request):
     db = CFSconfig().db

@@ -29,6 +29,7 @@ urlpatterns = [
     path("viewcollections/<str:collection>/confirmdelete", views.confirmdelete),
     path("viewcollections/<str:page>/download/", views.downloadcol),
     path("<str:page>/download/", views.downloadcol),
+    path("checkout", views.checkout),
     path("viewcollections/<str:page>/search/download/", views.downloadcol),
     path("viewcollections/variables/", views.lsvar, name="variableindex"),
     path("viewcollections/variables/<str:var>", views.lsvar),
