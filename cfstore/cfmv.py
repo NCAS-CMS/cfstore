@@ -66,33 +66,41 @@ def cli(ctx):
 
 @cli.command()
 @click.pass_context
-@click.argument("collection", nargs=1)
 @click.argument("transfer_method", nargs=1)
-@click.option("--source", default="None", help="the path of the source location")
-@click.option("--destination", default="None", help="the path of the destination")
+@click.option("--destination", default="None", help="the location of the gws directory where files will end up (only needed when moving)")
+@click.option("--filemanifest", default="None", help="the location of the file manifest, containing the paths of which files are to transfered")
 @click.option("--location", default="None", help="the location as stored by cfstore")
-def transfer(ctx, collection, transfer_method, source, destination, location):
+def transfer(ctx, transfer_method, filemanifest, destination, location):
     """
     Copy collection of files from source to destination
 
-    :param collection: File containing manifest of files to be transfered.
     :param transfer_method: Which method of transfer (currently JDMA for archiving or DELETE_FROM_GWS to remove from workspace)
     :param source: Source location of collection
     :param destination: Destination location for collection
     :return:
     """
 
-    print(collection, location)
-
+    disc,tape,unavailable,other = get_file_json(filemanifest)
+    print(disc,unavailable)
     if transfer_method == "JDMA":
-        JDMA_Transfer(ctx, destination, collection)
-    elif transfer_method == "DELETE_FROM_GWS":
-        GWS_Delete(ctx, collection, location)
+        JDMA_Transfer(ctx, tape, location, destination)
+    elif transfer_method == "GWS_DELETE":
+        GWS_Delete(ctx, unavailable, location)
+    elif transfer_method == "GWS_MOVE":
+        GWS_Move(ctx, disc, location, destination)
+
     else:
-        print("Select one of JDMA or DELETE_FROM_GWS")
+        print("Select one of JDMA, GWS_MOVE or GWS_DELETE")
 
 
-def JDMA_Transfer(ctx, collection, destination):
+def get_file_json(filemanifest):
+    print(filemanifest)
+    with open(filemanifest) as f:
+        jsonfiles = json.load(f)
+    disc,tape,unavailable,other = jsonfiles["disc"][:-1],jsonfiles["tape"][:-1],jsonfiles["unavailable"][:-1],jsonfiles["other"][:-1]
+    return disc,tape,unavailable,other
+
+def JDMA_Transfer(ctx, filelist, location, destination):
     """
     Copy collection of files from source to destination
 
@@ -105,8 +113,7 @@ def JDMA_Transfer(ctx, collection, destination):
 
     jdma = JDMAInterface(workspace=destination)
 
-    with open(collection) as f:
-        filelist = json.load(f)
+
     # Copy subset of streams
     jasmin.copy_streams()
 
@@ -116,8 +123,22 @@ def JDMA_Transfer(ctx, collection, destination):
     # Migrate data to Elastic Tape
     jdma.submit_migrate(filelist)
 
+def GWS_Move(ctx, filelist, location, destination):
+    """
+    Move a collection of files from one are on a gws to a new one
+    """
 
-def GWS_Delete(ctx, collection, location):
+    state, db = _set_context(ctx)
+    x = RemotePosix(state.db, location)
+    host, user = (
+        state.get_location(location)["host"],
+        state.get_location(location)["user"],
+    )
+    x.configure(host, user)
+
+    for file in filelist:
+        x.ssh.move_file(file[1], destination+"/"+file[0])
+def GWS_Delete(ctx, filelist, location):
     """
     Copy collection of files from source to destination
 
@@ -136,9 +157,7 @@ def GWS_Delete(ctx, collection, location):
     )
     x.configure(host, user)
 
-    with open(collection) as f:
-        filelist = json.load(f)
-    print(filelist)
+
     with open("json/cfadeletelist.json", "w+") as f:
         deletefile = json.dump(filelist, f)
     x.ssh.delete_from_master_cfa(
@@ -162,6 +181,8 @@ def GWS_Delete(ctx, collection, location):
     else:
         print("Please enter y or n.")
 
+def update_cfa(filelist):
+    pass
 
 if __name__ == "__main__":
     safe_cli()

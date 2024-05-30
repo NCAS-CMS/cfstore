@@ -4,25 +4,31 @@
         {% load static %}
     </head>
     <body>
-        <div>Disc</div><br>
-        {% for u in disc %}
-            {{u}} <br>
-        {% endfor %}  
-        <br>    
-        <div>Tape</div><br>
-        {% for u in tape %}
-            {{u}} <br>
-        {% endfor %}  
-        <br>    
-        <div>Unavailable</div><br>
-        {% for u in unavailable %}
-            {{u}} <br>
-        {% endfor %}  
-        <br>    
-        <div>Other</div><br>
-        {% for u in other %}
-            {{u}} <br>
-        {% endfor %}  
-        <br>    
+        {
+            "disc":<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;    [<br>
+                    {% for d in disc %}
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    {{d}},
+                    {% endfor %}""
+                    &nbsp;&nbsp;&nbsp;&nbsp;    ], <br>
+            "tape":<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;                [<br>
+                    {% for t in tape %}
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            {{t}},
+                    {% endfor %}""
+                    &nbsp;&nbsp;&nbsp;&nbsp;    ],  <br>
+            "unavailable":<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;[ <br>
+                    {% for u in unavailable %}
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;            {{u}},<br>
+                    {% endfor %}""
+            &nbsp;&nbsp;&nbsp;&nbsp;    ],   <br>
+            "other":<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;    [ <br>
+                    {% for o in other %}
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        {{o}},
+                    {% endfor %}""
+                    &nbsp;&nbsp;&nbsp;&nbsp;    ]   <br>
+        }    
     </body>
 </html>

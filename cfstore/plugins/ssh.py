@@ -148,9 +148,6 @@ class SSHlite(SSHcore):
 
         """
 
-        if subcollections:
-            raise NotImplementedError
-
         files = []
 
         def callback(file):
@@ -188,8 +185,8 @@ class SSHlite(SSHcore):
             if not os.path.exists(f.address):
                 print(f.path)
 
-    def move_file(self, remotePath, fileName):
-        self._sftp.rename(remotePath+'/tmp/'+fileName, remotePath+fileName)
+    def move_file(self, source, destination):
+        self._sftp.rename(source, destination)
 
     def copy_file(self, remotepath, newremotepath, localtemp):
         """

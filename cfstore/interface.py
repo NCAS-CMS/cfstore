@@ -405,6 +405,14 @@ class CollectionDB(CoreDB):
         else:
             raise FileNotFoundError
 
+    def retrieve_files_by_name(self, filename):
+        x = File.objects.filter(name__contains=filename).all()
+        if x:
+            assert len(x) > 0
+            return x
+        else:
+            x = None
+
     def retrieve_file_if_present(self, fullpath, size=None, checksum=None):
         """
         Retrieve a file with <path> and <name>.

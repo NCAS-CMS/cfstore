@@ -71,12 +71,12 @@ def cfparse_file_to_collection(db, filename, collection):
         with transaction.atomic():
             through_files = File.objects.bulk_create(
                 [
-                    File(name=os.path.basename(bulkfilename), size=0)
+                    File(name=os.path.basename(bulkfilename), path=os.path.abspath(bulkfilename), size=0)
                     for bulkfilename in (v.get_filenames())
                 ],
                 ignore_conflicts=True,
             )
-
+        var[properties["variant_id"]]["filenames"] = list(v.get_filenames())
         with transaction.atomic():
             Collection.files.through.objects.bulk_create(
                 [

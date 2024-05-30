@@ -290,17 +290,19 @@ def checkout(request):
         variables.append(check)
     variables = variables[2:]
 
-    for variable in variables:
+    for variabledrs in variables:
+        variable,drs = variabledrs.split(",")
         var = db.retrieve_variable("identity",variable)
         for file in var.in_files.all():
-            if "unavailable" in file.name:
-                files["unavailable"].append(file.name.replace("unavailable:",""))
-            elif ("tape") in file.name:
-                files["tape"].append(file.name.replace("tape:",""))
-            elif ("disc") in file.name:
-                files["disc"].append(file.name.replace("disc:",""))
-            else:
-                files["other"].append(file.name)
+            if file.name in var[drs]["filenames"]:
+                if "unavailable" in file.name:
+                    files["unavailable"].append([file.name.replace("unavailable:",""),file.path,file.size,drs])
+                elif ("tape") in file.name:
+                    files["tape"].append(file.name.replace("tape:",""))
+                elif ("disc") in file.name:
+                    files["disc"].append(file.name.replace("disc:",""))
+                else:
+                    files["other"].append(file.name)
     return render(
         request, "checkout_view.html", {"unavailable":files["unavailable"],"tape":files["tape"],"disc":files["disc"],"other":files["other"]}
     )

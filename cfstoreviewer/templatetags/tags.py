@@ -25,6 +25,7 @@ def outputvar(var):
 
 @template.defaulttags.register.filter
 def checkoutform(var):
+    print(var)
     output = var.identity
     return output
 
@@ -41,6 +42,10 @@ def vardrsdisplay(var):
     drs = var["experiment"] + "." + var["variant_id"] + "." + var["realm"] + "."
     return drs
 
+@template.defaulttags.register.filter
+def variantiddisplay(var):
+    vid =  var["variant_id"] 
+    return vid
 
 
 @template.defaulttags.register.filter
