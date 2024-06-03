@@ -85,7 +85,7 @@ def transfer(ctx, transfer_method, filemanifest, destination, location):
     if transfer_method == "JDMA":
         JDMA_Transfer(ctx, tape, location, destination)
     elif transfer_method == "GWS_DELETE":
-        GWS_Delete(ctx, unavailable, location)
+        GWS_Delete(ctx, disc, location, destination)
     elif transfer_method == "GWS_MOVE":
         GWS_Move(ctx, disc, location, destination)
 
@@ -138,7 +138,7 @@ def GWS_Move(ctx, filelist, location, destination):
 
     for file in filelist:
         x.ssh.move_file(file[1], destination+"/"+file[0])
-def GWS_Delete(ctx, filelist, location):
+def GWS_Delete(ctx, filelist, location, destination):
     """
     Copy collection of files from source to destination
 
@@ -158,24 +158,18 @@ def GWS_Delete(ctx, filelist, location):
     x.configure(host, user)
 
 
-    with open("json/cfadeletelist.json", "w+") as f:
-        deletefile = json.dump(filelist, f)
-    x.ssh.delete_from_master_cfa(
-        "json/cfadeletelist.json",
-    )
     totalfilesize = 0
     for file in filelist:
-        # Update the CFA
-        f = db.retrieve_file_if_present(file)
-        if f:
-            totalfilesize += f.size
+        totalfilesize += file[2]
+        print(file)
+
     answer = input(
-        f"This will open up {totalfilesize} worth of space on {location}. y/n"
+        f"This will open up {totalfilesize} bytes worth of space on {location}. y/n"
     )
     if answer.lower() == "y":
-        print("Clearing space")
-        # for file in filelist:
-        #   x.ssh.delete(file)
+        for file in filelist:
+            print(file[1])
+            x.ssh.delete(file[1])
     elif answer.lower() == "n":
         print("No actions")
     else:

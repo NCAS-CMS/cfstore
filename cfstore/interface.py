@@ -688,7 +688,7 @@ class CollectionDB(CoreDB):
         return results, queries
 
     def retrieve_or_make_variable(
-        self, standard_name, long_name, identity, cfdm_size, cfdm_domain
+        self, standard_name, long_name, identity, cfdm_size, cfdm_domain, location
     ):
         """Retrieve variable by arbitrary property"""
         var, created = Variable.objects.get_or_create(
@@ -697,6 +697,7 @@ class CollectionDB(CoreDB):
             identity=identity,
             cfdm_size=cfdm_size,
             cfdm_domain=cfdm_domain,
+            location=location,
         )
         return var, created
 

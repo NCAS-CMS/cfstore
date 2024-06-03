@@ -228,13 +228,24 @@ def backPropagate(ctx, cfa, jsonFile):
 @click.argument("directory")
 @click.argument("location")
 @click.argument("cfadirectory")
+def init(ctx, collection, directory, location, cfadirectory):
+    state, db = _set_context(ctx, collection)
+    vars = db.retrieve_all_variables("all","all")
+    for var in vars:
+        var.location = "tape"
+        var.save()
+    files = db.retrieve_files_by_name("")
+    for file in files:
+        file.name = file.name.replace("unavailable","tape")
+        file.save()
+@cli.command()
+@click.pass_context
+@click.option("--collection", default=None, help="Current collection (make default)")
+@click.argument("directory")
+@click.argument("location")
+@click.argument("cfadirectory")
 def update(ctx, collection, directory, location, cfadirectory):
 
-    growncfa = Dataset(
-        cfadirectory,
-        "a",
-        format="NETCDF4",
-    )
     state, db = _set_context(ctx, collection)
     x = RemotePosix(state.db, location)
     host, user = (
@@ -244,34 +255,45 @@ def update(ctx, collection, directory, location, cfadirectory):
     x.configure(host, user)
 
     tapefiles = x.ssh.get_files_and_sizes(directory, subcollections=True)
-    tapefiles.append(["/gws/nopw/j04/canari/copy_streams/cv827_1_mon__grid_T_195001-195001.nc", 493350999])
     for tf, size in tapefiles:
         name = os.path.basename(tf)
         path = os.path.abspath(tf)
         print(name, size)
         db_files = db.retrieve_files_by_name(name)
-        print(db_files)
+
         if db_files:
             for df in db_files:
-                print(df.path)
+                print(df.path,df.variables)
                 df.name = df.name.replace("unavailable","disc")
                 df.name = df.name.replace("tape","disc")
                 df.path = path
                 df.size = size
+                for var in db.retrieve_all_variables("in_files",df):
+                    print(var)
+                    var.location="disc"
+                    var.save()
                 df.save()
 
     tapefilenames = [row[0] for row in tapefiles]
+    
+    for root,_,cfafiles in os.walk(cfadirectory):
+        for cfa in cfafiles:
+            growncfa = Dataset(
+                os.path.join(root,cfa),
+                "a",
+                format="NETCDF4",
+            )
+            k = 1
+            for varkey, varval in growncfa.variables.items():
+                if varkey.startswith("cfa_file"):
+                    varshape = varval[..., 0].shape
+                    varval = varval[..., 0].flatten().tolist()
+                    for v in range(len(varval) - 1):
+                        k += 1
+                        val = varval[v]
+                        if val in tapefilenames:
+                            varval[v] = varval[v].replace("${unavailable}", "${disc}")
+                    varval = np.reshape(varval, varshape)
 
-    k = 1
-    for varkey, varval in growncfa.variables.items():
-        if varkey.startswith("cfa_file"):
-            varshape = varval[..., 0].shape
-            varval = varval[..., 0].flatten().tolist()
-            for v in range(len(varval) - 1):
-                k += 1
-                val = varval[v]
-                if val in tapefilenames:
-                    varval[v] = varval[v].replace("${unavailable}", "${disc}")
-            varval = np.reshape(varval, varshape)
+            
 
-        

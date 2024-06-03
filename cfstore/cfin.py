@@ -9,7 +9,7 @@ import click
 from cfstore.config import CFSconfig
 from cfstore.plugins.et_main import et_main
 from cfstore.plugins.posix import Posix, RemotePosix
-
+from cfstore.cfparse_file import cfparse_file_to_collection
 
 class InputError(Exception):
     def __init__(self, message, help):
@@ -230,9 +230,9 @@ def PopulateFromWorkspaceDirectoryByDirectory(
     print(argm)
     location = arg1
     pushdirectory, metadatadirectory, collection = argm
-    scriptlocation = "~/cfstore/scripts/"
-
-    aggscriptpath = "~/cfstore/scripts/aggregatebmetadata.py"
+    scriptlocation = "/home/george/Documents/cfs/cfstore/cfstore/scripts/"
+    
+    aggscriptpath = "/home/george/Documents/cfs/cfstore/cfstore/scripts/aggregatebmetadata.py"
 
     # SSH
     # Setup Remote Posix as normal
@@ -241,31 +241,38 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         state.get_location(location)["host"],
         state.get_location(location)["user"],
     )
+    print(metadatadirectory)
+
     x.configure(host, user)
 
-    for root, dirs in os.walk(collection):
-        # Add settings to script
-        x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
-        aggscriptpath = scriptlocation + "aggscript.py"
-        path = root + dirs
-        aggscriptname = "aggscript.py"
-        col = collection + path
-        description = "Path " + path
-
-        x.add_collection(
-            path,
-            col,
-            description,
+    try:
+        col = x.db.retrieve_collection(collection)
+    except:
+        col = x.add_collection(
+            metadatadirectory,
+            collection,
+            "Top level directory",
             subcollections=False,
             regex=None,
         )
+    # Activate Remote Environments
+    x.ssh.configureRemoteEnvironment()
+    print(metadatadirectory)        
+    def parse_from_remote_file(directory):
+        # Add settings to script
+        print("||",directory)
+        aggscriptpath = scriptlocation + "aggscript.py"
+        aggscriptname = "aggscript.py"
+        description = "Path " 
+
+        x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
+
 
         # Push Script(s)
         # x.ssh.pushScript(remotepath,col, scriptname)
         x.ssh.pushScript(pushdirectory, col, aggscriptpath)
 
-        # Activate Remote Environments
-        x.ssh.configureRemoteEnvironment()
+
 
         # Execute script to generate Aggregation File
         x.ssh.executeScript(pushdirectory, col, aggscriptname)
@@ -281,8 +288,11 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
 
         # Update database with JSON
-        x.aggregation_files_to_collection("cfstore/json/" + outputfilename, col)
+        print(col)
+        cfparse_file_to_collection(x.db, "cfstore/json/" + outputfilename, col.name,"disc")
         state.save()
+
+    x.ssh.walktree(metadatadirectory,print,dcallback=parse_from_remote_file)
 
 
 # This with the right arguments can run scripts on Jasmin
@@ -401,7 +411,7 @@ def PopulateFromWorkspaceDirectory(
 
     print("Adding metadata from aggregation files tp collection")
     # Update database with JSON
-    x.aggregation_files_to_collection("cfstore/json/" + outputfilename, collection)
+    cfparse_file_to_collection("cfstore/json/" + outputfilename, collection)
     state.save()
     scriptendtime = time.time()
     print(

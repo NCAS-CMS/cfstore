@@ -27,7 +27,7 @@ def manage_types(value):
         raise ValueError("Unrecognised type for database ", type(value))
 
 
-def cfparse_file_to_collection(db, filename, collection):
+def cfparse_file_to_collection(db, filename, collection,cffilelocation):
     """
     Parse a file and load cf metadata into the database
     :Parameters:
@@ -40,6 +40,7 @@ def cfparse_file_to_collection(db, filename, collection):
     **Examples:**
     >>> cfparse_file(db, 'my_model_file.nc')
     """
+    print("reading ",filename)
     fullstart = time.time()
     cff = cf.read(filename)
     # loop over fields in file (not the same as netcdf variables)
@@ -60,6 +61,7 @@ def cfparse_file_to_collection(db, filename, collection):
             identity=v.identity(),
             cfdm_size=size,
             cfdm_domain=domain,
+            location=cffilelocation
         )
         var.save()
 
@@ -155,7 +157,7 @@ def cfparse_file(db, filename):
         size = v.size
 
         var = Variable(
-            standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain
+            standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, location="tape"
         ).save()
         print("||", var)
         for k, p in properties.items():
@@ -163,7 +165,7 @@ def cfparse_file(db, filename):
                 var[k] = manage_types(p)
 
         for file in v.get_filenames():
-            for f in db.retrieve_or_make_file(os.path.basename(file)):
+            for f in db.retrieve_or_make_file(os.path.basename(file).replace("unavailable","tape")):
                 var.in_files.add(f)
 
         # there is a more pythonic way of doing this
