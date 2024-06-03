@@ -233,13 +233,13 @@
             {% endfor %}
             -->
 
-
+            <!--
             <div class="collapsiblebrowser-title">Frequency </div>
             <form autocomplete="off" action=""> 
                     <div class="autocomplete" style="width:300px;">
                         <input id="FrequencyAutosearch" class="autosearch" type="text" name="{{''|getfrequencyforautocompletesearchbar}}" placeholder="Frequency">
                     </div>
-            </form>
+            </form> -->
             <!--
             <div class="collapsiblebrowser-title">Frequency </div>
             {% for collection in usercollections %}
@@ -1021,12 +1021,6 @@ variantid = variantid.replace(/'/g, '"');
 obj = JSON.parse(variantid);
 
 autocomplete(document.getElementById("variantIDAutosearch"), obj);
-
-var frequency = document.getElementById("FrequencyAutosearch").getAttribute("name")
-frequency = frequency.replace(/'/g, '"');
-obj = JSON.parse(frequency);
-
-autocomplete(document.getElementById("FrequencyAutosearch"), obj);
 
 var method = document.getElementById("MethodAutosearch").getAttribute("name")
 method = method.replace(/'/g, '"');

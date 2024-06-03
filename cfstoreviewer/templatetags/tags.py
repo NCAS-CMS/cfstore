@@ -166,6 +166,17 @@ def getcellmethodsforautocompletesearchbar(property):
     return output
 
 @template.defaulttags.register.filter
+def getcollectionsforautocompletesearchbar(property):
+    db = CFSconfig().db
+    variables = db.retrieve_variable("all", "")
+    output = []
+    for variable in variables:
+        for var in variable.in_collection.all():
+            if var not in output:
+                output.append(var)
+    return output
+
+@template.defaulttags.register.filter
 def getfrequencyforautocompletesearchbar(property):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
@@ -176,7 +187,7 @@ def getfrequencyforautocompletesearchbar(property):
 def getLocationAutosearchallvariables(property):
     db = CFSconfig().db
     variables = db.retrieve_variable("all", "")
-    output = ['unavailable','tape','monthly']
+    output = ['unavailable','tape','disc']
     return output
 
 @register.inclusion_tag("demo_page.html", takes_context=True)

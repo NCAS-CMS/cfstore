@@ -1,6 +1,6 @@
 import ast
 
-from django.http import FileResponse, HttpResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 
 from cfstore.config import CFSconfig
@@ -295,14 +295,17 @@ def checkout(request):
         var = db.retrieve_variable("identity",variable)
         for file in var.in_files.all():
             if file.name in var[drs]["filenames"]:
-                if "unavailable" in file.name:
-                    files["unavailable"].append([file.name.replace("unavailable:",""),file.path,file.size,drs])
-                elif ("tape") in file.name:
-                    files["tape"].append(file.name.replace("tape:",""))
+                if "tape" in file.name:
+                    files["tape"].append([file.name.replace("tape:",""),file.path,file.size,drs])
+                elif ("unavailable") in file.name:
+                    files["tape"].append([file.name.replace("unavailable:",""),file.path.replace("unavailable:",""),file.size,drs])
                 elif ("disc") in file.name:
-                    files["disc"].append(file.name.replace("disc:",""))
+                    files["disc"].append([file.name.replace("disc:",""),file.path,file.size,drs])
                 else:
-                    files["other"].append(file.name)
+                    files["other"].append([file.name,file.path,file.size,drs])
+    
+    return JsonResponse(files)
+
     return render(
         request, "checkout_view.html", {"unavailable":files["unavailable"],"tape":files["tape"],"disc":files["disc"],"other":files["other"]}
     )
