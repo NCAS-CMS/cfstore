@@ -47,6 +47,7 @@ setup(
             "cfin=cfstore.cfin:safe_cli",
             "cfmv=cfstore.cfmv:safe_cli",
             "cfbr=cfstore.cfbrowse:safe_cli",
+            "cfmanage=cfstore.cfmanage:safe_cli"
         ],
     },
     package_data={"cfstore": package_data},
