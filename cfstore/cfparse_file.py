@@ -52,7 +52,9 @@ def cfparse_file_to_collection(db, filename, collection,cffilelocation):
         name, long_name = v.get_property("standard_name", None), v.get_property(
             "long_name", None
         )
+        realm = v.get_property("realm",None)
 
+        print(realm,cffilelocation,filename, v.identity())
         domain = v.domain._one_line_description()
         size = v.size
         var, created = db.retrieve_or_make_variable(
@@ -61,6 +63,7 @@ def cfparse_file_to_collection(db, filename, collection,cffilelocation):
             identity=v.identity(),
             cfdm_size=size,
             cfdm_domain=domain,
+            realm=realm,
             location=cffilelocation
         )
         var.save()
