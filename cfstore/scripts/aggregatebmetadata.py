@@ -29,6 +29,9 @@ if __name__ == "__main__":
         chunks=None,
     )
 
-    writepath = "{{homedir}}/" + "tempfile.cfa"
-
+    writepath = "{{homedir}}/canaricfas{{fileinput}}.cfa"
+    os.umask(0)
+    os.makedirs("{{homedir}}/canaricfas{{filepath}}", mode=0o777, exist_ok=True) 
+    os.chmod("{{homedir}}/canaricfas{{filepath}}", mode=0o777)
+    os.umask(0)
     cf.write(cff, cfa={"strict": False}, filename=writepath)
