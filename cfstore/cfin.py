@@ -1,5 +1,6 @@
 import os
 import stat
+import json
 import time
 from datetime import datetime
 from pathlib import Path
@@ -212,11 +213,15 @@ def getBMetadata(ctx, arg1, argm):
 @click.option(
     "--outputfilename", default="tempfile.cfa", help="the name of the output file"
 )
+@click.option(
+    "--delete", default="True", help="If true deletes the CFA after making it"
+)
 def PopulateFromWorkspaceDirectoryByDirectory(
     ctx,
     arg1,
     argm,
     outputfilename,
+    delete,
 ):
     """
     Runs a remote script to aggregate metadata and store it in the database
@@ -230,9 +235,11 @@ def PopulateFromWorkspaceDirectoryByDirectory(
     print(argm)
     location = arg1
     pushdirectory, metadatadirectory, collection = argm
+    print("pushdirectory is ",pushdirectory)
+    print("metadata directory is", metadatadirectory)
     scriptlocation = "/home/george/Documents/cfs/cfstore/cfstore/scripts/"
     
-    aggscriptpath = "/home/george/Documents/cfs/cfstore/cfstore/scripts/aggregatebmetadata.py"
+    baseaggscriptpath = "/home/george/Documents/cfs/cfstore/cfstore/scripts/aggregatebmetadata.py"
 
     # SSH
     # Setup Remote Posix as normal
@@ -263,9 +270,13 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         print("||",directory)
         aggscriptpath = scriptlocation + "aggscript.py"
         aggscriptname = "aggscript.py"
-        description = "Path " 
+        
+        directorypath, directoryname =os.path.split(directory)
+        cfaendpath = pushdirectory + "/canaricfas" +directorypath + ".cfa"
 
-        x.ssh.configureScript(aggscriptpath, (metadatadirectory, pushdirectory))
+        description = directory
+
+        x.ssh.configureScript(baseaggscriptpath, (directorypath, pushdirectory))
 
 
         # Push Script(s)
@@ -273,19 +284,20 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         x.ssh.pushScript(pushdirectory, col, aggscriptpath)
 
 
-
+        
         # Execute script to generate Aggregation File
         x.ssh.executeScript(pushdirectory, col, aggscriptname)
 
         # Retrieve JSON file
         x.ssh.get(
-            pushdirectory + "/tempfile.cfa",
+            cfaendpath,
             "cfstore/json/" + outputfilename,
-            delete=True,
+            delete=delete,
         )
 
         # Clean-up remote files (At present clean-up means remove them)
         # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
+        x.ssh.log_files_and_sizes(directory, cfaendpath)
 
         # Update database with JSON
         print(col)
