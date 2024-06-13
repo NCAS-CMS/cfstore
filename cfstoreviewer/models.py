@@ -175,6 +175,7 @@ class Variable(models.Model):
     in_collection = models.ManyToManyField(Collection)
     in_files = models.ManyToManyField(File)
     identity = models.CharField(max_length=1024)
+    realm = models.CharField(max_length=1024)
     location = models.CharField(max_length=1024)
 
 
