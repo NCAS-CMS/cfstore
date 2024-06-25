@@ -57,7 +57,7 @@ def cfparse_file_to_collection(db, filename, collection,cffilelocation):
         print(realm,cffilelocation,filename, v.identity())
         domain = v.domain._one_line_description()
         size = v.size
-        var, created = db.retrieve_or_make_variable(
+        var = db.retrieve_or_make_variable(
             standard_name=name,
             long_name=long_name,
             identity=v.identity(),
@@ -133,7 +133,7 @@ def cfparse_file_to_collection(db, filename, collection,cffilelocation):
     print("LOOP", time.time() - fullstart)
 
 
-def cfparse_file(db, filename):
+def cfparse_file(db, filename, cffilelocation):
     """
     Parse a file and load cf metadata into the database
     :Parameters:
@@ -156,20 +156,46 @@ def cfparse_file(db, filename):
         name, long_name = v.get_property("standard_name", None), v.get_property(
             "long_name", None
         )
+        realm = v.get_property("realm",None)
+
+        print(realm,cffilelocation,filename, v.identity())
         domain = v.domain._one_line_description()
         size = v.size
+        var = db.retrieve_or_make_variable(
+            standard_name=name,
+            long_name=long_name,
+            identity=v.identity(),
+            cfdm_size=size,
+            cfdm_domain=domain,
+            realm=realm,
+            location=cffilelocation
+        )
+        var.save()
 
-        var = Variable(
-            standard_name=name, long_name=long_name, cfdm_size=size, cfdm_domain=domain, location="tape"
-        ).save()
-        print("||", var)
+        var[properties["variant_id"]] = {}
+
         for k, p in properties.items():
             if k not in ["standard_name", "long_name"]:
-                var[k] = manage_types(p)
+                var[properties["variant_id"]][k] = manage_types(p)
+        with transaction.atomic():
+            through_files = File.objects.bulk_create(
+                [
+                    File(name=os.path.basename(bulkfilename), path=os.path.abspath(bulkfilename), size=0)
+                    for bulkfilename in (v.get_filenames())
+                ],
+                ignore_conflicts=True,
+            )
+        var[properties["variant_id"]]["filenames"] = list(v.get_filenames())
 
-        for file in v.get_filenames():
-            for f in db.retrieve_or_make_file(os.path.basename(file).replace("unavailable","tape")):
-                var.in_files.add(f)
+
+        with transaction.atomic():
+            Variable.in_files.through.objects.bulk_create(
+                [
+                    Variable.in_files.through(file_id=tf.pk, variable_id=var.id)
+                    for tf in through_files
+                ],
+                ignore_conflicts=True,
+            )
 
         # there is a more pythonic way of doing this
         # if db.retrieve_variable("long_name",var.long_name) should check emptiness but something is going wrong
@@ -178,31 +204,24 @@ def cfparse_file(db, filename):
         #   first should we be checking everything? Probably not, there will be some very similar variables we can group
         #   second these only included ordered lists which definitely needs to be changed - those are at least one example of similar variables we can group
         querylist = []
-        duplicate = True
+        duplicate = False
         if var.long_name:
             querylist = db.retrieve_all_variables("long_name", var.long_name)
         if var.standard_name:
             querylist = db.retrieve_all_variables("standard_name", var.standard_name)
         if querylist:
             for queryvar in querylist:
-                if (
-                    var.cfdm_domain == queryvar.cfdm_domain
-                    and var.cfdm_size == queryvar.cfdm_size
-                ):
-                    if DeepDiff(var._proxied, queryvar._proxied):
-                        duplicate = True
-                    else:
-                        duplicate = False
-                else:
-                    duplicate = False
-        else:
-            duplicate = False
-
-        if duplicate:
-            var.delete()
+                if not var.id == queryvar.id:
+                    if var.cfdm_size == queryvar.cfdm_size:
+                        if var.cfdm_domain == queryvar.cfdm_domain:
+                            if DeepDiff(var._proxied, queryvar._proxied):
+                                duplicate = True
+                                continue
+        var.save()
 
         for m, cm in v.cell_methods().items():
             for a in cm.get_axes():
                 method = cm.get_method()
                 dbmethod = db.cell_method_get_or_make(axis=a, method=method)
-                dbmethod.used_in.append(var)
+                var._cell_methods[method] = (a, method)
+        var.save()
