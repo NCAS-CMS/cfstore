@@ -93,7 +93,7 @@ def cli(ctx, collection):
 def setc(ctx, collection):
     """
     Set collection, or reset to default if --collection=all
-    Usage: cfsdb setc --collection=<collection>
+    Usage: cfdb setc --collection=<collection>
     """
     view_state, db = _set_context(ctx, collection)
     if collection != "all":
@@ -116,6 +116,7 @@ def aaftc(ctx, aggfile, collection):
     (A)dd (A)ggregation (F)ile (T)o (C)ollection
     Takes in an aggregation file and a collection. Collection is not actually an optional input.
     The contents of the aggregation file are added to the collection.
+        aggfile: A cfa file containing an aggregation of variables
     Usage: #FIXME
     """
     view_state, db = _set_context(ctx, collection)
@@ -139,7 +140,9 @@ def searchvariable(ctx, key, value, verbosity):
     Search for collections with a variable
     Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
     Other properties can also be searched
-    Usage: cfsdb searchvariable <key> <value>
+        key: One of long_name, standard_name, cfdm_size, cfdm_domain, cell_methods to search with
+        value: The value the key should contain
+    Usage: cfdb searchvariable <key> <value>
     """
     view_state, db = _set_context(ctx, "all")
 
@@ -164,7 +167,9 @@ def generatencfiles(ctx, directory, basefilename):
     Search for collections with a variable
     Main keys are: long_name, standard_name, cfdm_size, cfdm_domain, cell_methods
     Other properties can also be searched
-    Usage: cfsdb searchvariable <key> <value>
+    Usage: cfdb searchvariable <key> <value>
+
+    #FIXME This is should be generic
     """
     view_state, db = _set_context(ctx, "all")
 
@@ -280,6 +285,7 @@ def search_collections(
     """
     Search for collections with specific features
     The supported search properties are name_contains, description_contains, contains_file, tagname, facet
+    Usage: cfdb searchvariable --name_contains=<str>|--contains_file=<file>|--tagname=<tag>|--facet=<facet>
     """
     if not (name_contains or description_contains or contains_file or tagname or facet):
         print("You might want to put in some search options")
@@ -320,6 +326,8 @@ def browsevariable(ctx, key, value, verbosity):
     Iterative user input to build compound search
     Browse starts with initial key/value pair then iteratively take in additional key/value pairs gradually narrowing search
     Will not print collections without checking first - make sure the output is of a reasonable size
+    Usage: cfdb browsevariable <key> <value>
+        Then follow output to keep browsing
     """
     view_state, db = _set_context(ctx, "all")
     variables, query = db.retrieve_variable_query(key, value, [])
@@ -346,6 +354,10 @@ def browsevariable(ctx, key, value, verbosity):
 
 
 def sizeof_fmt(num, suffix="B"):
+    """
+    Helper function to sort byte sizes into more useful formats
+    No command line usage
+    """
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
             return "%3.1f%s%s" % (num, unit, suffix)
@@ -358,6 +370,11 @@ def sizeof_fmt(num, suffix="B"):
     "--collection", default=None, help="Required collection (use and make default)"
 )
 def get_file_no(ctx, collection):
+    """
+    Gets the number of files in a collection
+
+    Usage: cfdb get_file_no --collection=<col> 
+    """
     view_state, db = _set_context(ctx, collection)
     files = (db.retrieve_files_in_collection(collection))
     print(len(files))
@@ -370,14 +387,14 @@ def get_file_no(ctx, collection):
 @click.option(
     "--output",
     default="files",
-    help="What information is printed (files, tags, facets, relationships, collections, variables or locations)",
+    help="What information is printed (files, tags, facets, relationships, collections, variables or locations)"
 )
 def ls(ctx, collection, output):
     """
     List collections (collections=None),
     or list other objects in a specific collection
     (which might be the last used one).
-    Usage: cfsdb ls --collection=<collection> --output= <files|tags|facets|relationships|collections|variables|locations>
+    Usage: cfdb ls --collection=<collection> --output= <files|tags|facets|relationships|collections|variables|locations>
     """
     view_state, db = _set_context(ctx, collection)
     output = output.lower()
@@ -511,9 +528,7 @@ def ls(ctx, collection, output):
             loc_list = db.retrieve_locations()
             for c in loc_list:
                 return_list.append("Location details:")
-                return_list.append("Name:" + locationName)
-                return_list.append("Host:" + state.get_location(locationName)["host"])
-                return_list.append("User:" + state.get_location(locationName)["user"])
+                return_list.append("Name:" + c.name)
         elif output == "variables" or output == "var":
             var_list = db.retrieve_variable("all", "")
             for variable in var_list:
@@ -558,6 +573,11 @@ def ls(ctx, collection, output):
     "--collection", default=None, help="Look in collection (use and make default)"
 )
 def print_file_variables(ctx, file, collection):
+    """
+    Takes in a file and returns all the variables associated with that file
+
+    Usage: cfdb print_file_variables <file> --collection=<col>
+    """
     view_state, db = _set_context(ctx, collection)
     file = db.retrieve_file_if_present(file)
     print(file)
@@ -581,7 +601,7 @@ def findf(ctx, match, collection):
     """
     Find files in collection (or entire database if --collection=all), which include MATCH
     anywhere in their path and filename.
-    Usage: cfsdb findf <string to find> --collection=<collection>
+    Usage: cfdb findf <string to find> --collection=<collection>
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
@@ -617,6 +637,7 @@ def findrx(ctx, collection, match):
 
     (The default collection must be set, or the --collection argument used.)
     (Depreciated, replaced by locate replicants)
+    Usage: don't use this please
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
@@ -691,7 +712,7 @@ def locate_replicants(
         We normally assume that there we are looking in a large set of *other* files for matches into a smaller
         set of collection files. If the collection likely contains more files than exist in the set of others,
         then it might be worth using try_reverse_for_speed=True (default False) to speed things up.
-    Usage: cfsdb locate-replicants --collection=<collection> --checkby=<name>
+    Usage: cfdb locate-replicants --collection=<collection> --checkby=<name>
     See "Identifying Replicants.rst" for further usage information
     """
     view_state, db = _set_context(ctx, collection)
@@ -747,11 +768,11 @@ def organise(ctx, collection, description_file):
     Take a list of files move them into a collection with name COLLECTION
     If COLLECTION doesn't exist, create it.
     If invoked from a terminal, provide an editor for entering files.
-    Can also be invoked in a pipeline or using an input file (e.g. cfsdb organise yourc << YourFileListing)
+    Can also be invoked in a pipeline or using an input file (e.g. cfdb organise yourc << YourFileListing)
     Files must exist in database before they can be organised.
-    Usage: cfsdb organise <collectionname> --description_file=<file_location>
+    Usage: cfdb organise <collectionname> --description_file=<file_location>
     """
-    # FIXME This could probably do with a doc page
+    # FIXME This could probably do with a whole doc page
     view_state, db = _set_context(ctx, collection)
 
     if os.isatty(0):
@@ -787,7 +808,7 @@ def tag(ctx, collection, tagname):
     """
     Tag a COLLECTION with TAGNAME
     (and save collection as current default collection)
-    Usage: cfsdb tag <collection> <tagname>
+    Usage: cfdb tag <collection> <tagname>
     """
     view_state, db = _set_context(ctx, collection)
     db.tag_collection(view_state.collection, tagname)
@@ -817,8 +838,8 @@ def findc(ctx, match, tagname, facet):
     """
     Find all collections which either have MATCH in their name, or
     are tagged with TAGNAME
-    Usage: cfsdb findc --match|tagname=<string>
-    Alternate usage: cfsdb findc --facet <key> <value>
+    Usage: cfdb findc --match|tagname=<string>
+    Alternate usage: cfdb findc --facet <key> <value>
     """
     view_state, db = _set_context(ctx, "all")
     if facet == ():
@@ -849,7 +870,7 @@ def facet(ctx, key, value, collection, remove):
     (or remove if -r/--remove is present)
     As usual, do this with current default collection or be specific with
     --collection=collection
-    Usage: cfsdb facet key value --collection=collection
+    Usage: cfdb facet key value --collection=collection
     """
     view_state, db = _set_context(ctx, collection)
     if not view_state.collection:
@@ -880,10 +901,10 @@ def linkto(ctx, col1, link, col2):
     linkto (col1, 'parent_of, col2)
     Makes no reciprocal links. This link can only
     be discovered from col1.
-    Usage: cfsdb linkto collection1 relationshiplink collection2
+    Usage: cfdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
-    # db.add_relationships(col1, col2, link, None)
+    db.add_relationships(col1, col2, link, None)
 
 
 @cli.command()
@@ -898,7 +919,7 @@ def linkbetween(ctx, col1, link, col2):
     result in being able to find all collections
     which are "brother_of" col2 (which would be col1), and
     vice versa.
-    Usage: cfsdb linkto collection1 relationshiplink collection2
+    Usage: cfdb linkto collection1 relationshiplink collection2
     """
     view_state, db = _set_context(ctx, col1)
     db.add_relationships(col1, col2, link, link)
@@ -917,6 +938,7 @@ def findr(ctx, link, collection):
     e.g. findr parent_of
     would find all the related object collections for the subject/predicate/object
     relationship collection/parent_of/*
+    Usage: cfdb findr <link> --collection=<col>
     """
     view_state, db = _set_context(ctx, collection)
     collection = view_state.collection
@@ -938,7 +960,8 @@ def delete_col(ctx, collection, force):
     """
     Delete an <collection> that contains no files
     Raises an error if the collection is not empty
-    Usage: cfsdb delete-col <collection>
+    Usage: cfdb delete-col <collection>
+    Alternate usage: cfdb delete-col <collection> --force=True
     """
     view_state, db = _set_context(ctx, None)
     _print(db.delete_collection(collection, force))
@@ -952,7 +975,7 @@ def delete_loc(ctx, location):
     """
     Delete an <collection> that contains no files
     Raises an error if the collection is not empty
-    Usage: cfsdb delete-col <collection>
+    Usage: cfdb delete-col <collection>
     """
     view_state, db = _set_context(ctx, None)
     db.delete_location(location)
@@ -966,7 +989,7 @@ def delete_rel(ctx, relationship):
     """
     Delete an <collection> that contains no files
     Raises an error if the collection is not empty
-    Usage: cfsdb delete-col <collection>
+    Usage: cfdb delete-col <collection>
     """
     view_state, db = _set_context(ctx, None)
     db.delete_relationship(relationship)
@@ -982,7 +1005,7 @@ def delete_var(ctx, variable, col):
     Deletes a variable.
     If given a collection will delete remove all variable from that collection and delete any variables only in that collection.
     If given "all" will delete all variables
-    Usage: cfsdb delete-var variable <collection>
+    Usage: cfdb delete-var variable <collection>
     """
     view_state, db = _set_context(ctx, None)
 
@@ -1006,18 +1029,30 @@ def delete_var(ctx, variable, col):
 @cli.command()
 @click.pass_context
 @click.argument("collection")
-def pr(ctx, collection):
+@click.option(
+    "--format",
+    default="cmd",
+    help="Select one of cmd or json as output format"
+)
+def pr(ctx, collection,format):
     """
     Print information about a collection/json
-    #FIXME add json support
-    Usage: cfsdb pr <collection>
+    Usage: cfdb pr <collection>
+    Alternate usage: cfdb pr <collection> --format=json
     """
     # FIXME add json support
     view_state, db = _set_context(ctx, None)
-    markdown = db.collection_info(collection)
-    md = Markdown(markdown)
-    console = Console()
-    console.print(md)
+    format = format.lower()
+    name,description,files = db.collection_info(collection)
+    files = [f.name for f in files]
+    info = {"Description":description,name:files}
+    if format=="cmd":
+        console = Console()
+        console.print(info.items())
+    if format=="json":
+        file = "cfstore/json/pr"+name+".json"
+        with open(file, "w+") as f:
+            json.dump(info,f)
     view_state.save()
 
 
@@ -1027,7 +1062,7 @@ def pr(ctx, collection):
 def edit(ctx, collection):
     """
     Edit (and replace) a collection description
-    Usage: cfsdb edit <collection>
+    Usage: cfdb edit <collection>
     """
     view_state, db = _set_context(ctx, None)
     active_collection = db.retrieve_collection(collection)
@@ -1045,7 +1080,7 @@ def edit(ctx, collection):
 def delete_file(ctx, collection, file):
     """
     Removes a file from a collection
-    Usage: cfsdb delete-file <collection> <file>
+    Usage: cfdb delete-file <collection> <file>
     """
     view_state, db = _set_context(ctx, collection)
     db.delete_file_from_collection(collection, file)
