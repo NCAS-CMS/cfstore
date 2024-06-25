@@ -1,5 +1,6 @@
 import fnmatch
 import glob
+import json
 import os
 import posixpath
 import time
@@ -55,6 +56,7 @@ class SSHlite(SSHcore):
         """
         Get remote_path and store it in local_path
         """
+        print("getting",remotepath,"and putting it in",localpath)
         try:
             if not os.path.exists(localpath):
                 open(localpath, "w").close()
@@ -63,8 +65,8 @@ class SSHlite(SSHcore):
             if delete:
                 print("Deleting remote file")
                 self._sftp.remove(remotepath)
-        except IOError:
-            print("Get Failed")
+        except IOError as e:
+            print("Get Failed with",e)
 
     def delete(self, remote_file):
         """
@@ -88,7 +90,7 @@ class SSHlite(SSHcore):
             print("Failed to put list of file locations to remove")
 
     def walktree(
-        self, remotepath, fcallback, dcallback=None, ucallback=None, recurse=True
+        self, remotepath, fcallback, dcallback=None, ucallback=None, recurse=True,
     ):
         """
         Recursively descend, depth first, the directory tree rooted at
@@ -148,10 +150,10 @@ class SSHlite(SSHcore):
 
         """
 
-        files = []
+        files = {}
 
         def callback(file):
-            files.append((file, self.get_size(file)))
+            files[file] = self.get_size(file)
 
         if self.logging:
             stime = time.time()
@@ -184,6 +186,15 @@ class SSHlite(SSHcore):
         for f in files:
             if not os.path.exists(f.address):
                 print(f.path)
+
+    def log_files_and_sizes(self, inputdirectory, outputdirectory, subcollections=False):
+        filesandsizes = self.get_files_and_sizes(inputdirectory)
+        jsondirectory = "/home/george/Documents/cfs/cfstore/cfstore/json/filesizes.json"
+        with open(jsondirectory, "w+") as f:
+            json.dump(filesandsizes, f)
+        self._sftp.put(jsondirectory,outputdirectory.replace(".cfa","")+".json")
+        print("json dumped to",outputdirectory.replace(".cfa","")+".json")
+        return filesandsizes
 
     def move_file(self, source, destination):
         self._sftp.rename(source, destination)
@@ -234,6 +245,8 @@ class SSHlite(SSHcore):
     def configureScript(self, file, settings):
         # Read in the file
         fileinput, homedir = settings
+        filepath,filename =os.path.split(fileinput)
+        print("Configuring",file,"from", fileinput,"with",homedir)
         print("Reading ", file)
         with open(file, "r") as file:
             filedata = file.read()
@@ -241,8 +254,10 @@ class SSHlite(SSHcore):
         # Replace the target string
         filedata = filedata.replace("{{fileinput}}", fileinput)
         filedata = filedata.replace("{{homedir}}", homedir)
+        filedata = filedata.replace("{{filepath}}", filepath)
 
         # Write the file out again
+        print("Writing", file)
         with open("cfstore/scripts/aggscript.py", "w") as file:
             file.write(filedata)
 
