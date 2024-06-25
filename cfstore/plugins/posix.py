@@ -240,7 +240,7 @@ class Posix:
                 _proxied=managed_properties,
                 _cell_methods=cell_methods_unpacked,
             )
-            print(created)
+
             if not created:
                 print("Variable already exists! Updating files")
             if c not in var.in_collection.all():
