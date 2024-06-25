@@ -66,18 +66,16 @@ def cli(ctx):
 
 @cli.command()
 @click.pass_context
-@click.argument("transfer_method", nargs=1)
+@click.argument("transfer_method", nargs=1, help="Select one of JDMA,GWS_DELETE or GWS_MOVE as the transfer operation")
 @click.option("--destination", default="None", help="the location of the gws directory where files will end up (only needed when moving)")
-@click.option("--filemanifest", default="None", help="the location of the file manifest, containing the paths of which files are to transfered")
+@click.option("--filemanifest", default="None", help="filemanifest: A json file containing the list of files (format {disc:[list of files],tape:[list of files],unavailable:[list of files],other:[list of files])")
 @click.option("--location", default="None", help="the location as stored by cfstore")
 def transfer(ctx, transfer_method, filemanifest, destination, location):
     """
-    Copy collection of files from source to destination
-
-    :param transfer_method: Which method of transfer (currently JDMA for archiving or DELETE_FROM_GWS to remove from workspace)
-    :param source: Source location of collection
-    :param destination: Destination location for collection
-    :return:
+    Perform one of three transfer operations:
+        JDMA: Transfer files from tape to disc using a JDMA transfer
+        GWS_MOVE: Transfer a file from disc to a new location on disc
+        GWS_DELETE: Remove a file from disc (will not delete from tape)
     """
 
     disc,tape,unavailable,other = get_file_json(filemanifest)
@@ -85,7 +83,7 @@ def transfer(ctx, transfer_method, filemanifest, destination, location):
     if transfer_method == "JDMA":
         JDMA_Transfer(ctx, tape, location, destination)
     elif transfer_method == "GWS_DELETE":
-        GWS_Delete(ctx, disc, location, destination)
+        GWS_Delete(ctx, disc, location)
     elif transfer_method == "GWS_MOVE":
         GWS_Move(ctx, disc, location, destination)
 
@@ -94,6 +92,11 @@ def transfer(ctx, transfer_method, filemanifest, destination, location):
 
 
 def get_file_json(filemanifest):
+    """
+    Loads a json file and seperates it into 4 lists
+
+    -argument filemanifest: A json file containing the list of files (format {disc:[list of files],tape:[list of files],unavailable:[list of files],other:[list of files])
+    """
     print(filemanifest)
     with open(filemanifest) as f:
         jsonfiles = json.load(f)
@@ -102,11 +105,10 @@ def get_file_json(filemanifest):
 
 def JDMA_Transfer(ctx, filelist, location, destination):
     """
-    Copy collection of files from source to destination
+    Copy list of files from source to destination
 
-    :param collection: Collection of files which are to be moved. Collection must exist at source.
-    :param destination: Destination location for collection
-    :return:
+    -argument collection: Collection of files which are to be moved. Collection must exist at source.
+    -argument destination: Destination location for collection
     """
 
     jasmin = Jasmin()
@@ -125,7 +127,11 @@ def JDMA_Transfer(ctx, filelist, location, destination):
 
 def GWS_Move(ctx, filelist, location, destination):
     """
-    Move a collection of files from one are on a gws to a new one
+    Move a list of files from one are on a gws to a new one
+
+    -argument filelist: List of files which are to be moved. Files must exist at source.
+    -argument location: The remote location of the GWS as stored on CFStore
+    -argument destination: Destination location for collection
     """
 
     state, db = _set_context(ctx)
@@ -138,13 +144,12 @@ def GWS_Move(ctx, filelist, location, destination):
 
     for file in filelist:
         x.ssh.move_file(file[1], destination+"/"+file[0])
-def GWS_Delete(ctx, filelist, location, destination):
+def GWS_Delete(ctx, filelist, location):
     """
-    Copy collection of files from source to destination
+    Delete a list of files from a groupworkspace
 
-    :param filelist: List of files which are to be moved. Files must exist at source.
-    :param location: The remote location of the GWS as stored on CFStore
-    :return:
+    -argument filelist: List of files which are to be moved. Files must exist at source.
+    -argument location: The remote location of the GWS as stored on CFStore
     """
 
     state, db = _set_context(ctx)
