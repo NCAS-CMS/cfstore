@@ -52,12 +52,7 @@ class CoreDB:
     session = None
 
     def init(self, conn_string):
-        pass
-        """self.engine = create_engine(conn_string)
-        Base.metadata.create_all(self.engine)
-        self.connection = self.engine.connect()
-        self.session = Session(bind=self.connection)
-        self.conn_string = conn_string"""
+        django.setup()
 
     def save(self):
         """
