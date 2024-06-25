@@ -214,7 +214,7 @@ def getBMetadata(ctx, arg1, argm):
     "--outputfilename", default="tempfile.cfa", help="the name of the output file"
 )
 @click.option(
-    "--delete", default="True", help="If true deletes the CFA after making it"
+    "--delete", default=False, help="If true deletes the CFA after making it"
 )
 def PopulateFromWorkspaceDirectoryByDirectory(
     ctx,
@@ -224,11 +224,12 @@ def PopulateFromWorkspaceDirectoryByDirectory(
     delete,
 ):
     """
-    Runs a remote script to aggregate metadata and store it in the database
-    Format is:
-        cfin rp getbmetadataclean sshlocation wheretopushscript remotedirectory collection
-    Other scripts from /scripts/ folder can be used by setting --aggscript=scriptname (only name is needed, .py is optional)
-    Other locations for scripts can be used by setting --scriptlocation=afolder
+    Runs a remote script to aggregate directory by directory.
+    These cfa files will be stored in a home directory structured the same as the target directory
+    The variables from the cfa files are then stored in the database
+    In addition, Json files are made holding the sizes of the files
+    Usage: 
+        cfin rp populatefromworkspacedirectorybydirectory <location> <homedirectory> <targetdirectory> <collection> --delete<True|False>
     """
     state = CFSconfig()
     print(arg1)
@@ -272,11 +273,11 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         aggscriptname = "aggscript.py"
         
         directorypath, directoryname =os.path.split(directory)
-        cfaendpath = pushdirectory + "/canaricfas" +directorypath + ".cfa"
+        cfaendpath = pushdirectory + "/canaricfas" +directory + ".cfa"
 
         description = directory
 
-        x.ssh.configureScript(baseaggscriptpath, (directorypath, pushdirectory))
+        x.ssh.configureScript(baseaggscriptpath, (directory, pushdirectory))
 
 
         # Push Script(s)
@@ -288,6 +289,7 @@ def PopulateFromWorkspaceDirectoryByDirectory(
         # Execute script to generate Aggregation File
         x.ssh.executeScript(pushdirectory, col, aggscriptname)
 
+        print("Getting",cfaendpath,"to ",outputfilename)
         # Retrieve JSON file
         x.ssh.get(
             cfaendpath,
@@ -295,9 +297,13 @@ def PopulateFromWorkspaceDirectoryByDirectory(
             delete=delete,
         )
 
+
         # Clean-up remote files (At present clean-up means remove them)
         # This is actually an ongoing step done at the end of each remote transfer with excepts. It's more robust.
-        x.ssh.log_files_and_sizes(directory, cfaendpath)
+        #print("Logging files and sizes from",directory,"to",cfaendpath)
+        filesandsizes= x.ssh.log_files_and_sizes(directory, cfaendpath)
+
+        update_files_and_sizes(x.db,filesandsizes)
 
         # Update database with JSON
         print(col)
@@ -306,10 +312,15 @@ def PopulateFromWorkspaceDirectoryByDirectory(
 
     x.ssh.walktree(metadatadirectory,print,dcallback=parse_from_remote_file)
 
+def update_files_and_sizes(database,filesandsizes):
+    """
+    Helper function that updates the database with a json containing a list of files and their sizes
+    """
+    for f,size in filesandsizes:
+        file = database.retrieve_file(f)
+        file.size=size
 
-# This with the right arguments can run scripts on Jasmin
-# Most of the work is done in the arguments though
-# So needs fiddling
+
 @cli.command()
 @click.pass_context
 @click.argument("arg1", nargs=1)
