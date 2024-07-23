@@ -1,0 +1,8 @@
+Command Line Interface
+----------------------
+
+something#
+
+.. automodule:: cfstore.cfdb
+   :members:
+   :no-index:
