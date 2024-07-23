@@ -1,4 +1,6 @@
 cf-python
+scipy
+numpy
 matplotlib
 beautifulsoup4
 click

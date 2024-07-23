@@ -17,7 +17,7 @@ package_data = plugins
 
 setup(
     name="cfstore",
-    version="0.3.0",
+    version="1.0.0",
     packages=find_packages(),
     url="",
     license="MIT",
@@ -26,20 +26,23 @@ setup(
     description="Provides an interface to managing cf compliant data held in multiple storage locations",
     platforms=["Linux", "MacOS"],
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
+        "Framework :: Django",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
     ],
     install_requires=[
-        "click",
         "BeautifulSoup4",
         "paramiko",
         "rich",
         "sphinx-click",
         "cfdm",
         "python-dateutil",
+        "tqdm",
+        "deepdiff",
+        "django",
     ],
     entry_points={
         "console_scripts": [
@@ -47,7 +50,7 @@ setup(
             "cfin=cfstore.cfin:safe_cli",
             "cfmv=cfstore.cfmv:safe_cli",
             "cfbr=cfstore.cfbrowse:safe_cli",
-            "cfmanage=cfstore.cfmanage:safe_cli"
+            "cfmanage=cfstore.cfmanage:safe_cli",
         ],
     },
     package_data={"cfstore": package_data},
