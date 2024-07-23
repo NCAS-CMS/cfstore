@@ -10,6 +10,11 @@
    cmdline
    interface
    database
+   cfdb
+   cfin
+   cfmove
+   cfbrowse
+   cfmanage
 
 Welcome to cfstore's documentation!
 ===================================
@@ -25,11 +30,12 @@ potentially move them around.
 
 The ``cfstore`` package provides three sets of tools to provide this view:
 
-* ``cfin`` is used to ingest information about data held in a number of storage *locations*.
-* ``cfsdb`` is used to add, organise and manipulate that information.
-* ``cfmv`` allows you to use that information to move data between the storage *locations*.
+* :doc:`cfin` is used to ingest information about data held in a number of storage *locations*.
+* :doc:`cfdb` is used to add, organise and manipulate that information.
+* :doc:`cfmove` allows you to use that information to move data between the storage *locations*.
 
-
+:doc:`cfin`
+:doc:`getting_started`
 Where To Begin
 --------------
 See :doc:`getting_started` to understand how to
@@ -55,12 +61,10 @@ to be supported.
 There are two different interfaces available to the cfstore, the 
 command line interface, and the python interface. At the moment
 the python interface is rather low level and more suitable for
-developers. A future release will provide a suitable interface for 
-using in scientific scripts and python notebooks. Meanwhile
-we are concentrating on support via the command line.
+developers. The focus is support through commandline.
 
 Our main focus is Linux compatibility but there's no reason that Windows and Mac shouldn't also *mostly* work.
-If using a non-Linux machine, do tread carefully.
+If using a non-Linux machine, do tread carefully as we do not test on these.
 
 Command Line Interface
 ----------------------

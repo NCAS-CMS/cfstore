@@ -9,7 +9,7 @@ into a "cfstore database", to create and document new views (virtual
 collections) of your data, and where necessary move collections of data
 between storage locations.
 
-The ``cfstore`` package divides this into three sets of tools:
+The ``cfstore`` package divides this into three sets of practical tools:
 
 * ``cfin`` is used to ingest information about data held in a number of storage *locations*.
 * ``cfsdb`` is used to add, organise and manipulate that information.
@@ -20,6 +20,11 @@ information *about* the data. ``cfsdb`` allows you to arbitrarily organise infor
 the data, but it does not touch or move the data itself.  However, data can be moved
 between storage locations by ``cfmv`` so it does more than manipulate information *about*
 the data, it actually does things *to* the data.
+
+These are supplemented by two sets of tools aimed at specific users:
+
+* ``cfbrowse`` provides an api for browsing through data to help build tools for that purpose
+* ``cfmanage`` can be used by single data managers who are expected to make decisions about data that other groups of people wish to use
 
 The storage locations where your data are held have different properties (at least
 the physical location, but possibly other characteristics such as quotas, performance etc. Some will
@@ -49,11 +54,9 @@ of that data in a group workspace on JASMIN, and some in elastic tape. Once you 
 that data you could:
 
 1. Find all duplicate files, ensure you have moved a copy of everything to tape, then remove the disk copies.
-2. Organise virtual collections, such as all your data using the N512 UM,
+2. Organise virtual collections using information stored in their metadata, such as their size and scope or whether they're ocean or atmosphere models
 3. Create cf aggregation views of the atomic datasets in that data, and
-4. extract subsets onto disk as required.
-
-(You can't do step 4 yet with this version of the code, but that's where we are aiming.)
+4. Extract subsets onto disk as required.
 
 It is important to remember that your view of all the storage locations itself just lives on one machine,
 perhaps your laptop/desktop, and you need to interact with cfstore from that one physical location.
