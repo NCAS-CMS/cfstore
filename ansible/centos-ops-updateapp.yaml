@@ -8,9 +8,8 @@
     - name: overwrite django app
       ansible.builtin.git:
         key_file: "/home/{{user}}/.ssh/{{keyname}}"
-        repo: "{{ repo_url }}/{{ repo }}.git"
+        repo: https://github.com/NCAS-CMS/cfstore
         dest: "{{ repo_dir }}"
-        version: demo_branch_website
         accept_hostkey: true
         clone: false
         update: true
@@ -46,17 +45,7 @@
         project_path: "{{repo_dir}}"
         virtualenv: "/home/{{user}}/django"
 
-    - name: Make Django migrations
-      community.general.django_manage:
-        virtualenv: "/home/{{user}}/django"
-        project_path: "{{repo_dir}}"
-        command: makemigrations
 
-    - name: Do migrations
-      community.general.django_manage:
-        virtualenv: "/home/{{user}}/django"
-        project_path: "{{repo_dir}}"
-        command: migrate
 
     - name: crude hack to get django interactive to see the udunits xml variable
       ansible.builtin.blockinfile:
