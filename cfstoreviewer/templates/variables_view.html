@@ -113,8 +113,8 @@ a:active {
       {% for prop,value in variable|getvariablepropertyitems %}
          <div id="{{prop}}" class="tabcontent">
 
-        <table border="1"><tr><td>
-            <table border="1">
+        <table><tr><td>
+            <table>
                 <tr><h3><a href="">{{variable|outputvar}}</a><h3></tr>
                     <tr><th>Domain</th><td>{{variable.cfdm_domain}}</td></tr>
                     <tr><th>Size</th><td>{{variable.cfdm_size}}</td></tr>
@@ -144,19 +144,6 @@ a:active {
                         </div> 
                       </td>
                   </tr>
-                  <tr>   
-                    <th>Axes</th>
-                    <td>
-                      <div class="dropdown">
-                        <button class="dropbtn">Axes</button>
-                        <div class="dropdown-content">
-                            {% for axis in {{variable|getallvariablecellaxes}} %}
-                                <a>{{axis}}</a>
-                            {% endfor %}
-                        </div>
-                      </div> 
-                    </td>
-                </tr>
             </table>
             <form action="{{variable.identity}}/{{prop}}/download/" method="post">
               {% csrf_token %}
