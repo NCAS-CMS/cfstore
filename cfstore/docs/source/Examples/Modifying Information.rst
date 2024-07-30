@@ -5,7 +5,7 @@ Modifying Information About a Collection
 Types of Description
 --------------------
 
-``cfsdb`` provides four main methods of attaching information to collections:
+``cfdb`` provides four main methods of attaching information to collections:
 
 - Descriptions
     Descriptions contain a short user-inputted summary of the collection. A collection can only have one description.
@@ -20,7 +20,7 @@ Editing a Description
 ---------------------
 Input command::
 
-    cfsdb edit testcollection
+    cfdb edit testcollection
 
 Example output::
     
@@ -33,8 +33,8 @@ Editing a Facet or Tag
 ----------------------
 Input command::
     
-    cfsdb examplekey examplevalue --collection=testcollection
-    cfsdb examplekey examplevalue2 --collection=testcollection 
+    cfdb examplekey examplevalue --collection=testcollection
+    cfdb examplekey examplevalue2 --collection=testcollection 
 
 Example output::
     

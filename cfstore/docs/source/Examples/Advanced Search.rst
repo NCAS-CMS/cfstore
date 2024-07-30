@@ -1,4 +1,6 @@
+-------------------
 Advanced Search
+-------------------
 
 Search collections allows a more precise search for specific properties of collections.
 The command is structured as::
@@ -28,7 +30,7 @@ Metadata Searching
 Metadata has a bespoke search command aimed to pinpoint values
 This is done by inputting the following command::
 
-    cfsdb searchvariable <key> <value>
+    cfdb searchvariable <key> <value>
 
 Browse
 -------------------
@@ -36,7 +38,7 @@ Browse
 Browse (as opposed to search) lets users build up searches one step at a time
 To start with, an intial search is generated similar to searcg variable::
 
-        cfsdb browsevariable <key> <value>
+        cfdb browsevariable <key> <value>
 
 However this  will instead output a menu::
 

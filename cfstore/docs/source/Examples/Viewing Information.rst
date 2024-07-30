@@ -3,11 +3,11 @@ Viewing Information
 
 You can list all your collections with the `ls` command like this::
 
-        cfsdb ls --collection=all
+        cfdb ls --collection=all
 
 Output might look something like this::
 
-    cfsdb ls --collection=all
+    cfdb ls --collection=all
     cfstore.db
     Collection <xjanp> has  100.1TiB in 1326 files
     Collection <et_582> has  553.3GiB in 71 files
@@ -21,17 +21,17 @@ Output might look something like this::
 
 Modifying the description: You can view information about a collection using the `pr` command::
 
-        cfsdb pr collection_name
+        cfdb pr collection_name
 
 You should see something like this:
 
-.. image:: /_static/screenshot-cfsdb-pr-eg1.png
+.. image:: /_static/screenshot-cfdb-pr-eg1.png
     :width: 600
     :alt: (should show a screenshot of the output of this command in an example situation)
 
 You can edit the description by using the `edit` command::
 
-        cfsdb edit collection_name
+        cfdb edit collection_name
 
 which will open an editor, when you save the content it will replace
 the collection description in your database.
@@ -40,7 +40,7 @@ Adding tags:
 
 You can add a tag to a collection using the `tag` command::
 
-        cfsdb tag tagtestcollection testtag 
+        cfdb tag tagtestcollection testtag 
 
 Which will then return the confirmation message::
 

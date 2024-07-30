@@ -104,3 +104,6 @@ cfstoreviewer/__pycache__/__init__.cpython-38.pyc
 cfstoreviewer/__pycache__/urls.cpython-38.pyc
 cfstoreviewer/__pycache__/views.cpython-38.pyc
 cfstoreviewer/templatetags/__pycache__/tags.cpython-38.pyc
+cfstoreviewer
+django
+cfstoreapp

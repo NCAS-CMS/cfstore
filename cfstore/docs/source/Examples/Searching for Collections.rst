@@ -11,7 +11,7 @@ In the case of match, it will find all collections that have the ``match`` input
 
 Input command::
 
-    cfsdb findc --match=test
+    cfdb findc --match=test
 
 Example output::
 
@@ -28,7 +28,7 @@ If tag or facet are chosen instead, then collections will only be included if th
 
 Input command::
 
-    cfsdb findc --tagname=exampletag
+    cfdb findc --tagname=exampletag
 
 Example output::
 
@@ -39,13 +39,13 @@ Example output::
 
 
 Finding collections by facets
----------------------------
-Facets can be searched in a simlar fashion but require a key/value pair in the following format ``cfsdb findc --facet <key> <value``:
+--------------------------------
+Facets can be searched in a simlar fashion but require a key/value pair in the following format ``cfdb findc --facet <key> <value``:
 
 
 Input command::
 
-    cfsdb findc --facet testkey testvalue
+    cfdb findc --facet testkey testvalue
 
 Example output::
 
@@ -64,7 +64,7 @@ In addition, a collection can be added so that the search is only done for files
 
 Input command::
 
-    cfsdb findf test --collection=all
+    cfdb findf test --collection=all
 
 Example output::
 
@@ -82,7 +82,7 @@ The following example shows ``testcollection`` linked to both ``linkedtestcollec
 
 Input command::
 
-    cfsdb findr examplelink --collection=testcollection
+    cfdb findr examplelink --collection=testcollection
 
 Example output::
 

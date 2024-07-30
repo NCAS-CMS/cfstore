@@ -3,13 +3,13 @@ Identifying Replicants
 ----------------------
 
 Identifying replicant files (i.e. multiple identical files across collections) is one of the main use cases of cfstore.
-For this purpose we have a CFSDB command called "locate-replicants".
+For this purpose we have a CFDB command called "locate-replicants".
 Locate replicants takes in a single collection and identifies which of the stored files also exist in other collections ingested by cfstore.
 We'll start by providing an example set of collections:
 
 Input command:
 
-cfsdb ls
+cfdb ls
 
 Example output:
 
@@ -35,7 +35,7 @@ Basic searching
 ---------------
 Input command::
 
-    cfsdb locate-replicants --collection=address --checkby=name
+    cfdb locate-replicants --collection=address --checkby=name
 
 Example output::
 
@@ -46,7 +46,7 @@ This is the simplest example - all files in address are unique across collection
 
 Input command::
 
-    cfsdb locate-replicants --collection=xjlehjas2 --checkby=name
+    cfdb locate-replicants --collection=xjlehjas2 --checkby=name
     Example outputs:
     ...
     File: xjleha.pk19810921 has the following replicas:
@@ -84,7 +84,7 @@ We can instead check by filesize:
 
 Input command::
 
-    cfsdb locate-replicants --collection=xjlehjas2 --checkby=size
+    cfdb locate-replicants --collection=xjlehjas2 --checkby=size
 
 Example outputs::
 
@@ -106,7 +106,7 @@ By default "checkby" will be set to "both", checking both filesize and name.
 
 Input command::
 
-    cfsdb locate-replicants --collection=xjlehjas2 --checkby=both
+    cfdb locate-replicants --collection=xjlehjas2 --checkby=both
 
 Example outputs::
 
@@ -140,7 +140,7 @@ That means files that have identical storage locations will be linked.
 
 Input command::
 
-    cfsdb locate-replicants --collection=xjlehjas2 --checkby=both --match-full-path=true
+    cfdb locate-replicants --collection=xjlehjas2 --checkby=both --match-full-path=true
 
 Example outputs::
 

@@ -1,3 +1,4 @@
+---------------------
 Ingesting Information
 ---------------------
 
@@ -53,7 +54,7 @@ made in November 2021, this documentation needs to be updated!*
 
           cfin rp|local add collection_name_for_path path_to_add < description_file
 
-4. Sometimes you will want to remove the ``cfsdb`` representation of files held
+4. Sometimes you will want to remove the ``cfdb`` representation of files held
    below a specific directory because you've moved/deleted them using different
    tools.
 
@@ -61,9 +62,9 @@ made in November 2021, this documentation needs to be updated!*
 
         cfin rp|local clean path_to_clean
 
-   - All representations of files held in that location below that path in ``cfsdb`` will be
+   - All representations of files held in that location below that path in ``cfdb`` will be
      removed, no matter which collections they are in.  However, the collections
-     themselves will not be removed, you will need to use ``cfsdb`` tools to do that.
+     themselves will not be removed, you will need to use ``cfdb`` tools to do that.
      You might, or might not, then want to re-add the collection.
 
 
