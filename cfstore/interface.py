@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from cfstore.cfparse_file import cfparse_file, cfparse_file_to_collection
 from cfstore.db import (Cell_Method, Collection, CoreDB, File, Location,
-                        Protocol, Relationship, Tag, Variable, Directory)
+                        Protocol, Relationship, Tag, Variable)
 
 
 class CollectionError(Exception):
@@ -453,13 +453,6 @@ class CollectionDB(CoreDB):
         locs = Location.objects.all()
         return locs
 
-    def retrieve_directories(self):
-        """
-        Retrieve directories locations.
-        """
-        dir = Directory.objects.all()
-        return dir
-
     def retrieve_protocols(self):
         """
         Retrieve protocols.
@@ -503,18 +496,6 @@ class CollectionDB(CoreDB):
     def retrieve_files_in_location(self,location):
         files = File.objects.filter(locations__contains=location).all()
         return(files)
-
-    def retrieve_CFA_directory(self):
-        """
-        Retrieve directories locations.
-        """
-        cfa = Directory.objects.filter(cfa=True)
-        return cfa
-
-    def make_directory(self, path, location, cfa):
-        cfa = Directory.objects.create(path=path, location=location,CFA=cfa)
-        cfa.save()
-        return cfa
 
     def retrieve_or_make_file(self, match):
         """

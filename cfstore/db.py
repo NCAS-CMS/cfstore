@@ -7,7 +7,7 @@ from django.db import models
 
 from cfstore.parse_cell_methods import parse_cell_methods
 from cfstoreviewer.models import (Cell_Method, Collection, File, Location,
-                                  Protocol, Relationship, Tag, Variable, Directory)
+                                  Protocol, Relationship, Tag, Variable)
 
 # sqlalchemy relationships etc:
 # https://docs.sqlalchemy.org/en/13/orm/basic_relationships.html
