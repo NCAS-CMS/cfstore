@@ -13,28 +13,28 @@ class AuthGroup(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'auth_group'
+        db_table = "auth_group"
 
 
 class AuthGroupPermissions(models.Model):
     group = models.ForeignKey(AuthGroup, models.DO_NOTHING)
-    permission = models.ForeignKey('AuthPermission', models.DO_NOTHING)
+    permission = models.ForeignKey("AuthPermission", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'auth_group_permissions'
-        unique_together = (('group', 'permission'),)
+        db_table = "auth_group_permissions"
+        unique_together = (("group", "permission"),)
 
 
 class AuthPermission(models.Model):
-    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING)
+    content_type = models.ForeignKey("DjangoContentType", models.DO_NOTHING)
     codename = models.CharField(max_length=100)
     name = models.CharField(max_length=255)
 
     class Meta:
         managed = False
-        db_table = 'auth_permission'
-        unique_together = (('content_type', 'codename'),)
+        db_table = "auth_permission"
+        unique_together = (("content_type", "codename"),)
 
 
 class AuthUser(models.Model):
@@ -51,7 +51,7 @@ class AuthUser(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'auth_user'
+        db_table = "auth_user"
 
 
 class AuthUserGroups(models.Model):
@@ -60,8 +60,8 @@ class AuthUserGroups(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'auth_user_groups'
-        unique_together = (('user', 'group'),)
+        db_table = "auth_user_groups"
+        unique_together = (("user", "group"),)
 
 
 class AuthUserUserPermissions(models.Model):
@@ -70,8 +70,8 @@ class AuthUserUserPermissions(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'auth_user_user_permissions'
-        unique_together = (('user', 'permission'),)
+        db_table = "auth_user_user_permissions"
+        unique_together = (("user", "permission"),)
 
 
 class CfstoreviewerCellMethod(models.Model):
@@ -80,11 +80,13 @@ class CfstoreviewerCellMethod(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_cell_method'
+        db_table = "cfstoreviewer_cell_method"
 
 
 class CfstoreviewerCollection(models.Model):
-    field_proxied = models.JSONField(db_column='_proxied')  # Field renamed because it started with '_'.
+    field_proxied = models.JSONField(
+        db_column="_proxied"
+    )  # Field renamed because it started with '_'.
     name = models.CharField(unique=True, max_length=256)
     volume = models.IntegerField()
     description = models.TextField()
@@ -92,37 +94,39 @@ class CfstoreviewerCollection(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_collection'
+        db_table = "cfstoreviewer_collection"
 
 
 class CfstoreviewerCollectionFiles(models.Model):
     collection = models.ForeignKey(CfstoreviewerCollection, models.DO_NOTHING)
-    file = models.ForeignKey('CfstoreviewerFile', models.DO_NOTHING)
+    file = models.ForeignKey("CfstoreviewerFile", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_collection_files'
-        unique_together = (('collection', 'file'),)
+        db_table = "cfstoreviewer_collection_files"
+        unique_together = (("collection", "file"),)
 
 
 class CfstoreviewerCollectionProperties(models.Model):
     collection = models.ForeignKey(CfstoreviewerCollection, models.DO_NOTHING)
-    collectionproperty = models.ForeignKey('CfstoreviewerCollectionproperty', models.DO_NOTHING)
+    collectionproperty = models.ForeignKey(
+        "CfstoreviewerCollectionproperty", models.DO_NOTHING
+    )
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_collection_properties'
-        unique_together = (('collection', 'collectionproperty'),)
+        db_table = "cfstoreviewer_collection_properties"
+        unique_together = (("collection", "collectionproperty"),)
 
 
 class CfstoreviewerCollectionTags(models.Model):
     collection = models.ForeignKey(CfstoreviewerCollection, models.DO_NOTHING)
-    tag = models.ForeignKey('CfstoreviewerTag', models.DO_NOTHING)
+    tag = models.ForeignKey("CfstoreviewerTag", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_collection_tags'
-        unique_together = (('collection', 'tag'),)
+        db_table = "cfstoreviewer_collection_tags"
+        unique_together = (("collection", "tag"),)
 
 
 class CfstoreviewerCollectionproperty(models.Model):
@@ -131,26 +135,26 @@ class CfstoreviewerCollectionproperty(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_collectionproperty'
+        db_table = "cfstoreviewer_collectionproperty"
 
 
 class CfstoreviewerDirectory(models.Model):
     path = models.CharField(max_length=1024)
-    cfa = models.BooleanField(db_column='CFA')  # Field name made lowercase.
+    cfa = models.BooleanField(db_column="CFA")  # Field name made lowercase.
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_directory'
+        db_table = "cfstoreviewer_directory"
 
 
 class CfstoreviewerDirectoryLocation(models.Model):
     directory = models.ForeignKey(CfstoreviewerDirectory, models.DO_NOTHING)
-    location = models.ForeignKey('CfstoreviewerLocation', models.DO_NOTHING)
+    location = models.ForeignKey("CfstoreviewerLocation", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_directory_location'
-        unique_together = (('directory', 'location'),)
+        db_table = "cfstoreviewer_directory_location"
+        unique_together = (("directory", "location"),)
 
 
 class CfstoreviewerFile(models.Model):
@@ -163,27 +167,27 @@ class CfstoreviewerFile(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_file'
+        db_table = "cfstoreviewer_file"
 
 
 class CfstoreviewerFileLocations(models.Model):
     file = models.ForeignKey(CfstoreviewerFile, models.DO_NOTHING)
-    location = models.ForeignKey('CfstoreviewerLocation', models.DO_NOTHING)
+    location = models.ForeignKey("CfstoreviewerLocation", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_file_locations'
-        unique_together = (('file', 'location'),)
+        db_table = "cfstoreviewer_file_locations"
+        unique_together = (("file", "location"),)
 
 
 class CfstoreviewerFileReplicas(models.Model):
     file = models.ForeignKey(CfstoreviewerFile, models.DO_NOTHING)
-    location = models.ForeignKey('CfstoreviewerLocation', models.DO_NOTHING)
+    location = models.ForeignKey("CfstoreviewerLocation", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_file_replicas'
-        unique_together = (('file', 'location'),)
+        db_table = "cfstoreviewer_file_replicas"
+        unique_together = (("file", "location"),)
 
 
 class CfstoreviewerLocation(models.Model):
@@ -192,7 +196,7 @@ class CfstoreviewerLocation(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_location'
+        db_table = "cfstoreviewer_location"
 
 
 class CfstoreviewerLocationHoldsFiles(models.Model):
@@ -201,18 +205,18 @@ class CfstoreviewerLocationHoldsFiles(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_location_holds_files'
-        unique_together = (('location', 'file'),)
+        db_table = "cfstoreviewer_location_holds_files"
+        unique_together = (("location", "file"),)
 
 
 class CfstoreviewerLocationProtocols(models.Model):
     location = models.ForeignKey(CfstoreviewerLocation, models.DO_NOTHING)
-    protocol = models.ForeignKey('CfstoreviewerProtocol', models.DO_NOTHING)
+    protocol = models.ForeignKey("CfstoreviewerProtocol", models.DO_NOTHING)
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_location_protocols'
-        unique_together = (('location', 'protocol'),)
+        db_table = "cfstoreviewer_location_protocols"
+        unique_together = (("location", "protocol"),)
 
 
 class CfstoreviewerProtocol(models.Model):
@@ -220,7 +224,7 @@ class CfstoreviewerProtocol(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_protocol'
+        db_table = "cfstoreviewer_protocol"
 
 
 class CfstoreviewerRelationship(models.Model):
@@ -228,7 +232,7 @@ class CfstoreviewerRelationship(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_relationship'
+        db_table = "cfstoreviewer_relationship"
 
 
 class CfstoreviewerRelationshipRelatedCollection(models.Model):
@@ -237,8 +241,8 @@ class CfstoreviewerRelationshipRelatedCollection(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_relationship_related_collection'
-        unique_together = (('relationship', 'collection'),)
+        db_table = "cfstoreviewer_relationship_related_collection"
+        unique_together = (("relationship", "collection"),)
 
 
 class CfstoreviewerRelationshipSubjectCollection(models.Model):
@@ -247,8 +251,8 @@ class CfstoreviewerRelationshipSubjectCollection(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_relationship_subject_collection'
-        unique_together = (('relationship', 'collection'),)
+        db_table = "cfstoreviewer_relationship_subject_collection"
+        unique_together = (("relationship", "collection"),)
 
 
 class CfstoreviewerTag(models.Model):
@@ -256,7 +260,7 @@ class CfstoreviewerTag(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_tag'
+        db_table = "cfstoreviewer_tag"
 
 
 class CfstoreviewerVarMetadata(models.Model):
@@ -271,12 +275,16 @@ class CfstoreviewerVarMetadata(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_var_metadata'
+        db_table = "cfstoreviewer_var_metadata"
 
 
 class CfstoreviewerVariable(models.Model):
-    field_cell_methods = models.JSONField(db_column='_cell_methods')  # Field renamed because it started with '_'.
-    field_proxied = models.JSONField(db_column='_proxied')  # Field renamed because it started with '_'.
+    field_cell_methods = models.JSONField(
+        db_column="_cell_methods"
+    )  # Field renamed because it started with '_'.
+    field_proxied = models.JSONField(
+        db_column="_proxied"
+    )  # Field renamed because it started with '_'.
     cfdm_size = models.BigIntegerField()
     long_name = models.CharField(max_length=1024, blank=True, null=True)
     cfdm_domain = models.CharField(max_length=1024)
@@ -287,7 +295,7 @@ class CfstoreviewerVariable(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_variable'
+        db_table = "cfstoreviewer_variable"
 
 
 class CfstoreviewerVariableInCollection(models.Model):
@@ -296,8 +304,8 @@ class CfstoreviewerVariableInCollection(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_variable_in_collection'
-        unique_together = (('variable', 'collection'),)
+        db_table = "cfstoreviewer_variable_in_collection"
+        unique_together = (("variable", "collection"),)
 
 
 class CfstoreviewerVariableInFiles(models.Model):
@@ -306,15 +314,14 @@ class CfstoreviewerVariableInFiles(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_variable_in_files'
-        unique_together = (('variable', 'file'),)
+        db_table = "cfstoreviewer_variable_in_files"
+        unique_together = (("variable", "file"),)
 
 
 class CfstoreviewerVdm(models.Model):
-
     class Meta:
         managed = False
-        db_table = 'cfstoreviewer_vdm'
+        db_table = "cfstoreviewer_vdm"
 
 
 class DjangoAdminLog(models.Model):
@@ -322,13 +329,15 @@ class DjangoAdminLog(models.Model):
     object_repr = models.CharField(max_length=200)
     action_flag = models.PositiveSmallIntegerField()
     change_message = models.TextField()
-    content_type = models.ForeignKey('DjangoContentType', models.DO_NOTHING, blank=True, null=True)
+    content_type = models.ForeignKey(
+        "DjangoContentType", models.DO_NOTHING, blank=True, null=True
+    )
     user = models.ForeignKey(AuthUser, models.DO_NOTHING)
     action_time = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = 'django_admin_log'
+        db_table = "django_admin_log"
 
 
 class DjangoContentType(models.Model):
@@ -337,8 +346,8 @@ class DjangoContentType(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'django_content_type'
-        unique_together = (('app_label', 'model'),)
+        db_table = "django_content_type"
+        unique_together = (("app_label", "model"),)
 
 
 class DjangoMigrations(models.Model):
@@ -348,7 +357,7 @@ class DjangoMigrations(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'django_migrations'
+        db_table = "django_migrations"
 
 
 class DjangoSession(models.Model):
@@ -358,4 +367,4 @@ class DjangoSession(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'django_session'
+        db_table = "django_session"
